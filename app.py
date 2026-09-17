@@ -646,18 +646,28 @@ actual_fuel_l_h = st.number_input(
     step=1.0,
 )
 
-expected_fuel = result["l_h"]
+# ============================================================
+# PRECISION-SAFE ACTUAL VS EXPECTED CALCULATION
+# ============================================================
 
-variance = actual_fuel_l_h - expected_fuel
+# Use the same precision displayed/entered by the operator.
+expected_fuel = round(float(result["l_h"]), 1)
+actual_fuel_l_h = round(float(actual_fuel_l_h), 1)
+
+# Prevent tiny floating-point differences from creating
+# false excess-fuel alarms.
+variance = round(actual_fuel_l_h - expected_fuel, 1)
+
+# Treat differences smaller than 0.05 L/h as zero.
+if abs(variance) < 0.05:
+    variance = 0.0
 
 if expected_fuel > 0:
-
-    variance_percent = (
-        variance / expected_fuel
-    ) * 100
-
+    variance_percent = round(
+        (variance / expected_fuel) * 100,
+        2
+    )
 else:
-
     variance_percent = 0.0
 
 a1, a2, a3, a4 = st.columns(4)
@@ -731,7 +741,7 @@ else:
 
 st.subheader("💰 Excess Fuel Intelligence")
 
-if variance > 0:
+if variance > 0.05:
 
     excess_day = (
         variance *
