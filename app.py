@@ -327,15 +327,86 @@ st.sidebar.markdown("---")
 
 st.sidebar.subheader("Main Engine")
 
-engine_maker = st.sidebar.text_input(
+# ============================================================
+# ENGINE MASTER DATABASE
+# ============================================================
+
+ENGINE_DATABASE = {
+    "MAN": [
+        "MAN B&W",
+        "MAN 32/40",
+        "MAN 48/60",
+        "MAN D2862",
+        "Other / Manual Input",
+    ],
+    "Caterpillar": [
+        "CAT 3512",
+        "CAT 3516",
+        "CAT C32",
+        "CAT C175",
+        "Other / Manual Input",
+    ],
+    "Cummins": [
+        "Cummins KTA38",
+        "Cummins KTA50",
+        "Cummins QSK38",
+        "Cummins QSK60",
+        "Other / Manual Input",
+    ],
+    "Wartsila": [
+        "Wartsila 20",
+        "Wartsila 26",
+        "Wartsila 31",
+        "Wartsila 32",
+        "Other / Manual Input",
+    ],
+    "Yanmar": [
+        "Yanmar 6EY",
+        "Yanmar 8EY",
+        "Yanmar 6AYM",
+        "Other / Manual Input",
+    ],
+    "Mitsubishi": [
+        "Mitsubishi S12R",
+        "Mitsubishi S16R",
+        "Mitsubishi UEC",
+        "Other / Manual Input",
+    ],
+    "Niigata": [
+        "Niigata 6L",
+        "Niigata 8L",
+        "Niigata 6MG",
+        "Other / Manual Input",
+    ],
+    "Daihatsu": [
+        "Daihatsu DK",
+        "Daihatsu DE",
+        "Daihatsu DC",
+        "Other / Manual Input",
+    ],
+    "Other": [
+        "Other / Manual Input",
+    ],
+}
+
+engine_maker = st.sidebar.selectbox(
     "Engine Maker",
-    value="MAN / Caterpillar / Cummins",
+    list(ENGINE_DATABASE.keys()),
 )
 
-engine_model = st.sidebar.text_input(
+selected_engine_model = st.sidebar.selectbox(
     "Engine Model",
-    value="Enter engine model",
+    ENGINE_DATABASE[engine_maker],
 )
+
+if selected_engine_model == "Other / Manual Input":
+    engine_model = st.sidebar.text_input(
+        "Enter Engine Model",
+        value="",
+        placeholder="Example: 6L28/32A",
+    )
+else:
+    engine_model = selected_engine_model
 
 engine_count = st.sidebar.number_input(
     "Number of Main Engines Running",
