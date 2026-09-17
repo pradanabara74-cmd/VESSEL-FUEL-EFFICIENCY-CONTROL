@@ -1766,7 +1766,10 @@ st.caption(
 
 t3_selected_vessel = st.session_state.get(
     "selected_vessel",
-    globals().get("selected_vessel", "VESSEL")
+    st.session_state.get(
+        "sidebar_vessel_name",
+        globals().get("vessel_name", "ASL MANTRUS")
+    )
 )
 
 st.subheader("🚢 Vessel Fuel Performance")
