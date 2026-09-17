@@ -1206,3 +1206,200 @@ substantially from a conventional free-sailing propeller curve.
 st.caption(
     "Vessel Fuel Efficiency & Control Intelligence Center"
 )
+
+# ============================================================
+# TAHAP 1 — FLEET & VESSEL DATABASE
+# Vessel Fuel Efficiency & Control Intelligence Center
+# ============================================================
+
+st.divider()
+
+st.header("🚢 Fleet & Vessel Intelligence")
+
+st.caption(
+    "Central vessel database for fuel efficiency, engine performance, "
+    "bunker monitoring and fleet operational intelligence."
+)
+
+# ------------------------------------------------------------
+# ASL / AST FLEET DATABASE — 21 VESSELS
+# ------------------------------------------------------------
+
+FLEET_DATABASE = [
+    {"Vessel": "ASL MANTRUS", "Group": "ASL", "Status": "Active"},
+    {"Vessel": "ASL MULIA", "Group": "ASL", "Status": "Active"},
+    {"Vessel": "ASL SENTOSA", "Group": "ASL", "Status": "Active"},
+    {"Vessel": "ASL VICTORY", "Group": "ASL", "Status": "Active"},
+    {"Vessel": "ASL INTAN", "Group": "ASL", "Status": "Active"},
+    {"Vessel": "ASL GEMINI", "Group": "ASL", "Status": "Active"},
+    {"Vessel": "ASL BEAVER", "Group": "ASL", "Status": "Active"},
+    {"Vessel": "ASL CRESST", "Group": "ASL", "Status": "Active"},
+    {"Vessel": "ASL CALYPSO", "Group": "ASL", "Status": "Active"},
+    {"Vessel": "ASL PHOENIX", "Group": "ASL", "Status": "Active"},
+    {"Vessel": "ASL MARINE 8", "Group": "ASL", "Status": "Active"},
+    {"Vessel": "AST LEGEND", "Group": "AST", "Status": "Active"},
+    {"Vessel": "TERAS HYDRA", "Group": "TERAS", "Status": "Active"},
+    {"Vessel": "AST MAJU", "Group": "AST", "Status": "Active"},
+    {"Vessel": "KARYA ABADI 8", "Group": "OTHER", "Status": "Active"},
+    {"Vessel": "NUSANTARA ABADI 1", "Group": "OTHER", "Status": "Active"},
+    {"Vessel": "CAPITOL T2002", "Group": "CAPITOL", "Status": "Active"},
+    {"Vessel": "CAPITOL T2001", "Group": "CAPITOL", "Status": "Active"},
+    {"Vessel": "TB1000-06", "Group": "TB1000", "Status": "Active"},
+    {"Vessel": "TB1000-07", "Group": "TB1000", "Status": "Active"},
+    {"Vessel": "WHALE 3", "Group": "WHALE", "Status": "Active"},
+]
+
+fleet_df = pd.DataFrame(FLEET_DATABASE)
+
+# ------------------------------------------------------------
+# FLEET CONTROL
+# ------------------------------------------------------------
+
+fleet_names = fleet_df["Vessel"].tolist()
+
+selected_fleet_vessel = st.selectbox(
+    "Select Vessel for Fleet Intelligence",
+    fleet_names,
+    key="fleet_intelligence_vessel"
+)
+
+selected_record = fleet_df[
+    fleet_df["Vessel"] == selected_fleet_vessel
+].iloc[0]
+
+# Save selected vessel for later intelligence modules
+st.session_state["selected_fleet_vessel"] = selected_fleet_vessel
+
+# ------------------------------------------------------------
+# FLEET KPI
+# ------------------------------------------------------------
+
+active_vessels = int(
+    (fleet_df["Status"] == "Active").sum()
+)
+
+groups = int(
+    fleet_df["Group"].nunique()
+)
+
+col1, col2, col3, col4 = st.columns(4)
+
+with col1:
+    st.metric(
+        "Total Fleet",
+        len(fleet_df)
+    )
+
+with col2:
+    st.metric(
+        "Active Vessels",
+        active_vessels
+    )
+
+with col3:
+    st.metric(
+        "Fleet Groups",
+        groups
+    )
+
+with col4:
+    st.metric(
+        "Selected Vessel",
+        selected_fleet_vessel
+    )
+
+# ------------------------------------------------------------
+# SELECTED VESSEL
+# ------------------------------------------------------------
+
+st.subheader("🛳️ Selected Vessel")
+
+v1, v2, v3 = st.columns(3)
+
+with v1:
+    st.metric(
+        "Vessel",
+        selected_record["Vessel"]
+    )
+
+with v2:
+    st.metric(
+        "Fleet / Group",
+        selected_record["Group"]
+    )
+
+with v3:
+    st.metric(
+        "Operational Status",
+        selected_record["Status"]
+    )
+
+# ------------------------------------------------------------
+# FLEET DATABASE TABLE
+# ------------------------------------------------------------
+
+st.subheader("📋 Fleet Database")
+
+display_fleet_df = fleet_df.copy()
+display_fleet_df.insert(
+    0,
+    "No.",
+    range(1, len(display_fleet_df) + 1)
+)
+
+st.dataframe(
+    display_fleet_df,
+    use_container_width=True,
+    hide_index=True
+)
+
+# ------------------------------------------------------------
+# FLEET READINESS
+# ------------------------------------------------------------
+
+st.subheader("🧠 Fleet Intelligence Readiness")
+
+r1, r2, r3, r4 = st.columns(4)
+
+with r1:
+    st.metric(
+        "Vessels Registered",
+        f"{len(fleet_df)}/21"
+    )
+
+with r2:
+    st.metric(
+        "Fuel Intelligence",
+        "READY"
+    )
+
+with r3:
+    st.metric(
+        "Engine Intelligence",
+        "READY"
+    )
+
+with r4:
+    st.metric(
+        "Fleet Monitoring",
+        "ACTIVE"
+    )
+
+if len(fleet_df) == 21:
+    st.success(
+        "✅ TAHAP 1 ACTIVE — 21 vessels are registered in the "
+        "Fleet & Vessel Intelligence database."
+    )
+else:
+    st.warning(
+        "⚠️ Fleet database does not contain the expected 21 vessels."
+    )
+
+st.info(
+    "The selected vessel is stored in the application session and "
+    "can be used by the next intelligence modules."
+)
+
+# ============================================================
+# END TAHAP 1
+# ============================================================
