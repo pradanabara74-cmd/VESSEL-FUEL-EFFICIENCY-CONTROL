@@ -1741,3 +1741,504 @@ st.info(
 # ============================================================
 # END TAHAP 2
 # ============================================================
+
+# ============================================================
+# TAHAP 3
+# FUEL CONSUMPTION & PERFORMANCE INTELLIGENCE
+# ============================================================
+
+# ------------------------------------------------------------
+# TAHAP 3 - FUEL CONSUMPTION & PERFORMANCE INTELLIGENCE
+# ------------------------------------------------------------
+
+st.divider()
+
+st.header("⛽ Fuel Consumption & Performance Intelligence")
+st.caption(
+    "Operational fuel-performance monitoring connected to the "
+    "selected vessel and technical engine database."
+)
+
+# ------------------------------------------------------------
+# SELECTED VESSEL FROM TAHAP 1
+# ------------------------------------------------------------
+
+t3_selected_vessel = st.session_state.get(
+    "selected_vessel",
+    globals().get("selected_vessel", "VESSEL")
+)
+
+st.subheader("🚢 Vessel Fuel Performance")
+
+st.info(
+    f"Fuel performance analysis for: **{t3_selected_vessel}**"
+)
+
+# ------------------------------------------------------------
+# TECHNICAL DATA FROM TAHAP 2
+# Safe fallback values are provided if a variable name differs.
+# ------------------------------------------------------------
+
+t3_engine_count = float(
+    st.session_state.get(
+        "engine_count",
+        globals().get("engine_count", 2)
+    )
+)
+
+t3_power_per_engine = float(
+    st.session_state.get(
+        "rated_power_kw",
+        globals().get(
+            "rated_power_kw",
+            globals().get("rated_power", 1500.0)
+        )
+    )
+)
+
+t3_rated_rpm = float(
+    st.session_state.get(
+        "rated_rpm",
+        globals().get("rated_rpm", 1200.0)
+    )
+)
+
+t3_base_sfoc = float(
+    st.session_state.get(
+        "base_sfoc",
+        globals().get("base_sfoc", 205.0)
+    )
+)
+
+t3_fuel_density = float(
+    st.session_state.get(
+        "fuel_density",
+        globals().get("fuel_density", 0.850)
+    )
+)
+
+t3_total_power = t3_engine_count * t3_power_per_engine
+
+# ------------------------------------------------------------
+# OPERATING INPUT
+# ------------------------------------------------------------
+
+st.subheader("⚙️ Current Operating Data")
+
+t3_c1, t3_c2, t3_c3 = st.columns(3)
+
+with t3_c1:
+    t3_actual_rpm = st.number_input(
+        "Actual RPM",
+        min_value=0.0,
+        max_value=max(t3_rated_rpm * 1.10, 100.0),
+        value=min(800.0, t3_rated_rpm),
+        step=10.0,
+        key="t3_actual_rpm"
+    )
+
+with t3_c2:
+    t3_actual_fuel_lph = st.number_input(
+        "Actual Fuel Consumption (L/h)",
+        min_value=0.0,
+        value=253.0,
+        step=1.0,
+        key="t3_actual_fuel_lph"
+    )
+
+with t3_c3:
+    t3_fuel_price = st.number_input(
+        "Fuel Price (USD/L)",
+        min_value=0.0,
+        value=1.00,
+        step=0.01,
+        format="%.2f",
+        key="t3_fuel_price"
+    )
+
+t3_c4, t3_c5, t3_c6 = st.columns(3)
+
+with t3_c4:
+    t3_speed_kn = st.number_input(
+        "Vessel Speed (knots)",
+        min_value=0.0,
+        value=10.0,
+        step=0.1,
+        key="t3_speed_kn"
+    )
+
+with t3_c5:
+    t3_operating_hours = st.number_input(
+        "Operating Hours / Day",
+        min_value=0.0,
+        max_value=24.0,
+        value=24.0,
+        step=1.0,
+        key="t3_operating_hours"
+    )
+
+with t3_c6:
+    t3_monitor_band = st.number_input(
+        "Monitoring Band (%)",
+        min_value=1.0,
+        max_value=50.0,
+        value=5.0,
+        step=1.0,
+        key="t3_monitor_band"
+    )
+
+# ------------------------------------------------------------
+# ENGINEERING CALCULATION
+# Propeller-law estimate:
+# Load fraction approximately proportional to (RPM / Rated RPM)^3
+# ------------------------------------------------------------
+
+if t3_rated_rpm > 0:
+    t3_rpm_ratio = t3_actual_rpm / t3_rated_rpm
+else:
+    t3_rpm_ratio = 0.0
+
+t3_rpm_ratio = max(0.0, min(t3_rpm_ratio, 1.10))
+
+t3_load_fraction = t3_rpm_ratio ** 3
+t3_load_percent = t3_load_fraction * 100.0
+
+t3_estimated_power = t3_total_power * t3_load_fraction
+
+# Conservative low-load SFOC correction for monitoring only.
+if t3_load_percent < 30:
+    t3_adjusted_sfoc = t3_base_sfoc * 1.18
+elif t3_load_percent < 50:
+    t3_adjusted_sfoc = t3_base_sfoc * 1.10
+elif t3_load_percent < 75:
+    t3_adjusted_sfoc = t3_base_sfoc * 1.04
+else:
+    t3_adjusted_sfoc = t3_base_sfoc
+
+# kg/h
+t3_expected_fuel_kgh = (
+    t3_estimated_power * t3_adjusted_sfoc / 1000.0
+)
+
+# L/h
+if t3_fuel_density > 0:
+    t3_expected_fuel_lph = (
+        t3_expected_fuel_kgh / t3_fuel_density
+    )
+else:
+    t3_expected_fuel_lph = 0.0
+
+# ------------------------------------------------------------
+# VARIANCE & EFFICIENCY
+# ------------------------------------------------------------
+
+t3_difference_lph = (
+    t3_actual_fuel_lph - t3_expected_fuel_lph
+)
+
+if t3_expected_fuel_lph > 0:
+    t3_variance_percent = (
+        t3_difference_lph / t3_expected_fuel_lph
+    ) * 100.0
+
+    t3_efficiency_index = (
+        t3_expected_fuel_lph / t3_actual_fuel_lph * 100.0
+        if t3_actual_fuel_lph > 0
+        else 0.0
+    )
+else:
+    t3_variance_percent = 0.0
+    t3_efficiency_index = 0.0
+
+# ------------------------------------------------------------
+# DAILY PERFORMANCE
+# ------------------------------------------------------------
+
+t3_actual_daily_l = (
+    t3_actual_fuel_lph * t3_operating_hours
+)
+
+t3_expected_daily_l = (
+    t3_expected_fuel_lph * t3_operating_hours
+)
+
+t3_excess_lph = max(
+    t3_actual_fuel_lph - t3_expected_fuel_lph,
+    0.0
+)
+
+t3_excess_daily_l = (
+    t3_excess_lph * t3_operating_hours
+)
+
+t3_excess_30d_l = t3_excess_daily_l * 30.0
+
+t3_excess_daily_t = (
+    t3_excess_daily_l * t3_fuel_density / 1000.0
+)
+
+t3_cost_day = (
+    t3_excess_daily_l * t3_fuel_price
+)
+
+t3_cost_30d = t3_cost_day * 30.0
+
+if t3_speed_kn > 0:
+    t3_fuel_intensity = (
+        t3_actual_fuel_lph / t3_speed_kn
+    )
+else:
+    t3_fuel_intensity = 0.0
+
+# ------------------------------------------------------------
+# PERFORMANCE DASHBOARD
+# ------------------------------------------------------------
+
+st.subheader("📊 Fuel Performance Dashboard")
+
+t3_m1, t3_m2, t3_m3, t3_m4 = st.columns(4)
+
+t3_m1.metric(
+    "Engine Load",
+    f"{t3_load_percent:.1f}%"
+)
+
+t3_m2.metric(
+    "Estimated Power",
+    f"{t3_estimated_power:,.0f} kW"
+)
+
+t3_m3.metric(
+    "Expected Fuel",
+    f"{t3_expected_fuel_lph:,.1f} L/h"
+)
+
+t3_m4.metric(
+    "Actual Fuel",
+    f"{t3_actual_fuel_lph:,.1f} L/h"
+)
+
+t3_m5, t3_m6, t3_m7, t3_m8 = st.columns(4)
+
+t3_m5.metric(
+    "Difference",
+    f"{t3_difference_lph:+,.1f} L/h"
+)
+
+t3_m6.metric(
+    "Variance",
+    f"{t3_variance_percent:+.1f}%"
+)
+
+t3_m7.metric(
+    "Efficiency Index",
+    f"{t3_efficiency_index:.1f}%"
+)
+
+t3_m8.metric(
+    "Fuel Intensity",
+    f"{t3_fuel_intensity:.2f} L/NM"
+)
+
+# ------------------------------------------------------------
+# EXPECTED VS ACTUAL
+# ------------------------------------------------------------
+
+st.subheader("🎯 Actual Fuel vs Expected Fuel")
+
+t3_compare_df = pd.DataFrame(
+    {
+        "Fuel Performance": ["Expected", "Actual"],
+        "Fuel Consumption (L/h)": [
+            t3_expected_fuel_lph,
+            t3_actual_fuel_lph
+        ]
+    }
+)
+
+st.bar_chart(
+    t3_compare_df.set_index("Fuel Performance")
+)
+
+# ------------------------------------------------------------
+# PERFORMANCE STATUS
+# ------------------------------------------------------------
+
+st.subheader("🚦 Fuel Efficiency Status")
+
+if t3_expected_fuel_lph <= 0:
+    t3_status = "INSUFFICIENT DATA"
+    st.warning(
+        "⚠️ Expected fuel consumption cannot be calculated "
+        "with the current technical inputs."
+    )
+
+elif t3_variance_percent > t3_monitor_band:
+    t3_status = "HIGH CONSUMPTION"
+    st.error(
+        f"🔴 HIGH CONSUMPTION — Actual fuel is "
+        f"{t3_variance_percent:.1f}% above the current "
+        f"engineering estimate."
+    )
+
+elif t3_variance_percent < -t3_monitor_band:
+    t3_status = "BELOW ESTIMATE"
+    st.info(
+        f"🔵 BELOW ESTIMATE — Actual fuel is "
+        f"{abs(t3_variance_percent):.1f}% below the current "
+        f"engineering estimate. Verify operating conditions "
+        f"and measurement accuracy."
+    )
+
+else:
+    t3_status = "NORMAL"
+    st.success(
+        f"🟢 NORMAL — Actual fuel consumption is within "
+        f"±{t3_monitor_band:.0f}% of the current "
+        f"engineering estimate."
+    )
+
+# ------------------------------------------------------------
+# EXCESS FUEL INTELLIGENCE
+# ------------------------------------------------------------
+
+st.subheader("💰 Excess Fuel Intelligence")
+
+t3_e1, t3_e2, t3_e3, t3_e4 = st.columns(4)
+
+t3_e1.metric(
+    "Excess / Day",
+    f"{t3_excess_daily_l:,.0f} L"
+)
+
+t3_e2.metric(
+    "Excess / Day",
+    f"{t3_excess_daily_t:,.2f} t"
+)
+
+t3_e3.metric(
+    "Excess / 30 Days",
+    f"{t3_excess_30d_l:,.0f} L"
+)
+
+t3_e4.metric(
+    "Potential Cost / 30 Days",
+    f"USD {t3_cost_30d:,.2f}"
+)
+
+# ------------------------------------------------------------
+# INTELLIGENCE ANALYSIS
+# ------------------------------------------------------------
+
+st.subheader("🧠 Fuel Performance Intelligence")
+
+if t3_load_percent < 30:
+    st.warning(
+        "⚠️ Estimated propulsion load is below 30%. "
+        "Long-duration low-load operation should be checked "
+        "against the engine manufacturer's operating guidance."
+    )
+
+if t3_variance_percent > t3_monitor_band:
+    st.error(
+        "Fuel consumption is above the configured monitoring "
+        "band. Investigate operating condition, weather, "
+        "current, hull/propeller condition, engine loading, "
+        "fuel quality, measurement accuracy and auxiliary loads."
+    )
+
+elif abs(t3_variance_percent) <= t3_monitor_band:
+    st.success(
+        "Fuel consumption is currently inside the configured "
+        "monitoring band."
+    )
+
+if t3_speed_kn > 0:
+    st.info(
+        f"Current calculated fuel intensity: "
+        f"{t3_fuel_intensity:.2f} L/NM."
+    )
+
+# ------------------------------------------------------------
+# OPERATIONAL RECOMMENDATIONS
+# ------------------------------------------------------------
+
+st.subheader("📋 Priority Actions")
+
+t3_actions = []
+
+if t3_variance_percent > t3_monitor_band:
+    t3_actions.extend(
+        [
+            "Verify actual fuel-flow or tank measurement data.",
+            "Check engine load distribution and RPM stability.",
+            "Review weather, sea state, current and vessel draft.",
+            "Inspect hull and propeller condition where relevant.",
+            "Compare performance against verified sea-trial or "
+            "manufacturer performance data."
+        ]
+    )
+
+if t3_load_percent < 30:
+    t3_actions.append(
+        "Review prolonged low-load operation against engine "
+        "manufacturer recommendations."
+    )
+
+if t3_fuel_density == 0.850:
+    t3_actions.append(
+        "Replace the default fuel density with the latest "
+        "BDN or laboratory-tested density."
+    )
+
+if not t3_actions:
+    t3_actions.append(
+        "Continue monitoring fuel consumption and record "
+        "operational data consistently for trend analysis."
+    )
+
+for t3_i, t3_action in enumerate(t3_actions, start=1):
+    st.write(f"{t3_i}. {t3_action}")
+
+# ------------------------------------------------------------
+# DATA QUALITY & ENGINEERING NOTICE
+# ------------------------------------------------------------
+
+st.subheader("🛡️ Data Quality & Validation")
+
+st.warning(
+    "Expected fuel consumption is an engineering estimate. "
+    "For operational, contractual or commercial decisions, "
+    "validate the calculation against the exact installed "
+    "engine rating, manufacturer performance/SFOC curves, "
+    "propeller and hull characteristics, verified fuel density, "
+    "sea-trial data and calibrated fuel-flow or tank measurements."
+)
+
+# ------------------------------------------------------------
+# SAVE TAHAP 3 RESULTS FOR NEXT MODULES
+# ------------------------------------------------------------
+
+st.session_state["t3_fuel_status"] = t3_status
+st.session_state["t3_expected_fuel_lph"] = t3_expected_fuel_lph
+st.session_state["t3_actual_fuel_lph"] = t3_actual_fuel_lph
+st.session_state["t3_variance_percent"] = t3_variance_percent
+st.session_state["t3_efficiency_index"] = t3_efficiency_index
+st.session_state["t3_excess_daily_l"] = t3_excess_daily_l
+st.session_state["t3_cost_30d"] = t3_cost_30d
+st.session_state["t3_fuel_intensity"] = t3_fuel_intensity
+
+st.success(
+    "✅ TAHAP 3 ACTIVE — Fuel Consumption & Performance "
+    "Intelligence is operational."
+)
+
+st.info(
+    "Fuel-performance results from TAHAP 3 are stored in the "
+    "application session and prepared for the next intelligence "
+    "modules."
+)
+
+# ============================================================
+# END TAHAP 3
+# ============================================================
