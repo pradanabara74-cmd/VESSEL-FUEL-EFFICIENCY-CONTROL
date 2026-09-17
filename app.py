@@ -1403,3 +1403,341 @@ st.info(
 # ============================================================
 # END TAHAP 1
 # ============================================================
+# ============================================================
+# TAHAP 2
+# VESSEL TECHNICAL PROFILE & ENGINE DATABASE
+# ============================================================
+
+st.divider()
+
+st.header("⚙️ Vessel Technical Profile & Engine Intelligence")
+st.caption(
+    "Technical vessel and main-engine database connected to "
+    "Fleet & Vessel Intelligence."
+)
+
+# ------------------------------------------------------------
+# SELECTED VESSEL FROM TAHAP 1
+# ------------------------------------------------------------
+
+selected_vessel_t2 = st.session_state.get(
+    "selected_fleet_vessel",
+    fleet_df.iloc[0]["Vessel"]
+)
+
+# ------------------------------------------------------------
+# TECHNICAL DATABASE
+# Initial engineering database.
+# Values can be replaced with verified vessel particulars.
+# ------------------------------------------------------------
+
+VESSEL_TECHNICAL_DATABASE = {
+    vessel: {
+        "Vessel Type": "Tugboat",
+        "Gross Tonnage": 1000,
+        "Engine Maker": "MAN",
+        "Engine Model": "MAN B&W",
+        "Number of Engines": 2,
+        "Rated Power / Engine (kW)": 1500,
+        "Rated RPM": 1200,
+        "Fuel Type": "MGO",
+        "Base SFOC (g/kWh)": 205.0,
+        "Fuel Density (kg/L)": 0.850,
+    }
+    for vessel in fleet_df["Vessel"].tolist()
+}
+
+# ------------------------------------------------------------
+# LOAD CURRENT VESSEL DATA
+# ------------------------------------------------------------
+
+technical = VESSEL_TECHNICAL_DATABASE[selected_vessel_t2]
+
+st.subheader("🚢 Selected Vessel Technical Profile")
+
+c1, c2, c3, c4 = st.columns(4)
+
+c1.metric("Vessel", selected_vessel_t2)
+c2.metric("Vessel Type", technical["Vessel Type"])
+c3.metric(
+    "Gross Tonnage",
+    f'{technical["Gross Tonnage"]:,.0f} GT'
+)
+c4.metric(
+    "Main Engines",
+    technical["Number of Engines"]
+)
+
+c1, c2, c3, c4 = st.columns(4)
+
+c1.metric("Engine Maker", technical["Engine Maker"])
+c2.metric("Engine Model", technical["Engine Model"])
+c3.metric(
+    "Rated Power / Engine",
+    f'{technical["Rated Power / Engine (kW)"]:,.0f} kW'
+)
+c4.metric(
+    "Rated RPM",
+    f'{technical["Rated RPM"]:,.0f}'
+)
+
+# ------------------------------------------------------------
+# ENGINE POWER INTELLIGENCE
+# ------------------------------------------------------------
+
+total_installed_power = (
+    technical["Number of Engines"]
+    * technical["Rated Power / Engine (kW)"]
+)
+
+equivalent_hp = total_installed_power / 0.745699872
+
+st.subheader("⚡ Engine Power Intelligence")
+
+p1, p2, p3, p4 = st.columns(4)
+
+p1.metric(
+    "Total Installed Power",
+    f"{total_installed_power:,.0f} kW"
+)
+
+p2.metric(
+    "Equivalent Power",
+    f"{equivalent_hp:,.0f} HP"
+)
+
+p3.metric(
+    "Base SFOC",
+    f'{technical["Base SFOC (g/kWh)"]:.1f} g/kWh'
+)
+
+p4.metric(
+    "Fuel Density",
+    f'{technical["Fuel Density (kg/L)"]:.3f} kg/L'
+)
+
+# ------------------------------------------------------------
+# TECHNICAL DATA EDITOR
+# Allows verified vessel data to be entered later.
+# ------------------------------------------------------------
+
+st.subheader("🛠️ Technical Data Verification")
+
+with st.expander("Edit / Verify Vessel Technical Data"):
+
+    vessel_type_t2 = st.selectbox(
+        "Vessel Type",
+        [
+            "Tanker",
+            "Cargo Vessel",
+            "Tugboat",
+            "Ocean Tug",
+            "AHT",
+            "AHTS",
+            "Other",
+        ],
+        index=2,
+        key="t2_vessel_type",
+    )
+
+    gt_t2 = st.number_input(
+        "Gross Tonnage (GT)",
+        min_value=1.0,
+        value=float(technical["Gross Tonnage"]),
+        step=10.0,
+        key="t2_gt",
+    )
+
+    engine_maker_t2 = st.text_input(
+        "Engine Maker",
+        value=technical["Engine Maker"],
+        key="t2_engine_maker",
+    )
+
+    engine_model_t2 = st.text_input(
+        "Engine Model / Family",
+        value=technical["Engine Model"],
+        key="t2_engine_model",
+    )
+
+    engines_t2 = st.number_input(
+        "Number of Main Engines",
+        min_value=1,
+        max_value=8,
+        value=int(technical["Number of Engines"]),
+        step=1,
+        key="t2_engine_count",
+    )
+
+    power_t2 = st.number_input(
+        "Rated Power / Engine (kW)",
+        min_value=1.0,
+        value=float(
+            technical["Rated Power / Engine (kW)"]
+        ),
+        step=50.0,
+        key="t2_power",
+    )
+
+    rpm_t2 = st.number_input(
+        "Rated RPM",
+        min_value=1.0,
+        value=float(technical["Rated RPM"]),
+        step=10.0,
+        key="t2_rpm",
+    )
+
+    fuel_type_t2 = st.selectbox(
+        "Fuel Type",
+        ["MGO", "MDO", "HFO", "VLSFO", "LNG", "Other"],
+        key="t2_fuel_type",
+    )
+
+    sfoc_t2 = st.number_input(
+        "Base SFOC (g/kWh)",
+        min_value=100.0,
+        max_value=400.0,
+        value=float(technical["Base SFOC (g/kWh)"]),
+        step=1.0,
+        key="t2_sfoc",
+    )
+
+    density_t2 = st.number_input(
+        "Fuel Density (kg/L)",
+        min_value=0.500,
+        max_value=1.200,
+        value=float(technical["Fuel Density (kg/L)"]),
+        step=0.001,
+        format="%.3f",
+        key="t2_density",
+    )
+
+    save_t2 = st.button(
+        "💾 Save Verified Technical Profile",
+        type="primary",
+        use_container_width=True,
+    )
+
+# ------------------------------------------------------------
+# SAVE VERIFIED PROFILE INTO SESSION
+# ------------------------------------------------------------
+
+if save_t2:
+
+    verified_profile = {
+        "Vessel": selected_vessel_t2,
+        "Vessel Type": vessel_type_t2,
+        "Gross Tonnage": gt_t2,
+        "Engine Maker": engine_maker_t2,
+        "Engine Model": engine_model_t2,
+        "Number of Engines": engines_t2,
+        "Rated Power / Engine (kW)": power_t2,
+        "Rated RPM": rpm_t2,
+        "Fuel Type": fuel_type_t2,
+        "Base SFOC (g/kWh)": sfoc_t2,
+        "Fuel Density (kg/L)": density_t2,
+    }
+
+    if "verified_vessel_profiles" not in st.session_state:
+        st.session_state["verified_vessel_profiles"] = {}
+
+    st.session_state["verified_vessel_profiles"][
+        selected_vessel_t2
+    ] = verified_profile
+
+    st.success(
+        f"✅ Technical profile for {selected_vessel_t2} "
+        "has been saved and verified."
+    )
+
+# ------------------------------------------------------------
+# DATA READINESS / VALIDATION
+# ------------------------------------------------------------
+
+st.subheader("🛡️ Technical Data Readiness")
+
+required_fields = [
+    "Vessel Type",
+    "Gross Tonnage",
+    "Engine Maker",
+    "Engine Model",
+    "Number of Engines",
+    "Rated Power / Engine (kW)",
+    "Rated RPM",
+    "Fuel Type",
+    "Base SFOC (g/kWh)",
+    "Fuel Density (kg/L)",
+]
+
+completed_fields = sum(
+    1
+    for field in required_fields
+    if technical.get(field) not in [None, "", 0]
+)
+
+readiness_percent = (
+    completed_fields / len(required_fields)
+) * 100
+
+r1, r2, r3, r4 = st.columns(4)
+
+r1.metric(
+    "Technical Fields",
+    f"{completed_fields}/{len(required_fields)}"
+)
+
+r2.metric(
+    "Database Readiness",
+    f"{readiness_percent:.0f}%"
+)
+
+r3.metric(
+    "Engine Intelligence",
+    "READY"
+)
+
+r4.metric(
+    "Fuel Calculation",
+    "READY"
+)
+
+st.progress(readiness_percent / 100)
+
+# ------------------------------------------------------------
+# IMPORTANT DATA QUALITY NOTICE
+# ------------------------------------------------------------
+
+st.warning(
+    "⚠️ Initial technical values are engineering defaults. "
+    "Before commercial or operational use, replace them with "
+    "verified vessel particulars, engine nameplate data, "
+    "manufacturer performance/SFOC curves, bunker density, "
+    "and sea-trial or calibrated fuel-consumption data."
+)
+
+# ------------------------------------------------------------
+# TAHAP 2 STATUS
+# ------------------------------------------------------------
+
+if readiness_percent == 100:
+
+    st.success(
+        "✅ TAHAP 2 ACTIVE — Vessel Technical Profile & "
+        "Engine Database is operational."
+    )
+
+else:
+
+    st.warning(
+        "⚠️ TAHAP 2 requires additional technical data."
+    )
+
+st.info(
+    "Technical data from TAHAP 2 is prepared for connection "
+    "to the Fuel Efficiency, Bunker, Performance and "
+    "Intelligence modules in the next stages."
+)
+
+# ============================================================
+# END TAHAP 2
+# ============================================================
