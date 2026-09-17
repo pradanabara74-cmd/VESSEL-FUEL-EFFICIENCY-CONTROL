@@ -2221,7 +2221,6 @@ st.warning(
 
 st.session_state["t3_fuel_status"] = t3_status
 st.session_state["t3_expected_fuel_lph"] = t3_expected_fuel_lph
-st.session_state["t3_actual_fuel_lph"] = t3_actual_fuel_lph
 st.session_state["t3_variance_percent"] = t3_variance_percent
 st.session_state["t3_efficiency_index"] = t3_efficiency_index
 st.session_state["t3_excess_daily_l"] = t3_excess_daily_l
