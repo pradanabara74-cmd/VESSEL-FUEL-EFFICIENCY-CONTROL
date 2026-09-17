@@ -389,6 +389,77 @@ ENGINE_DATABASE = {
     ],
 }
 
+# ============================================================
+# ENGINE SPECIFICATION AUTO-FILL DATABASE
+# Default engineering reference values.
+# Verify against vessel/engine manufacturer's actual data.
+# ============================================================
+
+ENGINE_SPECS = {
+    "MAN B&W": {
+        "rated_kw": 3000.0,
+        "rated_rpm": 1200,
+        "sfoc": 205.0,
+    },
+    "MAN 32/40": {
+        "rated_kw": 3200.0,
+        "rated_rpm": 750,
+        "sfoc": 190.0,
+    },
+    "MAN 48/60": {
+        "rated_kw": 6000.0,
+        "rated_rpm": 500,
+        "sfoc": 185.0,
+    },
+    "MAN D2862": {
+        "rated_kw": 1450.0,
+        "rated_rpm": 1800,
+        "sfoc": 205.0,
+    },
+
+    "CAT 3512": {
+        "rated_kw": 1500.0,
+        "rated_rpm": 1800,
+        "sfoc": 205.0,
+    },
+    "CAT 3516": {
+        "rated_kw": 2000.0,
+        "rated_rpm": 1800,
+        "sfoc": 205.0,
+    },
+    "CAT C32": {
+        "rated_kw": 1000.0,
+        "rated_rpm": 1800,
+        "sfoc": 210.0,
+    },
+    "CAT C175": {
+        "rated_kw": 2500.0,
+        "rated_rpm": 1800,
+        "sfoc": 200.0,
+    },
+
+    "Cummins KTA38": {
+        "rated_kw": 900.0,
+        "rated_rpm": 1800,
+        "sfoc": 210.0,
+    },
+    "Cummins KTA50": {
+        "rated_kw": 1200.0,
+        "rated_rpm": 1800,
+        "sfoc": 205.0,
+    },
+    "Cummins QSK38": {
+        "rated_kw": 1000.0,
+        "rated_rpm": 1800,
+        "sfoc": 205.0,
+    },
+    "Cummins QSK60": {
+        "rated_kw": 1800.0,
+        "rated_rpm": 1800,
+        "sfoc": 200.0,
+    },
+}
+
 engine_maker = st.sidebar.selectbox(
     "Engine Maker",
     list(ENGINE_DATABASE.keys()),
@@ -416,56 +487,93 @@ engine_count = st.sidebar.number_input(
     step=1,
 )
 
-power_input = st.sidebar.radio(
-    "Rated Power Input",
-    ["kW", "HP"],
-    horizontal=True,
-)
+# ============================================================
+# AUTO ENGINE SPECIFICATION / MANUAL FALLBACK
+# ============================================================
 
-if power_input == "kW":
+engine_spec = ENGINE_SPECS.get(engine_model)
 
-    rated_kw = st.sidebar.number_input(
-        "Rated Power / Engine (kW)",
-        min_value=1.0,
-        value=1500.0,
-        step=50.0,
+if engine_spec:
+    # Automatic values from Engine Master Database
+    rated_kw = float(engine_spec["rated_kw"])
+    rated_hp = kw_to_hp(rated_kw)
+    rated_rpm = int(engine_spec["rated_rpm"])
+    base_sfoc = float(engine_spec["sfoc"])
+
+    st.sidebar.markdown("### ⚙️ Engine Specification")
+    st.sidebar.success("Engine specification loaded automatically")
+
+    st.sidebar.metric(
+        "Rated Power / Engine",
+        f"{rated_kw:,.0f} kW"
     )
 
-    rated_hp = kw_to_hp(rated_kw)
+    st.sidebar.metric(
+        "Equivalent HP / Engine",
+        f"{rated_hp:,.0f} HP"
+    )
+
+    st.sidebar.metric(
+        "Rated RPM",
+        f"{rated_rpm:,}"
+    )
+
+    st.sidebar.metric(
+        "Base SFOC",
+        f"{base_sfoc:.1f} g/kWh"
+    )
 
 else:
+    # Manual input for engines not yet available in ENGINE_SPECS
+    st.sidebar.markdown("### ⚙️ Manual Engine Specification")
 
-    rated_hp = st.sidebar.number_input(
-        "Rated Power / Engine (HP)",
-        min_value=1.0,
-        value=2000.0,
-        step=50.0,
+    power_input = st.sidebar.radio(
+        "Rated Power Input",
+        ["kW", "HP"],
+        horizontal=True,
     )
 
-    rated_kw = hp_to_kw(rated_hp)
+    if power_input == "kW":
+        rated_kw = st.sidebar.number_input(
+            "Rated Power / Engine (kW)",
+            min_value=1.0,
+            value=1500.0,
+            step=50.0,
+        )
+        rated_hp = kw_to_hp(rated_kw)
 
-rated_rpm = st.sidebar.number_input(
-    "Rated RPM",
-    min_value=100,
-    max_value=3000,
-    value=1200,
-    step=50,
-)
+    else:
+        rated_hp = st.sidebar.number_input(
+            "Rated Power / Engine (HP)",
+            min_value=1.0,
+            value=2000.0,
+            step=50.0,
+        )
+        rated_kw = hp_to_kw(rated_hp)
 
+    rated_rpm = st.sidebar.number_input(
+        "Rated RPM",
+        min_value=100,
+        max_value=3000,
+        value=1200,
+        step=50,
+    )
+
+    base_sfoc = st.sidebar.number_input(
+        "Base SFOC (g/kWh)",
+        min_value=100.0,
+        max_value=400.0,
+        value=205.0,
+        step=1.0,
+    )
+
+# Actual RPM remains adjustable for operations
 actual_rpm = st.sidebar.slider(
     "Actual RPM",
     min_value=100,
     max_value=int(rated_rpm),
     value=min(800, int(rated_rpm)),
     step=10,
-)
-
-base_sfoc = st.sidebar.number_input(
-    "Base SFOC (g/kWh)",
-    min_value=100.0,
-    max_value=400.0,
-    value=205.0,
-    step=1.0,
 )
 
 fuel_density = st.sidebar.number_input(
