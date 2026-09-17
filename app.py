@@ -365,7 +365,8 @@ st.sidebar.header("⚙️ Vessel Configuration")
 
 vessel_name = st.sidebar.text_input(
     "Vessel Name",
-    value="VESSEL 01",
+    value=st.session_state.get("selected_vessel", "ASL MANTRUS"),
+    key="sidebar_vessel_name",
 )
 
 vessel_type = st.sidebar.selectbox(
