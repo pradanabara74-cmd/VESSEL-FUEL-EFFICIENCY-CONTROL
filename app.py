@@ -19226,5 +19226,312 @@ st.info(
 # END TAHAP 37
 # ================================================================
 
+# ================================================================
+# TAHAP 38
+# FUEL EFFICIENCY VERIFICATION, EFFECTIVENESS
+# & CLOSED-LOOP IMPROVEMENT INTELLIGENCE
+# ================================================================
+
+st.markdown("---")
+
+st.header(
+    "🔄 Fuel Efficiency Verification, Effectiveness "
+    "& Closed-Loop Improvement Intelligence"
+)
+
+st.caption(
+    "TAHAP 38 — Verification of corrective-action follow-up "
+    "and continuous fuel-efficiency improvement."
+)
+
+# ----------------------------------------------------------------
+# READ TAHAP 37 RESULTS SAFELY
+# ----------------------------------------------------------------
+
+t38_t37_result = st.session_state.get("t37_result", {})
+
+t38_upstream_available = bool(
+    st.session_state.get(
+        "t37_result_upstream_available",
+        st.session_state.get("t37_upstream_available", False)
+    )
+)
+
+t38_actions = st.session_state.get(
+    "t37_actions",
+    t38_t37_result.get("recommended_actions", [])
+    if isinstance(t38_t37_result, dict)
+    else []
+)
+
+if not isinstance(t38_actions, list):
+    t38_actions = []
+
+t38_previous_priority = st.session_state.get(
+    "t37_priority",
+    t38_t37_result.get("priority", "REVIEW")
+    if isinstance(t38_t37_result, dict)
+    else "REVIEW"
+)
+
+# ----------------------------------------------------------------
+# FOLLOW-UP DATA
+# ----------------------------------------------------------------
+
+st.subheader("📡 Corrective Action Follow-Up")
+
+if t38_upstream_available:
+    st.success(
+        "🟢 TAHAP 37 operational recommendation intelligence "
+        "is available for follow-up assessment."
+    )
+else:
+    st.warning(
+        "🟠 TAHAP 37 upstream intelligence is limited. "
+        "Effectiveness assessment should be interpreted with "
+        "the available-data limitations."
+    )
+
+# ----------------------------------------------------------------
+# ACTION REVIEW
+# ----------------------------------------------------------------
+
+st.subheader("📋 Corrective Action Review")
+
+if t38_actions:
+
+    for i, action in enumerate(t38_actions, start=1):
+        st.write(f"{i}. {action}")
+
+else:
+
+    st.info(
+        "No specific upstream corrective actions are currently "
+        "available for effectiveness verification."
+    )
+
+# ----------------------------------------------------------------
+# VERIFICATION REQUIREMENTS
+# ----------------------------------------------------------------
+
+st.subheader("🔍 Verification Requirements")
+
+t38_verification_items = [
+    "Verified fuel-consumption measurements",
+    "ROB and tank-sounding records",
+    "Bunker delivery and transfer records",
+    "Engine RPM/load and performance parameters",
+    "Vessel speed and voyage duration",
+    "Draft and trim condition",
+    "Weather, current and sea-state information",
+    "Hull and propeller condition",
+    "Fuel properties and density/temperature corrections",
+    "Documented corrective-action completion evidence",
+]
+
+for item in t38_verification_items:
+    st.write(f"• {item}")
+
+# ----------------------------------------------------------------
+# EFFECTIVENESS CLASSIFICATION
+# ----------------------------------------------------------------
+
+st.subheader("📊 Effectiveness Assessment")
+
+t38_verification_count = 0
+
+# Safely detect possible verification evidence
+t38_possible_keys = [
+    "fuel_data",
+    "fuel_records",
+    "bunker_data",
+    "rob_data",
+    "engine_data",
+    "voyage_data",
+    "performance_data",
+]
+
+for key in t38_possible_keys:
+    value = st.session_state.get(key)
+
+    if value is not None:
+        try:
+            if len(value) > 0:
+                t38_verification_count += 1
+        except TypeError:
+            if bool(value):
+                t38_verification_count += 1
+
+if t38_upstream_available and t38_verification_count >= 3:
+
+    t38_effectiveness = "READY FOR VERIFICATION"
+    t38_confidence = "Higher data coverage"
+
+    st.success(
+        "🟢 Multiple supporting data sources are available. "
+        "Corrective-action effectiveness can proceed to "
+        "verification against actual records."
+    )
+
+elif t38_upstream_available:
+
+    t38_effectiveness = "FOLLOW-UP REQUIRED"
+    t38_confidence = "Limited verification data"
+
+    st.warning(
+        "🟠 Corrective actions are available, but additional "
+        "verified follow-up data is required before effectiveness "
+        "can be supported."
+    )
+
+else:
+
+    t38_effectiveness = "DATA REQUIRED"
+    t38_confidence = "Insufficient upstream coverage"
+
+    st.warning(
+        "🟠 Additional upstream and follow-up information is "
+        "required before corrective-action effectiveness can "
+        "be assessed."
+    )
+
+# ----------------------------------------------------------------
+# MANAGEMENT METRICS
+# ----------------------------------------------------------------
+
+m1, m2, m3 = st.columns(3)
+
+m1.metric(
+    "Corrective Actions",
+    len(t38_actions)
+)
+
+m2.metric(
+    "Verification Sources",
+    t38_verification_count
+)
+
+m3.metric(
+    "Effectiveness Status",
+    t38_effectiveness
+)
+
+# ----------------------------------------------------------------
+# CLOSED-LOOP IMPROVEMENT
+# ----------------------------------------------------------------
+
+st.subheader("🔄 Closed-Loop Improvement")
+
+st.write(
+    "1. Verify the corrective action was actually implemented."
+)
+
+st.write(
+    "2. Compare verified post-action performance with the "
+    "appropriate operational baseline."
+)
+
+st.write(
+    "3. Confirm that operating conditions are sufficiently "
+    "comparable before interpreting performance changes."
+)
+
+st.write(
+    "4. Review any remaining fuel-consumption deviation."
+)
+
+st.write(
+    "5. Escalate unresolved deviations for technical or "
+    "operational review."
+)
+
+st.write(
+    "6. Record verified lessons learned for future fleet "
+    "fuel-efficiency improvement."
+)
+
+# ----------------------------------------------------------------
+# DATA QUALITY & VALIDATION
+# ----------------------------------------------------------------
+
+st.subheader("🛡️ Data Quality & Validation")
+
+if t38_verification_count >= 3:
+
+    st.success(
+        "🟢 Supporting operational information is available "
+        "for effectiveness verification."
+    )
+
+else:
+
+    st.warning(
+        "🟠 Supporting follow-up information is currently "
+        "limited. Do not treat an estimated improvement or "
+        "saving as verified performance."
+    )
+
+st.info(
+    "Fuel Efficiency Verification, Effectiveness & Closed-Loop "
+    "Improvement Intelligence is a decision-support module. "
+    "A change in calculated fuel efficiency does not by itself "
+    "establish that a corrective action caused the change. "
+    "Verify actual fuel measurements, ROB, bunker records, "
+    "engine performance, RPM/load, vessel speed, draft/trim, "
+    "weather/current, sea state, voyage conditions, hull/propeller "
+    "condition, fuel properties and comparable operating conditions "
+    "before confirming effectiveness or financial savings."
+)
+
+# ----------------------------------------------------------------
+# STORE TAHAP 38 RESULTS
+# ----------------------------------------------------------------
+
+t38_result = {
+    "module": (
+        "Fuel Efficiency Verification, Effectiveness "
+        "& Closed-Loop Improvement Intelligence"
+    ),
+    "upstream_available": t38_upstream_available,
+    "corrective_actions": len(t38_actions),
+    "verification_sources": t38_verification_count,
+    "effectiveness_status": t38_effectiveness,
+    "confidence": t38_confidence,
+    "previous_priority": t38_previous_priority,
+}
+
+st.session_state["t38_result"] = t38_result
+
+st.session_state["t38_result_upstream_available"] = (
+    t38_upstream_available
+)
+
+st.session_state["t38_upstream_available"] = (
+    t38_upstream_available
+)
+
+st.session_state["t38_effectiveness_status"] = (
+    t38_effectiveness
+)
+
+# ----------------------------------------------------------------
+# TAHAP 38 STATUS
+# ----------------------------------------------------------------
+
+st.success(
+    "✅ TAHAP 38 ACTIVE — Fuel Efficiency Verification, "
+    "Effectiveness & Closed-Loop Improvement Intelligence "
+    "is operational."
+)
+
+st.info(
+    "TAHAP 38 results are stored in the application session "
+    "and prepared for the next intelligence modules."
+)
+
+# ================================================================
+# END TAHAP 38
+# ================================================================
+
 
 
