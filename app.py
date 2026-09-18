@@ -12624,4 +12624,437 @@ st.info(
 # END TAHAP 23
 # ============================================================
 
+# ============================================================
+# TAHAP 24
+# EXECUTIVE FUEL EFFICIENCY INTELLIGENCE DASHBOARD
+# ============================================================
+
+st.divider()
+
+st.header("📊 Executive Fuel Efficiency Intelligence Dashboard")
+
+st.caption(
+    "Integrated management view of fuel efficiency, vessel performance, "
+    "fuel cost, operational risk and management priorities."
+)
+
+# ------------------------------------------------------------
+# SAFE SESSION STATE READER
+# ------------------------------------------------------------
+
+def t24_get_state(key, default=0.0):
+    value = st.session_state.get(key, default)
+
+    if value is None:
+        return default
+
+    return value
+
+
+def t24_number(value, default=0.0):
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return float(default)
+
+
+# ------------------------------------------------------------
+# COLLECT RESULTS FROM PREVIOUS INTELLIGENCE MODULES
+# ------------------------------------------------------------
+
+t24_kpi_score = t24_number(
+    t24_get_state("t21_result_kpi_score", 0.0)
+)
+
+t24_sfoc = t24_number(
+    t24_get_state(
+        "t19_result_sfoc",
+        t24_get_state("t21_result_sfoc", 0.0)
+    )
+)
+
+t24_predicted_fuel = t24_number(
+    t24_get_state(
+        "t20_result_predicted_fuel",
+        t24_get_state("t20_result_voyage_fuel", 0.0)
+    )
+)
+
+t24_cost_saving = t24_number(
+    t24_get_state(
+        "t22_result_cost_saving",
+        t24_get_state(
+            "t23_result_potential_cost_saving",
+            0.0
+        )
+    )
+)
+
+t24_fuel_loss = t24_number(
+    t24_get_state(
+        "t17_result_fuel_loss",
+        t24_get_state("t17_result_unaccounted_fuel", 0.0)
+    )
+)
+
+t24_rob = t24_number(
+    t24_get_state(
+        "t16_result_rob",
+        t24_get_state("t16_result_calculated_rob", 0.0)
+    )
+)
+
+
+# ------------------------------------------------------------
+# EXECUTIVE KPI CARDS
+# ------------------------------------------------------------
+
+st.subheader("📌 Executive KPI Summary")
+
+t24_c1, t24_c2, t24_c3 = st.columns(3)
+
+with t24_c1:
+
+    st.metric(
+        "Fuel Efficiency KPI",
+        f"{t24_kpi_score:.1f} / 100"
+    )
+
+    st.metric(
+        "Calculated SFOC",
+        f"{t24_sfoc:.2f}"
+        if t24_sfoc > 0
+        else "N/A"
+    )
+
+
+with t24_c2:
+
+    st.metric(
+        "Voyage Fuel Forecast",
+        f"{t24_predicted_fuel:.2f} MT"
+        if t24_predicted_fuel > 0
+        else "N/A"
+    )
+
+    st.metric(
+        "Current ROB",
+        f"{t24_rob:.2f} MT"
+        if t24_rob > 0
+        else "N/A"
+    )
+
+
+with t24_c3:
+
+    st.metric(
+        "Potential Cost Saving",
+        f"USD {t24_cost_saving:,.2f}"
+    )
+
+    st.metric(
+        "Fuel Reconciliation Difference",
+        f"{t24_fuel_loss:.2f} MT"
+    )
+
+
+# ------------------------------------------------------------
+# MANAGEMENT STATUS
+# ------------------------------------------------------------
+
+st.subheader("🚦 Management Status")
+
+t24_alert_level = str(
+    t24_get_state(
+        "t23_result_alert_level",
+        t24_get_state(
+            "t23_result_management_status",
+            "NORMAL"
+        )
+    )
+).upper()
+
+
+if "CRITICAL" in t24_alert_level:
+
+    st.error(
+        "🔴 CRITICAL — Immediate review of fuel-efficiency "
+        "and supporting operational records is required."
+    )
+
+elif "HIGH" in t24_alert_level:
+
+    st.error(
+        "🔴 HIGH — Significant fuel-efficiency deviation "
+        "requires management attention."
+    )
+
+elif "WARNING" in t24_alert_level or "MEDIUM" in t24_alert_level:
+
+    st.warning(
+        "🟠 WARNING — Fuel-efficiency performance should "
+        "be reviewed and monitored."
+    )
+
+else:
+
+    st.success(
+        "🟢 NORMAL — No high-priority fuel-efficiency "
+        "alert is currently identified."
+    )
+
+
+# ------------------------------------------------------------
+# INTEGRATED INTELLIGENCE
+# ------------------------------------------------------------
+
+st.subheader("🧠 Integrated Intelligence")
+
+t24_findings = []
+
+if t24_kpi_score > 0:
+
+    if t24_kpi_score >= 90:
+        t24_findings.append(
+            "Fuel-efficiency KPI is within the configured high-performance range."
+        )
+
+    elif t24_kpi_score >= 75:
+        t24_findings.append(
+            "Fuel-efficiency KPI indicates an opportunity for performance review."
+        )
+
+    else:
+        t24_findings.append(
+            "Fuel-efficiency KPI is below the configured management reference."
+        )
+
+else:
+
+    t24_findings.append(
+        "Fuel-efficiency KPI data is not currently available."
+    )
+
+
+if t24_sfoc > 0:
+
+    t24_findings.append(
+        f"Calculated SFOC available for review: {t24_sfoc:.2f}."
+    )
+
+else:
+
+    t24_findings.append(
+        "Calculated SFOC is unavailable; verify engine-performance inputs."
+    )
+
+
+if t24_predicted_fuel > 0:
+
+    t24_findings.append(
+        f"Current voyage fuel forecast is {t24_predicted_fuel:.2f} MT."
+    )
+
+
+if abs(t24_fuel_loss) > 0.01:
+
+    t24_findings.append(
+        "Fuel reconciliation indicates a difference that should "
+        "be checked against tank measurements and source records."
+    )
+
+
+if t24_cost_saving > 0:
+
+    t24_findings.append(
+        f"Estimated fuel-cost saving opportunity: "
+        f"USD {t24_cost_saving:,.2f}."
+    )
+
+
+for t24_index, t24_finding in enumerate(t24_findings, start=1):
+
+    st.write(
+        f"{t24_index}. {t24_finding}"
+    )
+
+
+# ------------------------------------------------------------
+# PRIORITY ACTIONS
+# ------------------------------------------------------------
+
+st.subheader("📋 Executive Priority Actions")
+
+t24_actions = []
+
+if t24_kpi_score > 0 and t24_kpi_score < 75:
+
+    t24_actions.append(
+        "Review fuel-efficiency KPI deviation and supporting operational data."
+    )
+
+
+if t24_sfoc <= 0:
+
+    t24_actions.append(
+        "Verify fuel-consumption, engine-power and RPM records "
+        "before evaluating SFOC performance."
+    )
+
+
+if abs(t24_fuel_loss) > 0.01:
+
+    t24_actions.append(
+        "Reconcile ROB, bunker delivery, transfers and machinery "
+        "consumption against verified tank measurements."
+    )
+
+
+if t24_predicted_fuel > 0 and t24_rob > 0:
+
+    if t24_rob < t24_predicted_fuel:
+
+        t24_actions.append(
+            "Review available ROB against forecast voyage fuel "
+            "requirement and applicable reserve requirements."
+        )
+
+
+if t24_cost_saving > 0:
+
+    t24_actions.append(
+        "Review the identified fuel-saving opportunity and verify "
+        "commercial and operational assumptions before implementation."
+    )
+
+
+if not t24_actions:
+
+    t24_actions.append(
+        "Continue routine fuel-efficiency, ROB, SFOC, voyage "
+        "and cost-performance monitoring."
+    )
+
+
+for t24_index, t24_action in enumerate(t24_actions, start=1):
+
+    st.write(
+        f"{t24_index}. {t24_action}"
+    )
+
+
+# ------------------------------------------------------------
+# DATA QUALITY & VALIDATION
+# ------------------------------------------------------------
+
+st.subheader("🛡️ Data Quality & Validation")
+
+t24_available_inputs = 0
+
+if t24_kpi_score > 0:
+    t24_available_inputs += 1
+
+if t24_sfoc > 0:
+    t24_available_inputs += 1
+
+if t24_predicted_fuel > 0:
+    t24_available_inputs += 1
+
+if t24_rob > 0:
+    t24_available_inputs += 1
+
+
+if t24_available_inputs >= 3:
+
+    st.success(
+        "🟢 Multiple upstream intelligence results are available "
+        "for the executive dashboard."
+    )
+
+elif t24_available_inputs >= 1:
+
+    st.warning(
+        "🟠 Some upstream intelligence results are unavailable. "
+        "Dashboard conclusions should be interpreted with the "
+        "available-data limitations."
+    )
+
+else:
+
+    st.warning(
+        "🟠 Core operational results are currently unavailable. "
+        "Enter and verify source data in the preceding modules."
+    )
+
+
+# ------------------------------------------------------------
+# DECISION SUPPORT NOTICE
+# ------------------------------------------------------------
+
+st.info(
+    "The Executive Fuel Efficiency Intelligence Dashboard is a "
+    "decision-support tool. Results depend on entered and available "
+    "operational data and configured thresholds. Verify actual fuel "
+    "measurements, tank soundings, ROB, bunker documentation, engine "
+    "performance, RPM/load, vessel speed, draft/trim, weather/current, "
+    "voyage conditions, fuel prices and applicable OEM/company "
+    "requirements before technical, operational, safety, procurement "
+    "or commercial decisions."
+)
+
+
+# ------------------------------------------------------------
+# SAVE TAHAP 24 RESULTS
+# ------------------------------------------------------------
+
+st.session_state["t24_result_kpi_score"] = t24_kpi_score
+
+st.session_state["t24_result_sfoc"] = t24_sfoc
+
+st.session_state["t24_result_predicted_fuel"] = (
+    t24_predicted_fuel
+)
+
+st.session_state["t24_result_rob"] = t24_rob
+
+st.session_state["t24_result_fuel_loss"] = (
+    t24_fuel_loss
+)
+
+st.session_state["t24_result_cost_saving"] = (
+    t24_cost_saving
+)
+
+st.session_state["t24_result_alert_level"] = (
+    t24_alert_level
+)
+
+st.session_state["t24_result_priority_actions"] = (
+    t24_actions
+)
+
+st.session_state["t24_result_findings"] = (
+    t24_findings
+)
+
+
+# ------------------------------------------------------------
+# TAHAP 24 STATUS
+# ------------------------------------------------------------
+
+st.success(
+    "✅ TAHAP 24 ACTIVE — Executive Fuel Efficiency Intelligence "
+    "Dashboard is operational."
+)
+
+st.info(
+    "TAHAP 24 results are stored in the application session "
+    "and prepared for the next intelligence modules."
+)
+
+
+# ============================================================
+# END TAHAP 24
+# ============================================================
+
 
