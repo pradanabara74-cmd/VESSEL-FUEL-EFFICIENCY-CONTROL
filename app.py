@@ -16622,4 +16622,1062 @@ st.info(
 # END TAHAP 33
 # ============================================================
 
+# ============================================================
+# TAHAP 34
+# FUEL CONSUMPTION ROOT CAUSE & DIAGNOSTIC INTELLIGENCE
+# ============================================================
+
+st.markdown("---")
+st.header("🔬 Fuel Consumption Root Cause & Diagnostic Intelligence")
+st.caption(
+    "TAHAP 34 — Diagnostic screening of fuel-efficiency deviation, "
+    "possible contributing factors and management priorities."
+)
+
+
+# ------------------------------------------------------------
+# SAFE HELPERS
+# ------------------------------------------------------------
+
+def t34_safe_float(value, default=0.0):
+    try:
+        if value is None:
+            return default
+
+        if isinstance(value, str):
+            value = (
+                value.replace(",", "")
+                .replace("$", "")
+                .replace("%", "")
+                .strip()
+            )
+
+        return float(value)
+
+    except (TypeError, ValueError):
+        return default
+
+
+def t34_first_available(keys, default=None):
+    for key in keys:
+        if key in st.session_state:
+            value = st.session_state.get(key)
+
+            if value is not None:
+                return value
+
+    return default
+
+
+def t34_text(value, default="Not available"):
+    if value is None:
+        return default
+
+    value = str(value).strip()
+
+    if not value:
+        return default
+
+    return value
+
+
+# ------------------------------------------------------------
+# READ TAHAP 32 / 33 UPSTREAM INTELLIGENCE
+# ------------------------------------------------------------
+
+t34_degradation_pct = t34_safe_float(
+    t34_first_available(
+        [
+            "t33_result_degradation_pct",
+        ],
+        0.0,
+    )
+)
+
+t34_degradation_level = t34_text(
+    t34_first_available(
+        [
+            "t33_result_degradation_level",
+        ],
+        "DATA LIMITED",
+    )
+)
+
+t34_t33_priority = t34_text(
+    t34_first_available(
+        [
+            "t33_result_priority",
+        ],
+        "VERIFY DATA",
+    )
+)
+
+t34_current_consumption = t34_safe_float(
+    t34_first_available(
+        [
+            "t33_result_current_consumption",
+            "t32_result_current_consumption",
+            "current_consumption",
+            "actual_fuel_consumption",
+        ],
+        0.0,
+    )
+)
+
+t34_baseline_consumption = t34_safe_float(
+    t34_first_available(
+        [
+            "t33_result_baseline_consumption",
+            "t32_result_baseline_consumption",
+            "baseline_consumption",
+            "baseline_fuel_consumption",
+        ],
+        0.0,
+    )
+)
+
+t34_potential_saving = t34_safe_float(
+    t34_first_available(
+        [
+            "t33_result_potential_cost_saving",
+            "t32_result_potential_cost_saving",
+            "t31_result_potential_cost_saving",
+            "t30_result_potential_cost_saving",
+            "t29_result_potential_cost_saving",
+            "t28_result_potential_cost_saving",
+            "t27_result_potential_cost_saving",
+            "t26_result_potential_cost_saving",
+            "t25_result_potential_cost_saving",
+            "t24_result_potential_cost_saving",
+            "t23_result_potential_cost_saving",
+            "potential_cost_saving",
+        ],
+        0.0,
+    )
+)
+
+t34_data_available = bool(
+    t34_first_available(
+        [
+            "t33_result_data_available",
+        ],
+        False,
+    )
+)
+
+t34_anomaly_status = t34_text(
+    t34_first_available(
+        [
+            "t32_result_anomaly_level",
+            "t32_result_anomaly_status",
+            "t32_result_classification",
+        ],
+        "Not available",
+    )
+)
+
+
+# ------------------------------------------------------------
+# READ OPTIONAL OPERATIONAL PARAMETERS
+# ------------------------------------------------------------
+
+t34_rpm = t34_safe_float(
+    t34_first_available(
+        [
+            "engine_rpm",
+            "main_engine_rpm",
+            "rpm",
+        ],
+        0.0,
+    )
+)
+
+t34_engine_load = t34_safe_float(
+    t34_first_available(
+        [
+            "engine_load",
+            "main_engine_load",
+            "engine_load_pct",
+        ],
+        0.0,
+    )
+)
+
+t34_speed = t34_safe_float(
+    t34_first_available(
+        [
+            "vessel_speed",
+            "speed",
+            "speed_knots",
+        ],
+        0.0,
+    )
+)
+
+t34_draft = t34_safe_float(
+    t34_first_available(
+        [
+            "vessel_draft",
+            "draft",
+            "mean_draft",
+        ],
+        0.0,
+    )
+)
+
+t34_trim = t34_safe_float(
+    t34_first_available(
+        [
+            "vessel_trim",
+            "trim",
+        ],
+        0.0,
+    )
+)
+
+t34_weather = t34_text(
+    t34_first_available(
+        [
+            "weather_condition",
+            "weather",
+        ],
+        "Not available",
+    )
+)
+
+t34_sea_state = t34_text(
+    t34_first_available(
+        [
+            "sea_state",
+        ],
+        "Not available",
+    )
+)
+
+t34_current_condition = t34_text(
+    t34_first_available(
+        [
+            "current_condition",
+            "sea_current",
+            "current",
+        ],
+        "Not available",
+    )
+)
+
+t34_hull_condition = t34_text(
+    t34_first_available(
+        [
+            "hull_condition",
+        ],
+        "Not available",
+    )
+)
+
+t34_propeller_condition = t34_text(
+    t34_first_available(
+        [
+            "propeller_condition",
+        ],
+        "Not available",
+    )
+)
+
+t34_fuel_quality = t34_text(
+    t34_first_available(
+        [
+            "fuel_quality",
+            "bunker_quality",
+            "fuel_condition",
+        ],
+        "Not available",
+    )
+)
+
+
+# ------------------------------------------------------------
+# DETERMINE AVAILABLE DIAGNOSTIC DATA
+# ------------------------------------------------------------
+
+t34_engine_data = (
+    t34_rpm > 0 or
+    t34_engine_load > 0
+)
+
+t34_speed_data = (
+    t34_speed > 0
+)
+
+t34_draft_trim_data = (
+    t34_draft > 0 or
+    t34_trim != 0
+)
+
+t34_weather_data = (
+    t34_weather != "Not available" or
+    t34_sea_state != "Not available" or
+    t34_current_condition != "Not available"
+)
+
+t34_hull_data = (
+    t34_hull_condition != "Not available" or
+    t34_propeller_condition != "Not available"
+)
+
+t34_fuel_data = (
+    t34_fuel_quality != "Not available"
+)
+
+t34_available_groups = sum(
+    [
+        int(t34_engine_data),
+        int(t34_speed_data),
+        int(t34_draft_trim_data),
+        int(t34_weather_data),
+        int(t34_hull_data),
+        int(t34_fuel_data),
+    ]
+)
+
+
+# ------------------------------------------------------------
+# DIAGNOSTIC CONFIDENCE
+# ------------------------------------------------------------
+
+if t34_available_groups >= 5:
+    t34_confidence = "HIGH DATA COVERAGE"
+
+elif t34_available_groups >= 3:
+    t34_confidence = "MODERATE DATA COVERAGE"
+
+elif t34_available_groups >= 1:
+    t34_confidence = "LIMITED DATA COVERAGE"
+
+else:
+    t34_confidence = "INSUFFICIENT DATA"
+
+
+# ------------------------------------------------------------
+# DIAGNOSTIC PRIORITY
+# ------------------------------------------------------------
+
+t34_deg_upper = t34_degradation_level.upper()
+
+if t34_deg_upper == "CRITICAL":
+    t34_diagnostic_priority = "IMMEDIATE TECHNICAL REVIEW"
+
+elif t34_deg_upper == "HIGH":
+    t34_diagnostic_priority = "HIGH PRIORITY REVIEW"
+
+elif t34_deg_upper == "MODERATE":
+    t34_diagnostic_priority = "ENHANCED INVESTIGATION"
+
+elif t34_deg_upper == "LOW":
+    t34_diagnostic_priority = "MONITOR & VERIFY"
+
+elif t34_deg_upper == "NORMAL":
+    t34_diagnostic_priority = "ROUTINE MONITORING"
+
+else:
+    t34_diagnostic_priority = "VERIFY SOURCE DATA"
+
+
+# ------------------------------------------------------------
+# EXECUTIVE DIAGNOSTIC OVERVIEW
+# ------------------------------------------------------------
+
+st.subheader("📊 Diagnostic Overview")
+
+t34_c1, t34_c2, t34_c3, t34_c4 = st.columns(4)
+
+with t34_c1:
+    st.metric(
+        "TAHAP 33 Status",
+        t34_degradation_level
+    )
+
+with t34_c2:
+    if t34_data_available:
+        st.metric(
+            "Fuel Deviation",
+            f"{t34_degradation_pct:+.2f}%"
+        )
+    else:
+        st.metric(
+            "Fuel Deviation",
+            "N/A"
+        )
+
+with t34_c3:
+    st.metric(
+        "Diagnostic Data",
+        f"{t34_available_groups}/6"
+    )
+
+with t34_c4:
+    st.metric(
+        "Diagnostic Priority",
+        t34_diagnostic_priority
+    )
+
+
+# ------------------------------------------------------------
+# DATA COVERAGE
+# ------------------------------------------------------------
+
+st.subheader("🗂️ Diagnostic Data Coverage")
+
+t34_cov1, t34_cov2 = st.columns(2)
+
+with t34_cov1:
+
+    st.write(
+        "⚙️ Engine RPM / Load:",
+        "Available" if t34_engine_data else "Not available"
+    )
+
+    st.write(
+        "🚢 Vessel Speed:",
+        "Available" if t34_speed_data else "Not available"
+    )
+
+    st.write(
+        "📐 Draft / Trim:",
+        "Available" if t34_draft_trim_data else "Not available"
+    )
+
+with t34_cov2:
+
+    st.write(
+        "🌊 Weather / Current / Sea State:",
+        "Available" if t34_weather_data else "Not available"
+    )
+
+    st.write(
+        "🛳️ Hull / Propeller:",
+        "Available" if t34_hull_data else "Not available"
+    )
+
+    st.write(
+        "⛽ Fuel Quality:",
+        "Available" if t34_fuel_data else "Not available"
+    )
+
+st.info(
+    f"Diagnostic coverage classification: {t34_confidence}"
+)
+
+
+# ------------------------------------------------------------
+# OPERATIONAL PARAMETER SNAPSHOT
+# ------------------------------------------------------------
+
+st.subheader("📡 Operational Parameter Snapshot")
+
+t34_p1, t34_p2, t34_p3, t34_p4 = st.columns(4)
+
+with t34_p1:
+
+    if t34_rpm > 0:
+        st.metric(
+            "Engine RPM",
+            f"{t34_rpm:,.1f}"
+        )
+    else:
+        st.metric(
+            "Engine RPM",
+            "N/A"
+        )
+
+with t34_p2:
+
+    if t34_engine_load > 0:
+        st.metric(
+            "Engine Load",
+            f"{t34_engine_load:,.1f}%"
+        )
+    else:
+        st.metric(
+            "Engine Load",
+            "N/A"
+        )
+
+with t34_p3:
+
+    if t34_speed > 0:
+        st.metric(
+            "Vessel Speed",
+            f"{t34_speed:,.2f} kn"
+        )
+    else:
+        st.metric(
+            "Vessel Speed",
+            "N/A"
+        )
+
+with t34_p4:
+
+    if t34_draft > 0:
+        st.metric(
+            "Mean Draft",
+            f"{t34_draft:,.2f}"
+        )
+    else:
+        st.metric(
+            "Mean Draft",
+            "N/A"
+        )
+
+
+# ------------------------------------------------------------
+# DIAGNOSTIC SCREENING
+# ------------------------------------------------------------
+
+st.subheader("🔎 Diagnostic Screening")
+
+t34_findings = []
+
+
+# Engine / RPM / Load
+if t34_engine_data:
+
+    t34_findings.append(
+        {
+            "Area": "Engine RPM / Load",
+            "Status": "DATA AVAILABLE",
+            "Assessment":
+                "Compare RPM/load against approved engine-performance "
+                "references and equivalent operating conditions."
+        }
+    )
+
+else:
+
+    t34_findings.append(
+        {
+            "Area": "Engine RPM / Load",
+            "Status": "VERIFY DATA",
+            "Assessment":
+                "RPM/load data are not available for diagnostic screening."
+        }
+    )
+
+
+# Vessel Speed
+if t34_speed_data:
+
+    t34_findings.append(
+        {
+            "Area": "Vessel Speed",
+            "Status": "DATA AVAILABLE",
+            "Assessment":
+                "Review speed against voyage requirement, engine load "
+                "and verified fuel-consumption performance."
+        }
+    )
+
+else:
+
+    t34_findings.append(
+        {
+            "Area": "Vessel Speed",
+            "Status": "VERIFY DATA",
+            "Assessment":
+                "Vessel-speed data are not available for diagnostic screening."
+        }
+    )
+
+
+# Draft / Trim
+if t34_draft_trim_data:
+
+    t34_findings.append(
+        {
+            "Area": "Draft / Trim",
+            "Status": "DATA AVAILABLE",
+            "Assessment":
+                "Review loading condition, draft and trim against "
+                "comparable verified operating periods."
+        }
+    )
+
+else:
+
+    t34_findings.append(
+        {
+            "Area": "Draft / Trim",
+            "Status": "VERIFY DATA",
+            "Assessment":
+                "Draft/trim information is not available for screening."
+        }
+    )
+
+
+# Weather / Current
+if t34_weather_data:
+
+    t34_findings.append(
+        {
+            "Area": "Weather / Current",
+            "Status": "DATA AVAILABLE",
+            "Assessment":
+                "Consider weather, current and sea-state effects when "
+                "comparing fuel performance."
+        }
+    )
+
+else:
+
+    t34_findings.append(
+        {
+            "Area": "Weather / Current",
+            "Status": "VERIFY DATA",
+            "Assessment":
+                "Environmental-condition data are not available."
+        }
+    )
+
+
+# Hull / Propeller
+if t34_hull_data:
+
+    t34_findings.append(
+        {
+            "Area": "Hull / Propeller",
+            "Status": "DATA AVAILABLE",
+            "Assessment":
+                "Review available hull/propeller information where "
+                "performance deterioration is verified."
+        }
+    )
+
+else:
+
+    t34_findings.append(
+        {
+            "Area": "Hull / Propeller",
+            "Status": "VERIFY DATA",
+            "Assessment":
+                "Hull/propeller condition information is not available."
+        }
+    )
+
+
+# Fuel Quality
+if t34_fuel_data:
+
+    t34_findings.append(
+        {
+            "Area": "Fuel Quality",
+            "Status": "DATA AVAILABLE",
+            "Assessment":
+                "Review verified bunker/fuel-quality documentation and "
+                "relevant engine-operating records."
+        }
+    )
+
+else:
+
+    t34_findings.append(
+        {
+            "Area": "Fuel Quality",
+            "Status": "VERIFY DATA",
+            "Assessment":
+                "Fuel-quality information is not available for screening."
+        }
+    )
+
+
+# ------------------------------------------------------------
+# DISPLAY DIAGNOSTIC MATRIX
+# ------------------------------------------------------------
+
+try:
+    import pandas as pd
+
+    t34_findings_df = pd.DataFrame(t34_findings)
+
+    st.dataframe(
+        t34_findings_df,
+        use_container_width=True,
+        hide_index=True
+    )
+
+except Exception:
+
+    for item in t34_findings:
+
+        st.write(
+            f"**{item['Area']}** — "
+            f"{item['Status']} — "
+            f"{item['Assessment']}"
+        )
+
+
+# ------------------------------------------------------------
+# POSSIBLE CONTRIBUTING FACTORS
+# ------------------------------------------------------------
+
+st.subheader("🧩 Possible Contributing Factors")
+
+if t34_deg_upper in [
+    "CRITICAL",
+    "HIGH",
+    "MODERATE",
+    "LOW"
+]:
+
+    st.warning(
+        "An adverse fuel-efficiency deviation is present in the "
+        "available upstream intelligence. The following areas should "
+        "be verified before assigning a cause."
+    )
+
+else:
+
+    st.info(
+        "Available upstream information does not currently support "
+        "assignment of a specific root cause. Continue verification "
+        "using operational source records."
+    )
+
+st.markdown(
+    """
+**Diagnostic verification areas:**
+
+1. Main-engine RPM and load profile.
+2. Engine combustion and performance parameters.
+3. Vessel speed and voyage operating profile.
+4. Vessel loading condition, draft and trim.
+5. Weather, current and sea state.
+6. Hull and propeller condition.
+7. Fuel properties and bunker quality.
+8. Auxiliary machinery demand.
+9. Fuel measurement, ROB and tank-sounding accuracy.
+10. Changes in voyage or operational conditions.
+"""
+)
+
+
+# ------------------------------------------------------------
+# ROOT-CAUSE STATUS
+# ------------------------------------------------------------
+
+st.subheader("🧠 Root-Cause Assessment")
+
+if (
+    t34_data_available
+    and t34_available_groups >= 5
+):
+
+    t34_root_cause_status = (
+        "DIAGNOSTIC REVIEW READY"
+    )
+
+    st.success(
+        "🟢 Sufficient categories of operational information are "
+        "available for a structured diagnostic review. A verified "
+        "root cause still requires examination of source records."
+    )
+
+elif (
+    t34_data_available
+    and t34_available_groups >= 2
+):
+
+    t34_root_cause_status = (
+        "PARTIAL DIAGNOSTIC DATA"
+    )
+
+    st.warning(
+        "🟠 Fuel-deviation information is available, but only part "
+        "of the supporting operational information is available. "
+        "Do not assign a root cause until the missing data are verified."
+    )
+
+else:
+
+    t34_root_cause_status = (
+        "INSUFFICIENT DATA"
+    )
+
+    st.warning(
+        "🟠 Available information is insufficient to determine a "
+        "supported root cause. Obtain and verify additional operational "
+        "and fuel-consumption records."
+    )
+
+
+# ------------------------------------------------------------
+# MANAGEMENT PRIORITY
+# ------------------------------------------------------------
+
+st.subheader("🚦 Management Priority")
+
+if t34_deg_upper == "CRITICAL":
+
+    st.error(
+        "🔴 IMMEDIATE TECHNICAL REVIEW — Verify the reported "
+        "deviation and supporting machinery/operational records."
+    )
+
+elif t34_deg_upper == "HIGH":
+
+    st.warning(
+        "🟠 HIGH PRIORITY — Conduct a structured technical and "
+        "operational review of the verified deviation."
+    )
+
+elif t34_deg_upper == "MODERATE":
+
+    st.warning(
+        "🟡 ENHANCED INVESTIGATION — Review the trend and verify "
+        "possible contributing operational factors."
+    )
+
+elif t34_deg_upper == "LOW":
+
+    st.info(
+        "🔵 MONITOR & VERIFY — Continue enhanced monitoring and "
+        "compare subsequent verified operating periods."
+    )
+
+elif t34_deg_upper == "NORMAL":
+
+    st.success(
+        "🟢 ROUTINE MONITORING — No adverse degradation is indicated "
+        "by the available TAHAP 33 classification."
+    )
+
+else:
+
+    st.info(
+        "⚪ VERIFY SOURCE DATA — Complete the required source-data "
+        "verification before management classification."
+    )
+
+
+# ------------------------------------------------------------
+# MANAGEMENT ACTIONS
+# ------------------------------------------------------------
+
+st.subheader("📋 Management Actions")
+
+if t34_deg_upper in ["CRITICAL", "HIGH"]:
+
+    st.markdown(
+        """
+1. Verify actual fuel consumption, ROB and tank soundings.
+2. Review main-engine RPM/load and relevant performance parameters.
+3. Compare vessel speed with verified fuel-consumption performance.
+4. Review loading condition, draft and trim.
+5. Check weather, current, sea state and voyage conditions.
+6. Review bunker/fuel-quality documentation.
+7. Review available hull and propeller condition information.
+8. Compare the event with equivalent verified operating periods.
+9. Escalate confirmed abnormal performance for technical assessment.
+10. Track corrective actions and subsequent verified performance.
+"""
+    )
+
+elif t34_deg_upper == "MODERATE":
+
+    st.markdown(
+        """
+1. Verify the reported fuel-consumption deviation.
+2. Review engine RPM/load and vessel-speed trends.
+3. Review draft, trim and loading condition.
+4. Check environmental and voyage conditions.
+5. Review relevant bunker and machinery records.
+6. Continue enhanced monitoring.
+"""
+    )
+
+elif t34_deg_upper == "LOW":
+
+    st.markdown(
+        """
+1. Continue monitoring the fuel-efficiency trend.
+2. Verify source measurements and operational records.
+3. Compare subsequent voyages or operating periods.
+4. Escalate if the verified deviation increases.
+"""
+    )
+
+elif t34_deg_upper == "NORMAL":
+
+    st.markdown(
+        """
+1. Continue routine fuel-efficiency monitoring.
+2. Maintain verified engine and fuel-consumption records.
+3. Continue comparison against appropriate operating references.
+"""
+    )
+
+else:
+
+    st.markdown(
+        """
+1. Obtain current and baseline fuel-consumption records.
+2. Verify ROB and tank-sounding information.
+3. Obtain engine RPM/load information.
+4. Obtain vessel speed, draft and trim data.
+5. Record weather/current/sea-state conditions.
+6. Review bunker/fuel-quality documentation.
+7. Re-run the diagnostic assessment when sufficient data are available.
+"""
+    )
+
+
+# ------------------------------------------------------------
+# FINANCIAL CONTEXT
+# ------------------------------------------------------------
+
+st.subheader("💰 Financial Context")
+
+t34_f1, t34_f2 = st.columns(2)
+
+with t34_f1:
+
+    if t34_potential_saving > 0:
+
+        st.metric(
+            "Potential Saving",
+            f"${t34_potential_saving:,.2f}"
+        )
+
+    else:
+
+        st.metric(
+            "Potential Saving",
+            "$0.00"
+        )
+
+with t34_f2:
+
+    st.metric(
+        "Technical Priority",
+        t34_diagnostic_priority
+    )
+
+st.caption(
+    "Potential saving is an upstream decision-support estimate and "
+    "should not be treated as realized financial saving until verified."
+)
+
+
+# ------------------------------------------------------------
+# DATA QUALITY & VALIDATION
+# ------------------------------------------------------------
+
+st.subheader("🛡️ Data Quality & Validation")
+
+if (
+    t34_data_available
+    and t34_available_groups >= 3
+):
+
+    st.success(
+        "🟢 Upstream fuel-performance information and multiple "
+        "operational data categories are available for diagnostic screening."
+    )
+
+elif (
+    t34_data_available
+    or t34_available_groups > 0
+):
+
+    st.warning(
+        "🟠 Only part of the required diagnostic information is "
+        "available. Interpret the assessment with the available-data "
+        "limitations."
+    )
+
+else:
+
+    st.warning(
+        "🟠 Fuel-performance and supporting operational information "
+        "are currently insufficient for a supported diagnostic conclusion."
+    )
+
+st.info(
+    "Fuel Consumption Root Cause & Diagnostic Intelligence is a "
+    "decision-support screening module. The module identifies areas "
+    "requiring verification; it does not independently establish "
+    "machinery failure, engine malfunction, hull or propeller fouling, "
+    "fuel-quality problems, crew performance, fuel loss, commercial "
+    "responsibility or causation. Verify actual fuel measurements, "
+    "tank soundings, ROB, bunker records, engine parameters, RPM/load, "
+    "vessel speed, draft/trim, weather/current, sea state, voyage "
+    "conditions, hull/propeller condition, fuel properties and applicable "
+    "OEM/company requirements before technical, operational, safety, "
+    "procurement or commercial action."
+)
+
+
+# ------------------------------------------------------------
+# STORE TAHAP 34 RESULTS
+# ------------------------------------------------------------
+
+st.session_state["t34_result_degradation_pct"] = (
+    t34_degradation_pct
+)
+
+st.session_state["t34_result_degradation_level"] = (
+    t34_degradation_level
+)
+
+st.session_state["t34_result_diagnostic_priority"] = (
+    t34_diagnostic_priority
+)
+
+st.session_state["t34_result_diagnostic_confidence"] = (
+    t34_confidence
+)
+
+st.session_state["t34_result_root_cause_status"] = (
+    t34_root_cause_status
+)
+
+st.session_state["t34_result_available_groups"] = (
+    t34_available_groups
+)
+
+st.session_state["t34_result_potential_cost_saving"] = (
+    t34_potential_saving
+)
+
+st.session_state["t34_result_upstream_anomaly"] = (
+    t34_anomaly_status
+)
+
+st.session_state["t34_result_findings"] = (
+    t34_findings
+)
+
+st.session_state["t34_result_data_available"] = bool(
+    t34_data_available or
+    t34_available_groups > 0
+)
+
+
+# ------------------------------------------------------------
+# TAHAP 34 STATUS
+# ------------------------------------------------------------
+
+st.success(
+    "✅ TAHAP 34 ACTIVE — Fuel Consumption Root Cause & "
+    "Diagnostic Intelligence is operational."
+)
+
+st.info(
+    "TAHAP 34 results are stored in the application session "
+    "and prepared for the next intelligence modules."
+)
+
+
+# ============================================================
+# END TAHAP 34
+# ============================================================
+
 
