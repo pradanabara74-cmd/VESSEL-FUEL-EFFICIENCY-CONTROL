@@ -19733,6 +19733,329 @@ st.info(
 # ================================================================
 # END TAHAP 39
 # ================================================================
+# ================================================================
+# TAHAP 40
+# FLEET FUEL EFFICIENCY EXECUTIVE DASHBOARD &
+# FINAL MANAGEMENT INTELLIGENCE
+# ================================================================
+
+st.markdown("---")
+st.header(
+    "🏢 Fleet Fuel Efficiency Executive Dashboard & "
+    "Final Management Intelligence"
+)
+
+st.caption(
+    "Consolidated management decision-support view generated from "
+    "available upstream fuel-efficiency intelligence."
+)
+
+# ================================================================
+# 1. COLLECT UPSTREAM INTELLIGENCE
+# ================================================================
+
+t40_upstream_keys = [
+    "t30_result_upstream_available",
+    "t31_result_upstream_available",
+    "t32_result_upstream_available",
+    "t33_result_upstream_available",
+    "t34_result_upstream_available",
+    "t35_result_upstream_available",
+    "t36_result_upstream_available",
+    "t37_result_upstream_available",
+    "t38_result_upstream_available",
+    "t39_result_upstream_available",
+]
+
+t40_available_modules = sum(
+    1
+    for key in t40_upstream_keys
+    if bool(st.session_state.get(key, False))
+)
+
+t40_total_modules = len(t40_upstream_keys)
+
+if t40_total_modules > 0:
+    t40_coverage = (
+        t40_available_modules / t40_total_modules
+    ) * 100
+else:
+    t40_coverage = 0.0
+
+
+# ================================================================
+# 2. EXECUTIVE DASHBOARD
+# ================================================================
+
+st.subheader("📊 Executive Intelligence Dashboard")
+
+col1, col2, col3, col4 = st.columns(4)
+
+with col1:
+    st.metric(
+        "Intelligence Modules",
+        f"{t40_available_modules}/{t40_total_modules}"
+    )
+
+with col2:
+    st.metric(
+        "Data Coverage",
+        f"{t40_coverage:.0f}%"
+    )
+
+with col3:
+
+    if t40_coverage >= 80:
+        t40_readiness = "HIGH"
+
+    elif t40_coverage >= 50:
+        t40_readiness = "MODERATE"
+
+    else:
+        t40_readiness = "LIMITED"
+
+    st.metric(
+        "Management Readiness",
+        t40_readiness
+    )
+
+with col4:
+
+    if t40_coverage >= 80:
+        t40_status = "REVIEW READY"
+
+    elif t40_coverage >= 50:
+        t40_status = "PARTIAL"
+
+    else:
+        t40_status = "DATA REQUIRED"
+
+    st.metric(
+        "Fleet Status",
+        t40_status
+    )
+
+
+# ================================================================
+# 3. EXECUTIVE ASSESSMENT
+# ================================================================
+
+st.subheader("🎯 Executive Assessment")
+
+if t40_coverage >= 80:
+
+    st.success(
+        "🟢 Broad upstream fuel-efficiency intelligence is available "
+        "for executive management review."
+    )
+
+    t40_assessment = (
+        "Broad intelligence coverage available for management review."
+    )
+
+elif t40_coverage >= 50:
+
+    st.warning(
+        "🟠 Partial upstream intelligence is available. "
+        "Management assessment should consider the identified "
+        "data limitations."
+    )
+
+    t40_assessment = (
+        "Partial intelligence coverage — additional verification required."
+    )
+
+else:
+
+    st.warning(
+        "🟠 Available upstream intelligence is limited. "
+        "Additional verified operational information is required "
+        "before supported management conclusions are drawn."
+    )
+
+    t40_assessment = (
+        "Limited intelligence coverage — additional data required."
+    )
+
+
+# ================================================================
+# 4. INTELLIGENCE STATUS
+# ================================================================
+
+st.subheader("🧠 Intelligence Status")
+
+t40_status_rows = []
+
+for stage in range(30, 40):
+
+    key = f"t{stage}_result_upstream_available"
+
+    available = bool(
+        st.session_state.get(key, False)
+    )
+
+    t40_status_rows.append(
+        {
+            "Stage": f"TAHAP {stage}",
+            "Intelligence Status":
+                "AVAILABLE" if available else "LIMITED / NOT AVAILABLE"
+        }
+    )
+
+st.dataframe(
+    t40_status_rows,
+    use_container_width=True,
+    hide_index=True
+)
+
+
+# ================================================================
+# 5. MANAGEMENT PRIORITIES
+# ================================================================
+
+st.subheader("📋 Executive Management Priorities")
+
+st.markdown(
+    """
+1. Review verified vessel fuel-consumption performance.
+2. Compare actual consumption against appropriate operational baselines.
+3. Review abnormal fuel-consumption indications and trends.
+4. Review engine-performance degradation indicators.
+5. Review potential fuel-consumption root causes requiring verification.
+6. Review hull and propeller performance indicators.
+7. Reconcile ROB, bunker delivery and recorded fuel consumption.
+8. Review recommended operational corrective actions.
+9. Verify effectiveness of completed corrective actions.
+10. Review fleet KPI and performance-scorecard results.
+11. Escalate material deviations for technical or management review.
+12. Maintain auditable supporting operational records.
+"""
+)
+
+
+# ================================================================
+# 6. MANAGEMENT DECISION GATE
+# ================================================================
+
+st.subheader("🚦 Management Decision Gate")
+
+if t40_coverage >= 80:
+
+    st.success(
+        "🟢 MANAGEMENT REVIEW GATE: AVAILABLE\n\n"
+        "The available intelligence may support management review, "
+        "subject to verification of the underlying operational records."
+    )
+
+    t40_gate = "AVAILABLE"
+
+elif t40_coverage >= 50:
+
+    st.warning(
+        "🟠 MANAGEMENT REVIEW GATE: CONDITIONAL\n\n"
+        "Additional verification of missing or incomplete operational "
+        "information is recommended before material decisions."
+    )
+
+    t40_gate = "CONDITIONAL"
+
+else:
+
+    st.warning(
+        "🟠 MANAGEMENT REVIEW GATE: DATA VERIFICATION REQUIRED\n\n"
+        "Available information is insufficient for a broadly supported "
+        "fleet-level management assessment."
+    )
+
+    t40_gate = "DATA VERIFICATION REQUIRED"
+
+
+# ================================================================
+# 7. DATA QUALITY & VALIDATION
+# ================================================================
+
+st.subheader("🛡️ Data Quality & Validation")
+
+if t40_coverage >= 80:
+
+    st.success(
+        "🟢 Upstream fuel-efficiency intelligence is broadly available "
+        "for executive dashboard assessment."
+    )
+
+elif t40_coverage > 0:
+
+    st.warning(
+        "🟠 Only part of the upstream intelligence is currently "
+        "available. Interpret executive dashboard results with the "
+        "available-data limitations."
+    )
+
+else:
+
+    st.warning(
+        "🟠 Upstream fuel-efficiency intelligence is currently "
+        "insufficient for a supported executive dashboard assessment."
+    )
+
+
+# ================================================================
+# 8. IMPORTANT DECISION-SUPPORT NOTICE
+# ================================================================
+
+st.info(
+    "Fleet Fuel Efficiency Executive Dashboard & Final Management "
+    "Intelligence consolidates configured decision-support indicators "
+    "from available operational information. Dashboard classifications "
+    "do not independently establish machinery condition, machinery "
+    "failure, crew performance, fuel loss, theft, commercial "
+    "responsibility, causation, regulatory compliance or future "
+    "financial results. Verify actual fuel measurements, tank soundings, "
+    "ROB, bunker records, engine parameters, RPM/load, vessel speed, "
+    "draft/trim, weather/current, sea state, voyage conditions, "
+    "hull/propeller condition, fuel properties and applicable "
+    "OEM/company requirements before technical, operational, safety, "
+    "procurement, financial or commercial action."
+)
+
+
+# ================================================================
+# 9. STORE TAHAP 40 RESULTS
+# ================================================================
+
+st.session_state["t40_result"] = {
+    "available_modules": t40_available_modules,
+    "total_modules": t40_total_modules,
+    "coverage_percent": round(t40_coverage, 1),
+    "management_readiness": t40_readiness,
+    "fleet_status": t40_status,
+    "management_gate": t40_gate,
+    "executive_assessment": t40_assessment,
+}
+
+st.session_state["t40_result_upstream_available"] = (
+    t40_available_modules > 0
+)
+
+
+# ================================================================
+# 10. TAHAP 40 STATUS
+# ================================================================
+
+st.success(
+    "✅ TAHAP 40 ACTIVE — Fleet Fuel Efficiency Executive Dashboard & "
+    "Final Management Intelligence is operational."
+)
+
+st.info(
+    "TAHAP 40 results are stored in the application session "
+    "and available for final system integration."
+)
+
+
+# ================================================================
+# END TAHAP 40
+# ================================================================
 
 
 
