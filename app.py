@@ -16135,4 +16135,491 @@ st.info(
 # END TAHAP 32
 # ============================================================
 
+# ============================================================
+# TAHAP 33
+# ENGINE PERFORMANCE DEGRADATION INTELLIGENCE
+# ============================================================
+
+st.markdown("---")
+st.header("⚙️ Engine Performance Degradation Intelligence")
+st.caption(
+    "TAHAP 33 — Engine performance degradation screening, "
+    "fuel-efficiency impact assessment and management decision support."
+)
+
+# ------------------------------------------------------------
+# SAFE HELPERS
+# ------------------------------------------------------------
+
+def t33_safe_float(value, default=0.0):
+    try:
+        if value is None:
+            return default
+
+        if isinstance(value, str):
+            value = (
+                value.replace(",", "")
+                .replace("$", "")
+                .replace("%", "")
+                .strip()
+            )
+
+        return float(value)
+
+    except (TypeError, ValueError):
+        return default
+
+
+def t33_first_available(keys, default=None):
+    for key in keys:
+        if key in st.session_state:
+            value = st.session_state.get(key)
+
+            if value is not None:
+                return value
+
+    return default
+
+
+# ------------------------------------------------------------
+# READ UPSTREAM INTELLIGENCE
+# ------------------------------------------------------------
+
+t33_current_consumption = t33_safe_float(
+    t33_first_available(
+        [
+            "t32_result_current_consumption",
+            "t31_result_current_consumption",
+            "t30_result_current_consumption",
+            "current_consumption",
+            "actual_fuel_consumption",
+        ],
+        0.0,
+    )
+)
+
+t33_baseline_consumption = t33_safe_float(
+    t33_first_available(
+        [
+            "t32_result_baseline_consumption",
+            "t31_result_baseline_consumption",
+            "t30_result_baseline_consumption",
+            "baseline_consumption",
+            "baseline_fuel_consumption",
+        ],
+        0.0,
+    )
+)
+
+t33_current_efficiency = t33_safe_float(
+    t33_first_available(
+        [
+            "t32_result_efficiency",
+            "t31_result_efficiency",
+            "t30_result_efficiency",
+            "fuel_efficiency",
+        ],
+        0.0,
+    )
+)
+
+t33_potential_saving = t33_safe_float(
+    t33_first_available(
+        [
+            "t32_result_potential_cost_saving",
+            "t31_result_potential_cost_saving",
+            "t30_result_potential_cost_saving",
+            "t29_result_potential_cost_saving",
+            "t28_result_potential_cost_saving",
+            "t27_result_potential_cost_saving",
+            "t26_result_potential_cost_saving",
+            "t25_result_potential_cost_saving",
+            "t24_result_potential_cost_saving",
+            "t23_result_potential_cost_saving",
+            "potential_cost_saving",
+        ],
+        0.0,
+    )
+)
+
+t33_upstream_anomaly = t33_first_available(
+    [
+        "t32_result_anomaly_level",
+        "t32_result_anomaly_status",
+        "t32_result_classification",
+    ],
+    "Not available",
+)
+
+# ------------------------------------------------------------
+# PERFORMANCE DEGRADATION CALCULATION
+# ------------------------------------------------------------
+
+if (
+    t33_current_consumption > 0
+    and t33_baseline_consumption > 0
+):
+    t33_degradation_pct = (
+        (
+            t33_current_consumption
+            - t33_baseline_consumption
+        )
+        / t33_baseline_consumption
+    ) * 100
+
+    t33_consumption_data_available = True
+
+else:
+    t33_degradation_pct = 0.0
+    t33_consumption_data_available = False
+
+
+# ------------------------------------------------------------
+# DEGRADATION CLASSIFICATION
+# ------------------------------------------------------------
+
+if not t33_consumption_data_available:
+    t33_degradation_level = "DATA LIMITED"
+    t33_priority = "VERIFY DATA"
+
+elif t33_degradation_pct >= 15:
+    t33_degradation_level = "CRITICAL"
+    t33_priority = "IMMEDIATE REVIEW"
+
+elif t33_degradation_pct >= 10:
+    t33_degradation_level = "HIGH"
+    t33_priority = "HIGH"
+
+elif t33_degradation_pct >= 5:
+    t33_degradation_level = "MODERATE"
+    t33_priority = "MEDIUM"
+
+elif t33_degradation_pct > 0:
+    t33_degradation_level = "LOW"
+    t33_priority = "MONITOR"
+
+else:
+    t33_degradation_level = "NORMAL"
+    t33_priority = "ROUTINE MONITORING"
+
+
+# ------------------------------------------------------------
+# EXECUTIVE METRICS
+# ------------------------------------------------------------
+
+st.subheader("📊 Engine Performance Overview")
+
+t33_col1, t33_col2, t33_col3, t33_col4 = st.columns(4)
+
+with t33_col1:
+    if t33_current_consumption > 0:
+        st.metric(
+            "Current Fuel Consumption",
+            f"{t33_current_consumption:,.2f}"
+        )
+    else:
+        st.metric(
+            "Current Fuel Consumption",
+            "N/A"
+        )
+
+with t33_col2:
+    if t33_baseline_consumption > 0:
+        st.metric(
+            "Baseline Consumption",
+            f"{t33_baseline_consumption:,.2f}"
+        )
+    else:
+        st.metric(
+            "Baseline Consumption",
+            "N/A"
+        )
+
+with t33_col3:
+    if t33_consumption_data_available:
+        st.metric(
+            "Performance Deviation",
+            f"{t33_degradation_pct:+.2f}%"
+        )
+    else:
+        st.metric(
+            "Performance Deviation",
+            "N/A"
+        )
+
+with t33_col4:
+    st.metric(
+        "Degradation Level",
+        t33_degradation_level
+    )
+
+
+# ------------------------------------------------------------
+# ENGINE PERFORMANCE ASSESSMENT
+# ------------------------------------------------------------
+
+st.subheader("🔎 Engine Performance Assessment")
+
+if t33_degradation_level == "CRITICAL":
+
+    st.error(
+        "🔴 CRITICAL — Available fuel-consumption indicators show "
+        "a substantial adverse deviation from the configured baseline."
+    )
+
+elif t33_degradation_level == "HIGH":
+
+    st.warning(
+        "🟠 HIGH — Available indicators show a significant adverse "
+        "fuel-consumption deviation requiring priority review."
+    )
+
+elif t33_degradation_level == "MODERATE":
+
+    st.warning(
+        "🟡 MODERATE — Available indicators show a measurable "
+        "fuel-consumption deviation that should be investigated."
+    )
+
+elif t33_degradation_level == "LOW":
+
+    st.info(
+        "🔵 LOW — A limited adverse deviation is indicated. "
+        "Continue monitoring and verify the operating conditions."
+    )
+
+elif t33_degradation_level == "NORMAL":
+
+    st.success(
+        "🟢 NORMAL — Available consumption indicators do not show "
+        "an adverse deviation from the configured baseline."
+    )
+
+else:
+
+    st.info(
+        "⚪ DATA LIMITED — Sufficient current and baseline fuel "
+        "consumption data are not available for degradation calculation."
+    )
+
+
+# ------------------------------------------------------------
+# UPSTREAM INTELLIGENCE
+# ------------------------------------------------------------
+
+st.subheader("🧠 Upstream Intelligence")
+
+t33_u1, t33_u2, t33_u3 = st.columns(3)
+
+with t33_u1:
+    st.metric(
+        "TAHAP 32 Anomaly",
+        str(t33_upstream_anomaly)
+    )
+
+with t33_u2:
+    if t33_current_efficiency != 0:
+        st.metric(
+            "Fuel Efficiency Indicator",
+            f"{t33_current_efficiency:,.2f}"
+        )
+    else:
+        st.metric(
+            "Fuel Efficiency Indicator",
+            "N/A"
+        )
+
+with t33_u3:
+    if t33_potential_saving > 0:
+        st.metric(
+            "Potential Saving",
+            f"${t33_potential_saving:,.2f}"
+        )
+    else:
+        st.metric(
+            "Potential Saving",
+            "$0.00"
+        )
+
+
+# ------------------------------------------------------------
+# POSSIBLE CONTRIBUTING FACTORS
+# ------------------------------------------------------------
+
+st.subheader("🧩 Factors Requiring Verification")
+
+st.markdown(
+    """
+Possible contributors to an adverse fuel-efficiency trend may include:
+
+1. Main-engine loading and RPM profile.
+2. Engine combustion and tuning condition.
+3. Fuel quality and fuel properties.
+4. Hull and propeller condition.
+5. Vessel loading, draft and trim.
+6. Weather, current and sea state.
+7. Voyage profile and vessel speed.
+8. Auxiliary machinery demand.
+9. Measurement or reporting inconsistencies.
+
+These factors are verification items and are **not automatically
+identified causes**.
+"""
+)
+
+
+# ------------------------------------------------------------
+# MANAGEMENT ACTIONS
+# ------------------------------------------------------------
+
+st.subheader("📋 Management Actions")
+
+if t33_degradation_level in ["CRITICAL", "HIGH"]:
+
+    st.markdown(
+        """
+1. Verify fuel-consumption records, ROB and tank soundings.
+2. Review main-engine RPM, load and operating profile.
+3. Compare current engine parameters with approved reference data.
+4. Review recent bunker quality and relevant fuel documentation.
+5. Check vessel speed, draft, trim, weather and current conditions.
+6. Review hull and propeller condition where relevant.
+7. Escalate significant verified deviations for technical review.
+8. Track corrective actions and subsequent verified performance.
+"""
+    )
+
+elif t33_degradation_level == "MODERATE":
+
+    st.markdown(
+        """
+1. Verify the fuel-consumption deviation against source records.
+2. Review engine RPM/load and vessel operating conditions.
+3. Compare performance with recent verified operating periods.
+4. Check weather, current, draft, trim and voyage conditions.
+5. Continue enhanced monitoring until the deviation is explained.
+"""
+    )
+
+elif t33_degradation_level == "LOW":
+
+    st.markdown(
+        """
+1. Continue routine performance monitoring.
+2. Verify the deviation against operational records.
+3. Review trends for repeated deterioration.
+4. Escalate if the verified deviation increases.
+"""
+    )
+
+elif t33_degradation_level == "NORMAL":
+
+    st.markdown(
+        """
+1. Continue routine engine-performance monitoring.
+2. Maintain verified fuel and machinery records.
+3. Continue comparison against the approved operating baseline.
+"""
+    )
+
+else:
+
+    st.markdown(
+        """
+1. Obtain verified current fuel-consumption data.
+2. Confirm the appropriate baseline/reference consumption.
+3. Verify engine RPM/load and vessel operating conditions.
+4. Reassess performance when sufficient data are available.
+"""
+    )
+
+
+# ------------------------------------------------------------
+# DATA QUALITY & VALIDATION
+# ------------------------------------------------------------
+
+st.subheader("🛡️ Data Quality & Validation")
+
+if t33_consumption_data_available:
+
+    st.success(
+        "🟢 Current and baseline fuel-consumption indicators are "
+        "available for engine-performance screening."
+    )
+
+else:
+
+    st.warning(
+        "🟠 Current and/or baseline fuel-consumption indicators are "
+        "unavailable. Engine-performance degradation cannot be "
+        "quantified from the available upstream data."
+    )
+
+
+st.info(
+    "Engine Performance Degradation Intelligence is a decision-support "
+    "screening module based on configured thresholds and available "
+    "operational information. A degradation classification does not by "
+    "itself establish engine malfunction, machinery failure, fuel loss, "
+    "crew performance, commercial responsibility or causation. Verify "
+    "actual fuel measurements, tank soundings, ROB, bunker records, "
+    "engine parameters, RPM/load, vessel speed, draft/trim, weather, "
+    "current, sea state, voyage conditions, hull/propeller condition, "
+    "fuel properties and applicable OEM/company requirements before "
+    "technical, operational, safety or commercial action."
+)
+
+
+# ------------------------------------------------------------
+# STORE TAHAP 33 RESULTS
+# ------------------------------------------------------------
+
+st.session_state["t33_result_degradation_pct"] = (
+    t33_degradation_pct
+)
+
+st.session_state["t33_result_degradation_level"] = (
+    t33_degradation_level
+)
+
+st.session_state["t33_result_priority"] = (
+    t33_priority
+)
+
+st.session_state["t33_result_current_consumption"] = (
+    t33_current_consumption
+)
+
+st.session_state["t33_result_baseline_consumption"] = (
+    t33_baseline_consumption
+)
+
+st.session_state["t33_result_potential_cost_saving"] = (
+    t33_potential_saving
+)
+
+st.session_state["t33_result_data_available"] = (
+    t33_consumption_data_available
+)
+
+
+# ------------------------------------------------------------
+# TAHAP 33 STATUS
+# ------------------------------------------------------------
+
+st.success(
+    "✅ TAHAP 33 ACTIVE — Engine Performance Degradation "
+    "Intelligence is operational."
+)
+
+st.info(
+    "TAHAP 33 results are stored in the application session "
+    "and prepared for the next intelligence modules."
+)
+
+
+# ============================================================
+# END TAHAP 33
+# ============================================================
+
 
