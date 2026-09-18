@@ -10077,4 +10077,679 @@ st.info(
 # END TAHAP 18
 # ================================================================
 
+# ================================================================
+# TAHAP 19 - ENGINE PERFORMANCE & SFOC INTELLIGENCE
+# ================================================================
+
+st.divider()
+st.header("⚙️ Engine Performance & SFOC Intelligence")
+
+st.caption(
+    "Engine fuel-performance monitoring using power, load, RPM "
+    "and specific fuel oil consumption (SFOC) indicators."
+)
+
+# ------------------------------------------------
+# SAFE FLOAT
+# ------------------------------------------------
+
+def t19_safe_float(value, default=0.0):
+    try:
+        if value is None:
+            return float(default)
+        return float(value)
+    except (TypeError, ValueError):
+        return float(default)
+
+
+# ------------------------------------------------
+# VESSEL CONTEXT
+# ------------------------------------------------
+
+t19_selected_vessel = st.session_state.get(
+    "selected_fleet_vessel",
+    st.session_state.get(
+        "sidebar_vessel_name",
+        globals().get("vessel_name", "ASL MANTRUS")
+    )
+)
+
+st.subheader("🚢 Engine Performance Vessel")
+st.write(f"**Vessel:** {t19_selected_vessel}")
+
+
+# ------------------------------------------------
+# PREVIOUS INTELLIGENCE
+# ------------------------------------------------
+
+t19_previous_efficiency = t19_safe_float(
+    st.session_state.get(
+        "t18_result_efficiency_index",
+        st.session_state.get(
+            "t10_result_efficiency_score",
+            0.0
+        )
+    )
+)
+
+t19_previous_degradation = t19_safe_float(
+    st.session_state.get(
+        "t18_result_degradation_score",
+        0.0
+    )
+)
+
+
+# ------------------------------------------------
+# ENGINE REFERENCE DATA
+# ------------------------------------------------
+
+st.subheader("📝 Engine Reference & Operating Data")
+
+t19_c1, t19_c2, t19_c3 = st.columns(3)
+
+with t19_c1:
+
+    t19_rated_power = st.number_input(
+        "Rated Engine Power (kW)",
+        min_value=0.0,
+        value=3300.0,
+        step=100.0,
+        key="t19_rated_power"
+    )
+
+    t19_actual_power = st.number_input(
+        "Actual Engine Power (kW)",
+        min_value=0.0,
+        value=2310.0,
+        step=50.0,
+        key="t19_actual_power"
+    )
+
+
+with t19_c2:
+
+    t19_rated_rpm = st.number_input(
+        "Rated Engine RPM",
+        min_value=0.0,
+        value=1200.0,
+        step=10.0,
+        key="t19_rated_rpm"
+    )
+
+    t19_actual_rpm = st.number_input(
+        "Actual Engine RPM",
+        min_value=0.0,
+        value=1100.0,
+        step=10.0,
+        key="t19_actual_rpm"
+    )
+
+
+with t19_c3:
+
+    t19_reference_sfoc = st.number_input(
+        "Reference SFOC (g/kWh)",
+        min_value=0.0,
+        value=195.0,
+        step=1.0,
+        key="t19_reference_sfoc"
+    )
+
+    t19_actual_fuel_kg_h = st.number_input(
+        "Actual Fuel Consumption (kg/h)",
+        min_value=0.0,
+        value=450.0,
+        step=10.0,
+        key="t19_actual_fuel_kg_h"
+    )
+
+
+# ------------------------------------------------
+# OPERATING HOURS
+# ------------------------------------------------
+
+st.subheader("⏱️ Operating Profile")
+
+t19_c4, t19_c5 = st.columns(2)
+
+with t19_c4:
+
+    t19_operating_hours = st.number_input(
+        "Engine Operating Hours / Day",
+        min_value=0.0,
+        max_value=24.0,
+        value=24.0,
+        step=0.5,
+        key="t19_operating_hours"
+    )
+
+
+with t19_c5:
+
+    t19_engine_condition = st.selectbox(
+        "Reported Engine Condition",
+        [
+            "Normal",
+            "Minor Performance Concern",
+            "Performance Degradation",
+            "Maintenance Required"
+        ],
+        key="t19_engine_condition"
+    )
+
+
+# ------------------------------------------------
+# ENGINE LOAD
+# ------------------------------------------------
+
+if t19_rated_power > 0:
+
+    t19_engine_load_percent = (
+        t19_actual_power /
+        t19_rated_power
+    ) * 100.0
+
+else:
+
+    t19_engine_load_percent = 0.0
+
+
+# ------------------------------------------------
+# ACTUAL SFOC
+# ------------------------------------------------
+
+if t19_actual_power > 0:
+
+    t19_actual_sfoc = (
+        t19_actual_fuel_kg_h * 1000.0
+    ) / t19_actual_power
+
+else:
+
+    t19_actual_sfoc = 0.0
+
+
+# ------------------------------------------------
+# SFOC VARIANCE
+# ------------------------------------------------
+
+if t19_reference_sfoc > 0 and t19_actual_sfoc > 0:
+
+    t19_sfoc_variance = (
+        t19_actual_sfoc -
+        t19_reference_sfoc
+    )
+
+    t19_sfoc_variance_percent = (
+        t19_sfoc_variance /
+        t19_reference_sfoc
+    ) * 100.0
+
+else:
+
+    t19_sfoc_variance = 0.0
+    t19_sfoc_variance_percent = 0.0
+
+
+# ------------------------------------------------
+# RPM UTILIZATION
+# ------------------------------------------------
+
+if t19_rated_rpm > 0:
+
+    t19_rpm_utilization = (
+        t19_actual_rpm /
+        t19_rated_rpm
+    ) * 100.0
+
+else:
+
+    t19_rpm_utilization = 0.0
+
+
+# ------------------------------------------------
+# DAILY FUEL
+# ------------------------------------------------
+
+t19_daily_fuel_kg = (
+    t19_actual_fuel_kg_h *
+    t19_operating_hours
+)
+
+t19_daily_fuel_tonnes = (
+    t19_daily_fuel_kg /
+    1000.0
+)
+
+
+# ------------------------------------------------
+# ENGINE PERFORMANCE SCORE
+# ------------------------------------------------
+
+t19_performance_penalty = max(
+    0.0,
+    t19_sfoc_variance_percent
+)
+
+if t19_engine_load_percent > 95.0:
+    t19_performance_penalty += 5.0
+
+elif t19_engine_load_percent < 30.0 and t19_actual_power > 0:
+    t19_performance_penalty += 3.0
+
+
+if t19_engine_condition == "Minor Performance Concern":
+    t19_performance_penalty += 3.0
+
+elif t19_engine_condition == "Performance Degradation":
+    t19_performance_penalty += 8.0
+
+elif t19_engine_condition == "Maintenance Required":
+    t19_performance_penalty += 15.0
+
+
+t19_engine_efficiency_score = max(
+    0.0,
+    min(
+        100.0,
+        100.0 - t19_performance_penalty
+    )
+)
+
+
+# ------------------------------------------------
+# ENGINE STATUS
+# ------------------------------------------------
+
+if t19_actual_power <= 0 or t19_actual_fuel_kg_h <= 0:
+
+    t19_status = "DATA REQUIRED"
+    t19_status_icon = "⚪"
+
+elif t19_sfoc_variance_percent <= 3.0:
+
+    t19_status = "NORMAL"
+    t19_status_icon = "🟢"
+
+elif t19_sfoc_variance_percent <= 8.0:
+
+    t19_status = "WATCH"
+    t19_status_icon = "🟡"
+
+elif t19_sfoc_variance_percent <= 15.0:
+
+    t19_status = "DEGRADED"
+    t19_status_icon = "🟠"
+
+else:
+
+    t19_status = "HIGH DEGRADATION"
+    t19_status_icon = "🔴"
+
+
+# ------------------------------------------------
+# PERFORMANCE RESULTS
+# ------------------------------------------------
+
+st.subheader("📊 Engine Performance Results")
+
+t19_m1, t19_m2, t19_m3, t19_m4 = st.columns(4)
+
+with t19_m1:
+    st.metric(
+        "Engine Load",
+        f"{t19_engine_load_percent:.1f}%"
+    )
+
+with t19_m2:
+    st.metric(
+        "Actual SFOC",
+        f"{t19_actual_sfoc:.1f} g/kWh"
+    )
+
+with t19_m3:
+    st.metric(
+        "SFOC Variance",
+        f"{t19_sfoc_variance_percent:+.1f}%"
+    )
+
+with t19_m4:
+    st.metric(
+        "Engine Efficiency",
+        f"{t19_engine_efficiency_score:.1f}%"
+    )
+
+
+t19_m5, t19_m6, t19_m7 = st.columns(3)
+
+with t19_m5:
+    st.metric(
+        "RPM Utilization",
+        f"{t19_rpm_utilization:.1f}%"
+    )
+
+with t19_m6:
+    st.metric(
+        "Daily Fuel",
+        f"{t19_daily_fuel_tonnes:.2f} t/day"
+    )
+
+with t19_m7:
+    st.metric(
+        "Previous T18 Efficiency",
+        f"{t19_previous_efficiency:.1f}%"
+    )
+
+
+# ------------------------------------------------
+# STATUS
+# ------------------------------------------------
+
+st.subheader("🚦 Engine Performance Status")
+
+if t19_status == "NORMAL":
+
+    st.success(
+        f"{t19_status_icon} NORMAL — Engine SFOC is within "
+        "the configured monitoring tolerance."
+    )
+
+elif t19_status == "WATCH":
+
+    st.warning(
+        f"{t19_status_icon} WATCH — SFOC is moderately above "
+        "the entered reference value."
+    )
+
+elif t19_status == "DEGRADED":
+
+    st.warning(
+        f"{t19_status_icon} DEGRADED — Engine fuel performance "
+        "requires technical review."
+    )
+
+elif t19_status == "HIGH DEGRADATION":
+
+    st.error(
+        f"{t19_status_icon} HIGH DEGRADATION — Significant SFOC "
+        "variance requires investigation."
+    )
+
+else:
+
+    st.info(
+        f"{t19_status_icon} DATA REQUIRED — Enter verified engine "
+        "power and fuel-consumption data."
+    )
+
+
+# ------------------------------------------------
+# INTELLIGENCE FINDINGS
+# ------------------------------------------------
+
+st.subheader("🧠 Engine Intelligence")
+
+t19_intelligence = []
+
+if t19_actual_power <= 0:
+
+    t19_intelligence.append(
+        "Actual engine power is zero or unavailable."
+    )
+
+if t19_actual_fuel_kg_h <= 0:
+
+    t19_intelligence.append(
+        "Actual hourly fuel consumption is zero or unavailable."
+    )
+
+if t19_actual_sfoc > 0:
+
+    if t19_sfoc_variance_percent > 8.0:
+
+        t19_intelligence.append(
+            "Calculated SFOC is materially above the entered "
+            "reference SFOC."
+        )
+
+    elif t19_sfoc_variance_percent > 3.0:
+
+        t19_intelligence.append(
+            "Calculated SFOC is moderately above the entered "
+            "reference SFOC."
+        )
+
+    else:
+
+        t19_intelligence.append(
+            "Calculated SFOC is within the configured monitoring "
+            "tolerance relative to the entered reference."
+        )
+
+
+if t19_engine_load_percent > 95.0:
+
+    t19_intelligence.append(
+        "Engine is operating close to the entered rated-power limit."
+    )
+
+elif (
+    t19_engine_load_percent < 30.0
+    and t19_actual_power > 0
+):
+
+    t19_intelligence.append(
+        "Engine is operating at relatively low load; verify whether "
+        "this operating point is appropriate for the engine."
+    )
+
+
+if t19_previous_degradation >= 8.0:
+
+    t19_intelligence.append(
+        "TAHAP 18 also indicates elevated vessel fuel-performance "
+        "degradation; correlate engine and vessel-level findings."
+    )
+
+
+for item in t19_intelligence:
+    st.write(f"• {item}")
+
+
+# ------------------------------------------------
+# PRIORITY ACTIONS
+# ------------------------------------------------
+
+st.subheader("📋 Priority Actions")
+
+t19_priority_actions = []
+
+if (
+    t19_actual_power <= 0
+    or t19_actual_fuel_kg_h <= 0
+):
+
+    t19_priority_actions.append(
+        "Verify actual engine power, operating hours and measured "
+        "fuel-consumption data."
+    )
+
+
+if t19_sfoc_variance_percent > 3.0:
+
+    t19_priority_actions.append(
+        "Compare calculated SFOC with the applicable OEM reference "
+        "at comparable load and operating conditions."
+    )
+
+
+if t19_sfoc_variance_percent > 8.0:
+
+    t19_priority_actions.append(
+        "Review fuel injection, turbocharger, air system, exhaust "
+        "temperatures and relevant engine performance records."
+    )
+
+
+if t19_sfoc_variance_percent > 15.0:
+
+    t19_priority_actions.append(
+        "Escalate the SFOC deviation for detailed engine-performance "
+        "analysis before concluding that degradation exists."
+    )
+
+
+if t19_engine_load_percent > 95.0:
+
+    t19_priority_actions.append(
+        "Verify permissible continuous engine loading against the "
+        "applicable OEM operating limits."
+    )
+
+
+if t19_engine_condition != "Normal":
+
+    t19_priority_actions.append(
+        "Review outstanding engine defects and maintenance history."
+    )
+
+
+if not t19_priority_actions:
+
+    t19_priority_actions.append(
+        "Continue routine engine-performance and SFOC monitoring."
+    )
+
+
+for index, action in enumerate(
+    t19_priority_actions,
+    start=1
+):
+    st.write(f"{index}. {action}")
+
+
+# ------------------------------------------------
+# DATA QUALITY & VALIDATION
+# ------------------------------------------------
+
+st.subheader("🛡️ Data Quality & Validation")
+
+t19_validation_messages = []
+
+if t19_rated_power <= 0:
+
+    t19_validation_messages.append(
+        "Rated engine power is zero or unavailable."
+    )
+
+if t19_actual_power <= 0:
+
+    t19_validation_messages.append(
+        "Actual engine power is zero or unavailable."
+    )
+
+if t19_reference_sfoc <= 0:
+
+    t19_validation_messages.append(
+        "Reference SFOC is zero or unavailable."
+    )
+
+if t19_actual_fuel_kg_h <= 0:
+
+    t19_validation_messages.append(
+        "Actual hourly fuel consumption is zero or unavailable."
+    )
+
+if t19_rated_rpm <= 0:
+
+    t19_validation_messages.append(
+        "Rated RPM is zero or unavailable."
+    )
+
+
+if t19_validation_messages:
+
+    for message in t19_validation_messages:
+        st.warning(f"🟠 {message}")
+
+else:
+
+    st.success(
+        "🟢 Engine-performance inputs passed the basic "
+        "validation checks."
+    )
+
+
+st.info(
+    "Calculated SFOC and engine-performance results are "
+    "decision-support indicators. A valid comparison normally "
+    "requires verified fuel flow/consumption, engine power and "
+    "RPM together with an applicable OEM/reference performance "
+    "curve at comparable load and ambient/operating conditions. "
+    "Do not use this calculation alone to diagnose engine condition "
+    "or change machinery operating limits."
+)
+
+
+# ------------------------------------------------
+# STORE RESULTS
+# ------------------------------------------------
+
+st.session_state["t19_result_vessel"] = (
+    t19_selected_vessel
+)
+
+st.session_state["t19_result_engine_load_percent"] = (
+    t19_engine_load_percent
+)
+
+st.session_state["t19_result_actual_sfoc"] = (
+    t19_actual_sfoc
+)
+
+st.session_state["t19_result_sfoc_variance"] = (
+    t19_sfoc_variance
+)
+
+st.session_state["t19_result_sfoc_variance_percent"] = (
+    t19_sfoc_variance_percent
+)
+
+st.session_state["t19_result_engine_efficiency_score"] = (
+    t19_engine_efficiency_score
+)
+
+st.session_state["t19_result_daily_fuel_tonnes"] = (
+    t19_daily_fuel_tonnes
+)
+
+st.session_state["t19_result_status"] = (
+    t19_status
+)
+
+st.session_state["t19_result_priority_actions"] = (
+    t19_priority_actions
+)
+
+st.session_state["t19_result_intelligence"] = (
+    t19_intelligence
+)
+
+
+st.success(
+    "✅ TAHAP 19 ACTIVE — Engine Performance & SFOC "
+    "Intelligence is operational."
+)
+
+st.info(
+    "TAHAP 19 results are stored in the application session "
+    "and prepared for the next intelligence modules."
+)
+
+
+# ================================================================
+# END TAHAP 19
+# ================================================================
+
 
