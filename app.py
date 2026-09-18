@@ -13057,4 +13057,504 @@ st.info(
 # END TAHAP 24
 # ============================================================
 
+# ============================================================
+# TAHAP 25
+# FUEL EFFICIENCY RECOMMENDATION & OPTIMIZATION INTELLIGENCE
+# ============================================================
+
+st.divider()
+
+st.header("🎯 Fuel Efficiency Recommendation & Optimization Intelligence")
+
+st.caption(
+    "Integrated decision-support module for identifying fuel-efficiency "
+    "improvement opportunities and management follow-up priorities."
+)
+
+
+# ------------------------------------------------------------
+# SAFE HELPERS
+# ------------------------------------------------------------
+
+def t25_get_state(key, default=0.0):
+    value = st.session_state.get(key, default)
+
+    if value is None:
+        return default
+
+    return value
+
+
+def t25_number(value, default=0.0):
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return float(default)
+
+
+# ------------------------------------------------------------
+# COLLECT AVAILABLE UPSTREAM RESULTS
+# ------------------------------------------------------------
+
+t25_kpi_score = t25_number(
+    t25_get_state(
+        "t24_result_kpi_score",
+        t25_get_state("t21_result_kpi_score", 0.0)
+    )
+)
+
+t25_sfoc = t25_number(
+    t25_get_state(
+        "t24_result_sfoc",
+        t25_get_state("t19_result_sfoc", 0.0)
+    )
+)
+
+t25_predicted_fuel = t25_number(
+    t25_get_state(
+        "t24_result_predicted_fuel",
+        t25_get_state("t20_result_predicted_fuel", 0.0)
+    )
+)
+
+t25_rob = t25_number(
+    t25_get_state(
+        "t24_result_rob",
+        t25_get_state("t16_result_rob", 0.0)
+    )
+)
+
+t25_fuel_loss = t25_number(
+    t25_get_state(
+        "t24_result_fuel_loss",
+        t25_get_state("t17_result_fuel_loss", 0.0)
+    )
+)
+
+t25_cost_saving = t25_number(
+    t25_get_state(
+        "t24_result_cost_saving",
+        t25_get_state("t22_result_cost_saving", 0.0)
+    )
+)
+
+t25_alert_level = str(
+    t25_get_state(
+        "t24_result_alert_level",
+        t25_get_state("t23_result_alert_level", "NORMAL")
+    )
+).upper()
+
+
+# ------------------------------------------------------------
+# OPTIMIZATION OVERVIEW
+# ------------------------------------------------------------
+
+st.subheader("📊 Optimization Overview")
+
+t25_c1, t25_c2, t25_c3 = st.columns(3)
+
+with t25_c1:
+
+    st.metric(
+        "Efficiency KPI",
+        f"{t25_kpi_score:.1f} / 100"
+        if t25_kpi_score > 0
+        else "N/A"
+    )
+
+    st.metric(
+        "SFOC",
+        f"{t25_sfoc:.2f}"
+        if t25_sfoc > 0
+        else "N/A"
+    )
+
+
+with t25_c2:
+
+    st.metric(
+        "Voyage Fuel Forecast",
+        f"{t25_predicted_fuel:.2f} MT"
+        if t25_predicted_fuel > 0
+        else "N/A"
+    )
+
+    st.metric(
+        "Available ROB",
+        f"{t25_rob:.2f} MT"
+        if t25_rob > 0
+        else "N/A"
+    )
+
+
+with t25_c3:
+
+    st.metric(
+        "Fuel Difference",
+        f"{t25_fuel_loss:.2f} MT"
+    )
+
+    st.metric(
+        "Potential Cost Saving",
+        f"USD {t25_cost_saving:,.2f}"
+    )
+
+
+# ------------------------------------------------------------
+# OPTIMIZATION PRIORITY
+# ------------------------------------------------------------
+
+st.subheader("🚦 Optimization Priority")
+
+t25_priority_score = 0
+
+if t25_kpi_score > 0:
+
+    if t25_kpi_score < 75:
+        t25_priority_score += 3
+
+    elif t25_kpi_score < 90:
+        t25_priority_score += 1
+
+
+if abs(t25_fuel_loss) > 0.01:
+    t25_priority_score += 2
+
+
+if (
+    t25_predicted_fuel > 0
+    and t25_rob > 0
+    and t25_rob < t25_predicted_fuel
+):
+    t25_priority_score += 3
+
+
+if "CRITICAL" in t25_alert_level:
+    t25_priority_score += 4
+
+elif "HIGH" in t25_alert_level:
+    t25_priority_score += 3
+
+elif (
+    "WARNING" in t25_alert_level
+    or "MEDIUM" in t25_alert_level
+):
+    t25_priority_score += 1
+
+
+if t25_priority_score >= 6:
+
+    t25_priority = "HIGH"
+
+    st.error(
+        "🔴 HIGH PRIORITY — Multiple indicators require "
+        "management review and verification."
+    )
+
+elif t25_priority_score >= 3:
+
+    t25_priority = "MEDIUM"
+
+    st.warning(
+        "🟠 MEDIUM PRIORITY — Fuel-efficiency improvement "
+        "opportunities require review."
+    )
+
+else:
+
+    t25_priority = "NORMAL"
+
+    st.success(
+        "🟢 NORMAL — Continue routine fuel-efficiency "
+        "optimization and performance monitoring."
+    )
+
+
+# ------------------------------------------------------------
+# RECOMMENDATION ENGINE
+# ------------------------------------------------------------
+
+st.subheader("🧠 Optimization Recommendations")
+
+t25_recommendations = []
+
+
+if t25_kpi_score > 0 and t25_kpi_score < 90:
+
+    t25_recommendations.append(
+        "Review the fuel-efficiency KPI against the configured "
+        "reference and identify the operational contributors "
+        "to the deviation."
+    )
+
+
+if t25_sfoc <= 0:
+
+    t25_recommendations.append(
+        "Complete and verify engine fuel-consumption, power and "
+        "RPM inputs before using SFOC for optimization."
+    )
+
+
+if abs(t25_fuel_loss) > 0.01:
+
+    t25_recommendations.append(
+        "Reconcile tank soundings, ROB, bunker delivery records, "
+        "fuel transfers and machinery consumption before treating "
+        "the difference as an actual fuel loss."
+    )
+
+
+if t25_predicted_fuel > 0 and t25_rob > 0:
+
+    if t25_rob < t25_predicted_fuel:
+
+        t25_recommendations.append(
+            "Review voyage fuel availability against the forecast "
+            "requirement and applicable company/statutory reserve."
+        )
+
+    else:
+
+        t25_recommendations.append(
+            "Continue monitoring ROB against voyage fuel forecast "
+            "as voyage conditions and consumption change."
+        )
+
+
+if t25_cost_saving > 0:
+
+    t25_recommendations.append(
+        "Review the identified cost-saving opportunity against "
+        "verified bunker price, actual consumption and operational "
+        "feasibility before implementation."
+    )
+
+
+if not t25_recommendations:
+
+    t25_recommendations.append(
+        "Continue routine monitoring of fuel consumption, SFOC, "
+        "ROB, voyage performance and fuel cost."
+    )
+
+
+for t25_i, t25_item in enumerate(
+    t25_recommendations,
+    start=1
+):
+
+    st.write(
+        f"{t25_i}. {t25_item}"
+    )
+
+
+# ------------------------------------------------------------
+# OPERATIONAL OPTIMIZATION CHECKLIST
+# ------------------------------------------------------------
+
+st.subheader("⚙️ Operational Optimization Checklist")
+
+t25_checklist = [
+    "Verify actual fuel consumption against machinery operating records.",
+    "Review engine RPM/load against the applicable operating reference.",
+    "Check vessel speed against voyage and operational requirements.",
+    "Review draft and trim conditions.",
+    "Consider weather, current and sea-state effects.",
+    "Review hull and propeller condition where relevant.",
+    "Verify ROB and tank measurement records.",
+    "Review bunker quantity, quality and delivery documentation.",
+    "Compare voyage fuel forecast with actual consumption.",
+    "Verify that proposed efficiency measures remain within OEM, "
+    "company and statutory operating requirements."
+]
+
+for t25_i, t25_item in enumerate(
+    t25_checklist,
+    start=1
+):
+
+    st.write(
+        f"{t25_i}. {t25_item}"
+    )
+
+
+# ------------------------------------------------------------
+# MANAGEMENT ACTION PLAN
+# ------------------------------------------------------------
+
+st.subheader("📋 Management Action Plan")
+
+t25_actions = []
+
+
+if t25_priority == "HIGH":
+
+    t25_actions.append(
+        "Perform a management review of the identified "
+        "fuel-efficiency deviations."
+    )
+
+    t25_actions.append(
+        "Verify the underlying operational and fuel source records "
+        "before corrective action."
+    )
+
+
+elif t25_priority == "MEDIUM":
+
+    t25_actions.append(
+        "Review the identified optimization opportunities and "
+        "monitor the next verified operating period."
+    )
+
+
+else:
+
+    t25_actions.append(
+        "Continue routine fuel-efficiency and voyage-performance "
+        "monitoring."
+    )
+
+
+if t25_cost_saving > 0:
+
+    t25_actions.append(
+        "Track verified fuel consumption and actual financial "
+        "results against the estimated saving opportunity."
+    )
+
+
+for t25_i, t25_action in enumerate(
+    t25_actions,
+    start=1
+):
+
+    st.write(
+        f"{t25_i}. {t25_action}"
+    )
+
+
+# ------------------------------------------------------------
+# DATA QUALITY & VALIDATION
+# ------------------------------------------------------------
+
+st.subheader("🛡️ Data Quality & Validation")
+
+t25_available_data = 0
+
+if t25_kpi_score > 0:
+    t25_available_data += 1
+
+if t25_sfoc > 0:
+    t25_available_data += 1
+
+if t25_predicted_fuel > 0:
+    t25_available_data += 1
+
+if t25_rob > 0:
+    t25_available_data += 1
+
+
+if t25_available_data >= 3:
+
+    st.success(
+        "🟢 Multiple upstream operational indicators are "
+        "available for optimization review."
+    )
+
+elif t25_available_data >= 1:
+
+    st.warning(
+        "🟠 Some upstream operational indicators are unavailable. "
+        "Recommendations should be interpreted with the "
+        "available-data limitations."
+    )
+
+else:
+
+    st.warning(
+        "🟠 Core fuel-efficiency data is currently unavailable. "
+        "Complete and verify the preceding module inputs before "
+        "using optimization recommendations."
+    )
+
+
+# ------------------------------------------------------------
+# DECISION SUPPORT NOTICE
+# ------------------------------------------------------------
+
+st.info(
+    "Fuel-efficiency optimization recommendations are decision-support "
+    "indicators, not automatic machinery or navigation instructions. "
+    "Actual performance can be affected by vessel loading, draft/trim, "
+    "RPM/load, speed, weather/current, sea state, machinery condition, "
+    "hull/propeller condition, fuel properties and measurement quality. "
+    "Verify source records and comply with applicable OEM limits, "
+    "statutory requirements, company procedures and the Master's "
+    "operational authority before implementing changes."
+)
+
+
+# ------------------------------------------------------------
+# SAVE TAHAP 25 RESULTS
+# ------------------------------------------------------------
+
+st.session_state["t25_result_priority_score"] = (
+    t25_priority_score
+)
+
+st.session_state["t25_result_priority"] = (
+    t25_priority
+)
+
+st.session_state["t25_result_recommendations"] = (
+    t25_recommendations
+)
+
+st.session_state["t25_result_actions"] = (
+    t25_actions
+)
+
+st.session_state["t25_result_kpi_score"] = (
+    t25_kpi_score
+)
+
+st.session_state["t25_result_sfoc"] = (
+    t25_sfoc
+)
+
+st.session_state["t25_result_predicted_fuel"] = (
+    t25_predicted_fuel
+)
+
+st.session_state["t25_result_rob"] = (
+    t25_rob
+)
+
+st.session_state["t25_result_cost_saving"] = (
+    t25_cost_saving
+)
+
+
+# ------------------------------------------------------------
+# TAHAP 25 STATUS
+# ------------------------------------------------------------
+
+st.success(
+    "✅ TAHAP 25 ACTIVE — Fuel Efficiency Recommendation & "
+    "Optimization Intelligence is operational."
+)
+
+st.info(
+    "TAHAP 25 results are stored in the application session "
+    "and prepared for the next intelligence modules."
+)
+
+
+# ============================================================
+# END TAHAP 25
+# ============================================================
+
 
