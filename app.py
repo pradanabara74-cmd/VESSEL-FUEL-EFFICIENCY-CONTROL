@@ -20571,6 +20571,180 @@ st.info(
 # END TAHAP 42
 # =============================================================================
 
+# ================================================================
+# TAHAP 43
+# FLEET ALERT, ESCALATION & MANAGEMENT RESPONSE INTELLIGENCE
+# ================================================================
+
+st.markdown("---")
+st.header("🚨 Fleet Alert & Escalation Intelligence")
+
+# ------------------------------------------------
+# TAHAP 43 - UPSTREAM INTELLIGENCE
+# ------------------------------------------------
+
+stage42_data = st.session_state.get("tahap_42_results", {})
+
+# ------------------------------------------------
+# MANAGEMENT ALERT REGISTER
+# ------------------------------------------------
+
+fleet_alerts = []
+
+if isinstance(stage42_data, dict):
+    risk_level = str(
+        stage42_data.get(
+            "risk_level",
+            stage42_data.get("fleet_risk_level", "NOT ASSESSED")
+        )
+    ).upper()
+
+    priority_level = str(
+        stage42_data.get(
+            "priority",
+            stage42_data.get("priority_level", "NORMAL")
+        )
+    ).upper()
+
+    if risk_level in ["HIGH", "CRITICAL"]:
+        fleet_alerts.append(
+            {
+                "category": "Fleet Risk",
+                "severity": risk_level,
+                "action": "Verify the underlying operational data and "
+                          "escalate verified material deviations in "
+                          "accordance with company procedures."
+            }
+        )
+
+    if priority_level in ["HIGH", "CRITICAL", "URGENT"]:
+        fleet_alerts.append(
+            {
+                "category": "Management Priority",
+                "severity": priority_level,
+                "action": "Management review is recommended after "
+                          "verification of the supporting records."
+            }
+        )
+
+# ------------------------------------------------
+# ALERT STATUS
+# ------------------------------------------------
+
+if fleet_alerts:
+    alert_status = "REVIEW REQUIRED"
+else:
+    alert_status = "MONITOR"
+
+# ------------------------------------------------
+# SESSION STATE
+# ------------------------------------------------
+
+tahap_43_results = {
+    "module": "Fleet Alert & Escalation Intelligence",
+    "status": "ACTIVE",
+    "alert_status": alert_status,
+    "alert_count": len(fleet_alerts),
+    "alerts": fleet_alerts,
+    "source_stage": 42,
+}
+
+st.session_state["tahap_43_results"] = tahap_43_results
+
+# ------------------------------------------------
+# MANAGEMENT STATUS
+# ------------------------------------------------
+
+st.subheader("📡 Management Alert Status")
+
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    st.metric(
+        "Alert Status",
+        alert_status
+    )
+
+with col2:
+    st.metric(
+        "Alerts Identified",
+        len(fleet_alerts)
+    )
+
+with col3:
+    st.metric(
+        "Upstream Stage",
+        "TAHAP 42"
+    )
+
+# ------------------------------------------------
+# ALERT REGISTER
+# ------------------------------------------------
+
+st.subheader("🚨 Alert & Escalation Register")
+
+if fleet_alerts:
+    for alert in fleet_alerts:
+        st.warning(
+            f"{alert['category']} | "
+            f"Severity: {alert['severity']} | "
+            f"{alert['action']}"
+        )
+else:
+    st.info(
+        "No management escalation has been generated from the "
+        "currently available TAHAP 42 information. Continue monitoring "
+        "and verify material operational deviations against source records."
+    )
+
+# ------------------------------------------------
+# DATA QUALITY & VALIDATION
+# ------------------------------------------------
+
+st.subheader("🛡️ Data Quality & Validation")
+
+if stage42_data:
+    st.success(
+        "🟢 TAHAP 42 Fleet Risk & Priority Management Intelligence "
+        "is available for TAHAP 43 assessment."
+    )
+else:
+    st.warning(
+        "🟠 TAHAP 42 structured results are not currently available. "
+        "TAHAP 43 remains operational with limited upstream information."
+    )
+
+st.info(
+    "Fleet Alert & Escalation Intelligence is a decision-support "
+    "screening module. Alerts, priorities and escalation indicators "
+    "do not independently establish machinery failure, fuel loss, theft, "
+    "crew performance, commercial responsibility, regulatory compliance, "
+    "causation or future financial results. Verify actual vessel records, "
+    "fuel measurements, tank soundings, ROB, bunker documentation, engine "
+    "parameters, RPM/load, vessel speed, draft/trim, weather/current, sea "
+    "state, voyage conditions, hull/propeller condition, fuel properties "
+    "and applicable OEM/company requirements before technical, operational, "
+    "safety, procurement, financial or commercial action."
+)
+
+# ------------------------------------------------
+# TAHAP 43 STATUS
+# ------------------------------------------------
+
+st.success(
+    "✅ TAHAP 43 ACTIVE — Fleet Alert, Escalation & Management "
+    "Response Intelligence is operational."
+)
+
+st.info(
+    "TAHAP 43 results are stored in the application session "
+    "and prepared for the next intelligence module."
+)
+
+# ================================================================
+# END TAHAP 43
+# ================================================================
+
 
 
 
