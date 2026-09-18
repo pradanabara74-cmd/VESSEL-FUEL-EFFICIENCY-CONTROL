@@ -14449,4 +14449,507 @@ st.info(
 # END TAHAP 28
 # =============================================================================
 
+# =============================================================================
+# TAHAP 29
+# FLEET FUEL EFFICIENCY RISK & OPPORTUNITY INTELLIGENCE
+# =============================================================================
+
+st.markdown("---")
+st.header("⚖️ Fleet Fuel Efficiency Risk & Opportunity Intelligence")
+
+st.caption(
+    "Management decision-support module for consolidating available "
+    "fuel-efficiency risks, saving opportunities and follow-up priorities."
+)
+
+# -----------------------------------------------------------------------------
+# SAFE UPSTREAM DATA
+# -----------------------------------------------------------------------------
+
+def t29_safe_float(value, default=0.0):
+    try:
+        if value is None:
+            return default
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def t29_safe_int(value, default=0):
+    try:
+        if value is None:
+            return default
+        return int(float(value))
+    except (TypeError, ValueError):
+        return default
+
+
+t29_kpi_score = t29_safe_float(
+    st.session_state.get(
+        "t28_result_kpi_score",
+        st.session_state.get(
+            "t21_result_kpi_score",
+            0.0
+        )
+    )
+)
+
+t29_potential_saving = t29_safe_float(
+    st.session_state.get(
+        "t28_result_potential_saving",
+        st.session_state.get(
+            "t23_result_potential_cost_saving",
+            0.0
+        )
+    )
+)
+
+t29_active_actions = t29_safe_int(
+    st.session_state.get(
+        "t28_result_active_actions",
+        st.session_state.get(
+            "t26_result_active_actions",
+            0
+        )
+    )
+)
+
+t29_benchmark_score = t29_safe_float(
+    st.session_state.get(
+        "t28_result_benchmark_score",
+        st.session_state.get(
+            "t27_result_benchmark_score",
+            0.0
+        )
+    )
+)
+
+t29_management_priority = str(
+    st.session_state.get(
+        "t28_result_priority",
+        "DATA REVIEW"
+    )
+).upper()
+
+# -----------------------------------------------------------------------------
+# DATA AVAILABILITY
+# -----------------------------------------------------------------------------
+
+t29_kpi_available = t29_kpi_score > 0
+t29_saving_available = t29_potential_saving > 0
+t29_benchmark_available = t29_benchmark_score > 0
+t29_actions_available = t29_active_actions > 0
+
+t29_available_count = sum(
+    [
+        t29_kpi_available,
+        t29_saving_available,
+        t29_benchmark_available,
+        t29_actions_available,
+    ]
+)
+
+t29_upstream_available = t29_available_count > 0
+
+# -----------------------------------------------------------------------------
+# RISK ASSESSMENT
+# -----------------------------------------------------------------------------
+
+t29_risk_points = 0
+t29_risk_factors = []
+
+if t29_kpi_available:
+    if t29_kpi_score < 70:
+        t29_risk_points += 3
+        t29_risk_factors.append(
+            "Fuel-efficiency KPI is below the configured 70-point threshold."
+        )
+
+    elif t29_kpi_score < 85:
+        t29_risk_points += 2
+        t29_risk_factors.append(
+            "Fuel-efficiency KPI is below the configured 85-point threshold."
+        )
+
+    elif t29_kpi_score < 95:
+        t29_risk_points += 1
+        t29_risk_factors.append(
+            "Fuel-efficiency KPI is below the configured 95-point threshold."
+        )
+
+
+if t29_benchmark_available:
+    if t29_benchmark_score < 70:
+        t29_risk_points += 3
+        t29_risk_factors.append(
+            "Benchmark score is below the configured 70-point threshold."
+        )
+
+    elif t29_benchmark_score < 85:
+        t29_risk_points += 2
+        t29_risk_factors.append(
+            "Benchmark score is below the configured 85-point threshold."
+        )
+
+    elif t29_benchmark_score < 95:
+        t29_risk_points += 1
+        t29_risk_factors.append(
+            "Benchmark score is below the configured 95-point threshold."
+        )
+
+
+if t29_active_actions >= 5:
+    t29_risk_points += 3
+    t29_risk_factors.append(
+        "Five or more fuel-efficiency actions remain active/open."
+    )
+
+elif t29_active_actions >= 3:
+    t29_risk_points += 2
+    t29_risk_factors.append(
+        "Three or more fuel-efficiency actions remain active/open."
+    )
+
+elif t29_active_actions >= 1:
+    t29_risk_points += 1
+    t29_risk_factors.append(
+        "Fuel-efficiency actions remain active/open."
+    )
+
+
+if t29_management_priority == "HIGH":
+    t29_risk_points += 3
+    t29_risk_factors.append(
+        "TAHAP 28 classified the available management priority as HIGH."
+    )
+
+elif t29_management_priority == "MEDIUM":
+    t29_risk_points += 2
+    t29_risk_factors.append(
+        "TAHAP 28 classified the available management priority as MEDIUM."
+    )
+
+elif t29_management_priority == "ROUTINE":
+    t29_risk_points += 0
+
+# -----------------------------------------------------------------------------
+# RISK CLASSIFICATION
+# -----------------------------------------------------------------------------
+
+if not t29_upstream_available:
+    t29_risk_level = "DATA REVIEW"
+
+elif t29_risk_points >= 8:
+    t29_risk_level = "HIGH"
+
+elif t29_risk_points >= 4:
+    t29_risk_level = "MEDIUM"
+
+else:
+    t29_risk_level = "LOW"
+
+# -----------------------------------------------------------------------------
+# OPPORTUNITY ASSESSMENT
+# -----------------------------------------------------------------------------
+
+if not t29_saving_available:
+    t29_opportunity_level = "NOT QUANTIFIED"
+
+elif t29_potential_saving >= 10000:
+    t29_opportunity_level = "HIGH"
+
+elif t29_potential_saving >= 5000:
+    t29_opportunity_level = "MEDIUM"
+
+else:
+    t29_opportunity_level = "AVAILABLE"
+
+# -----------------------------------------------------------------------------
+# EXECUTIVE METRICS
+# -----------------------------------------------------------------------------
+
+st.subheader("📊 Risk & Opportunity Summary")
+
+t29_col1, t29_col2, t29_col3, t29_col4 = st.columns(4)
+
+with t29_col1:
+    st.metric(
+        "Risk Level",
+        t29_risk_level
+    )
+
+with t29_col2:
+    st.metric(
+        "Potential Saving",
+        (
+            f"${t29_potential_saving:,.2f}"
+            if t29_saving_available
+            else "$0.00"
+        )
+    )
+
+with t29_col3:
+    st.metric(
+        "Opportunity",
+        t29_opportunity_level
+    )
+
+with t29_col4:
+    st.metric(
+        "Active / Open",
+        t29_active_actions
+    )
+
+# -----------------------------------------------------------------------------
+# MANAGEMENT RISK INTERPRETATION
+# -----------------------------------------------------------------------------
+
+st.subheader("🚦 Management Risk Interpretation")
+
+if t29_risk_level == "HIGH":
+
+    st.error(
+        "🔴 HIGH — Multiple available indicators exceed the configured "
+        "management-review thresholds. Verify the underlying operational "
+        "data and review the contributing factors."
+    )
+
+elif t29_risk_level == "MEDIUM":
+
+    st.warning(
+        "🟠 MEDIUM — Available indicators identify items requiring "
+        "management follow-up and verification."
+    )
+
+elif t29_risk_level == "LOW":
+
+    st.success(
+        "🟢 LOW — Available indicators do not currently exceed the "
+        "configured elevated-risk thresholds."
+    )
+
+else:
+
+    st.warning(
+        "🟠 DATA REVIEW — Available upstream information is insufficient "
+        "for a complete risk classification."
+    )
+
+# -----------------------------------------------------------------------------
+# IDENTIFIED RISK FACTORS
+# -----------------------------------------------------------------------------
+
+st.subheader("🔎 Identified Risk Factors")
+
+if t29_risk_factors:
+
+    for t29_index, t29_factor in enumerate(
+        t29_risk_factors,
+        start=1
+    ):
+        st.write(
+            f"{t29_index}. {t29_factor}"
+        )
+
+else:
+
+    st.write(
+        "No elevated risk factor was identified from the currently "
+        "available configured indicators."
+    )
+
+# -----------------------------------------------------------------------------
+# OPPORTUNITY INTELLIGENCE
+# -----------------------------------------------------------------------------
+
+st.subheader("💰 Efficiency Opportunity Intelligence")
+
+if t29_saving_available:
+
+    st.success(
+        f"Identified potential fuel-cost saving opportunity: "
+        f"${t29_potential_saving:,.2f}."
+    )
+
+    st.write(
+        "The amount is an upstream decision-support estimate and should "
+        "be validated against actual fuel consumption, bunker price, "
+        "voyage conditions and applicable commercial records."
+    )
+
+else:
+
+    st.info(
+        "A quantified financial saving opportunity is not currently "
+        "available from the upstream intelligence."
+    )
+
+# -----------------------------------------------------------------------------
+# MANAGEMENT ACTION PLAN
+# -----------------------------------------------------------------------------
+
+st.subheader("📋 Priority Management Actions")
+
+t29_actions = []
+
+if t29_risk_level == "HIGH":
+
+    t29_actions.append(
+        "Perform management review of the contributing fuel-efficiency "
+        "indicators and verify the underlying operational records."
+    )
+
+elif t29_risk_level == "MEDIUM":
+
+    t29_actions.append(
+        "Review the contributing indicators during the next management "
+        "performance review and verify material deviations."
+    )
+
+
+if t29_kpi_available and t29_kpi_score < 85:
+
+    t29_actions.append(
+        "Review verified fuel-consumption and engine-performance data "
+        "supporting the fuel-efficiency KPI."
+    )
+
+
+if t29_benchmark_available and t29_benchmark_score < 85:
+
+    t29_actions.append(
+        "Review benchmark results using comparable vessel configuration, "
+        "loading and operating conditions."
+    )
+
+
+if t29_active_actions > 0:
+
+    t29_actions.append(
+        f"Follow up {t29_active_actions} active/open fuel-efficiency "
+        "action(s) and update their implementation status."
+    )
+
+
+if t29_saving_available:
+
+    t29_actions.append(
+        "Validate the identified saving opportunity against verified "
+        "fuel consumption and actual financial records."
+    )
+
+
+if not t29_actions:
+
+    t29_actions.append(
+        "Continue routine fuel-efficiency, ROB, engine-performance, "
+        "voyage-performance and financial monitoring."
+    )
+
+
+for t29_index, t29_action in enumerate(
+    t29_actions,
+    start=1
+):
+    st.write(
+        f"{t29_index}. {t29_action}"
+    )
+
+# -----------------------------------------------------------------------------
+# DATA QUALITY & VALIDATION
+# -----------------------------------------------------------------------------
+
+st.subheader("🛡️ Data Quality & Validation")
+
+if t29_available_count >= 3:
+
+    st.success(
+        "🟢 Multiple upstream intelligence indicators are available for "
+        "risk and opportunity assessment."
+    )
+
+elif t29_upstream_available:
+
+    st.warning(
+        "🟠 Only part of the upstream intelligence is currently available. "
+        "Interpret the assessment with the available-data limitations."
+    )
+
+else:
+
+    st.warning(
+        "🟠 Upstream intelligence is unavailable for a complete risk and "
+        "opportunity assessment."
+    )
+
+
+st.info(
+    "Risk and opportunity classifications are decision-support indicators "
+    "generated from configured thresholds and available operational data. "
+    "They do not independently establish machinery condition, crew "
+    "performance, fuel loss, commercial responsibility, causation or "
+    "future financial results. Verify actual fuel measurements, tank "
+    "soundings, ROB, bunker records, engine performance, RPM/load, vessel "
+    "speed, draft/trim, weather/current, voyage conditions, hull/propeller "
+    "condition, fuel prices and applicable OEM/company requirements before "
+    "technical, operational, safety, procurement or commercial action."
+)
+
+# -----------------------------------------------------------------------------
+# STORE TAHAP 29 RESULTS
+# -----------------------------------------------------------------------------
+
+st.session_state["t29_result_risk_level"] = t29_risk_level
+st.session_state["t29_result_risk_points"] = t29_risk_points
+
+st.session_state["t29_result_opportunity_level"] = (
+    t29_opportunity_level
+)
+
+st.session_state["t29_result_potential_saving"] = (
+    t29_potential_saving
+)
+
+st.session_state["t29_result_active_actions"] = (
+    t29_active_actions
+)
+
+st.session_state["t29_result_kpi_score"] = (
+    t29_kpi_score
+)
+
+st.session_state["t29_result_benchmark_score"] = (
+    t29_benchmark_score
+)
+
+st.session_state["t29_result_risk_factors"] = (
+    t29_risk_factors
+)
+
+st.session_state["t29_result_actions"] = (
+    t29_actions
+)
+
+st.session_state["t29_result_upstream_available"] = (
+    t29_upstream_available
+)
+
+# -----------------------------------------------------------------------------
+# TAHAP 29 STATUS
+# -----------------------------------------------------------------------------
+
+st.success(
+    "✅ TAHAP 29 ACTIVE — Fleet Fuel Efficiency Risk & Opportunity "
+    "Intelligence is operational."
+)
+
+st.info(
+    "TAHAP 29 results are stored in the application session "
+    "and prepared for the next intelligence modules."
+)
+
+# =============================================================================
+# END TAHAP 29
+# =============================================================================
+
 
