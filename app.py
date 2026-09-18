@@ -6119,3 +6119,584 @@ st.info(
 # ============================================================
 # END TAHAP 11
 # ============================================================
+
+# ============================================================
+# TAHAP 12 - FUEL ANOMALY DETECTION & EARLY WARNING INTELLIGENCE
+# ============================================================
+
+st.divider()
+st.header("🚨 Fuel Anomaly Detection & Early Warning Intelligence")
+
+st.caption(
+    "Integrated early-warning analysis for abnormal fuel consumption, "
+    "performance deviation, commercial exposure and management response."
+)
+
+
+# ------------------------------------------------------------
+# VESSEL CONTEXT
+# ------------------------------------------------------------
+
+t12_selected_vessel = st.session_state.get(
+    "t11_result_vessel",
+    st.session_state.get(
+        "selected_fleet_vessel",
+        st.session_state.get(
+            "sidebar_vessel_name",
+            globals().get("vessel_name", "ASL MANTRUS")
+        )
+    )
+)
+
+st.subheader("🚢 Early Warning Vessel")
+st.info(
+    f"Fuel anomaly and early-warning analysis for: "
+    f"**{t12_selected_vessel}**"
+)
+
+
+# ------------------------------------------------------------
+# SAFE NUMBER FUNCTION
+# ------------------------------------------------------------
+
+def t12_safe_float(value, default=0.0):
+    try:
+        if value is None:
+            return float(default)
+        return float(value)
+    except (TypeError, ValueError):
+        return float(default)
+
+
+# ------------------------------------------------------------
+# COLLECT UPSTREAM INTELLIGENCE
+# ------------------------------------------------------------
+
+t12_management_score = t12_safe_float(
+    st.session_state.get(
+        "t11_result_management_score",
+        0.0
+    )
+)
+
+t12_efficiency_score = t12_safe_float(
+    st.session_state.get(
+        "t11_result_efficiency_score",
+        0.0
+    )
+)
+
+t12_optimization_score = t12_safe_float(
+    st.session_state.get(
+        "t11_result_optimization_score",
+        0.0
+    )
+)
+
+t12_data_quality_score = t12_safe_float(
+    st.session_state.get(
+        "t11_result_data_quality_score",
+        0.0
+    )
+)
+
+t12_excess_fuel = t12_safe_float(
+    st.session_state.get(
+        "t11_result_excess_fuel",
+        0.0
+    )
+)
+
+t12_excess_cost = t12_safe_float(
+    st.session_state.get(
+        "t11_result_excess_cost",
+        0.0
+    )
+)
+
+t12_saving_opportunity = t12_safe_float(
+    st.session_state.get(
+        "t11_result_saving_opportunity",
+        0.0
+    )
+)
+
+t12_days_to_reserve = t12_safe_float(
+    st.session_state.get(
+        "t8_result_days_to_reserve",
+        0.0
+    )
+)
+
+
+# ------------------------------------------------------------
+# NORMALIZE SCORES
+# ------------------------------------------------------------
+
+def t12_normalize_score(value):
+    value = t12_safe_float(value, 0.0)
+    return max(0.0, min(100.0, value))
+
+
+t12_management_score = t12_normalize_score(
+    t12_management_score
+)
+
+t12_efficiency_score = t12_normalize_score(
+    t12_efficiency_score
+)
+
+t12_optimization_score = t12_normalize_score(
+    t12_optimization_score
+)
+
+t12_data_quality_score = t12_normalize_score(
+    t12_data_quality_score
+)
+
+
+# ------------------------------------------------------------
+# ANOMALY POINT SYSTEM
+# ------------------------------------------------------------
+
+t12_anomaly_points = 0
+t12_anomaly_reasons = []
+
+
+# Fuel efficiency
+if t12_efficiency_score < 60:
+    t12_anomaly_points += 30
+    t12_anomaly_reasons.append(
+        "Fuel-efficiency score is below 60."
+    )
+
+elif t12_efficiency_score < 75:
+    t12_anomaly_points += 15
+    t12_anomaly_reasons.append(
+        "Fuel-efficiency score is below the preferred benchmark."
+    )
+
+
+# Optimization
+if t12_optimization_score < 60:
+    t12_anomaly_points += 20
+    t12_anomaly_reasons.append(
+        "Optimization score indicates significant improvement potential."
+    )
+
+elif t12_optimization_score < 75:
+    t12_anomaly_points += 10
+    t12_anomaly_reasons.append(
+        "Optimization performance requires monitoring."
+    )
+
+
+# Management performance
+if t12_management_score < 60:
+    t12_anomaly_points += 20
+    t12_anomaly_reasons.append(
+        "Integrated management performance score requires review."
+    )
+
+elif t12_management_score < 75:
+    t12_anomaly_points += 10
+    t12_anomaly_reasons.append(
+        "Integrated management performance is below the preferred range."
+    )
+
+
+# Excess fuel
+if t12_excess_fuel > 0:
+    t12_anomaly_points += 15
+    t12_anomaly_reasons.append(
+        "Upstream intelligence detected excess fuel consumption."
+    )
+
+
+# Excess cost
+if t12_excess_cost > 0:
+    t12_anomaly_points += 10
+    t12_anomaly_reasons.append(
+        "Fuel deviation is producing a measurable cost impact."
+    )
+
+
+# Data quality
+if t12_data_quality_score < 60:
+    t12_anomaly_points += 15
+    t12_anomaly_reasons.append(
+        "Low data quality reduces confidence in the analysis."
+    )
+
+elif t12_data_quality_score < 80:
+    t12_anomaly_points += 5
+    t12_anomaly_reasons.append(
+        "Source data should be further verified."
+    )
+
+
+# Reserve exposure
+if 0 < t12_days_to_reserve <= 2:
+    t12_anomaly_points += 30
+    t12_anomaly_reasons.append(
+        "Fuel reserve threshold may be reached within two days."
+    )
+
+elif 2 < t12_days_to_reserve <= 5:
+    t12_anomaly_points += 15
+    t12_anomaly_reasons.append(
+        "Fuel reserve threshold may be approached within five days."
+    )
+
+
+t12_anomaly_score = min(
+    100.0,
+    float(t12_anomaly_points)
+)
+
+
+# ------------------------------------------------------------
+# ALERT LEVEL
+# ------------------------------------------------------------
+
+if t12_anomaly_score >= 70:
+    t12_alert_level = "CRITICAL"
+    t12_alert_icon = "🔴"
+
+elif t12_anomaly_score >= 45:
+    t12_alert_level = "HIGH"
+    t12_alert_icon = "🟠"
+
+elif t12_anomaly_score >= 20:
+    t12_alert_level = "WATCH"
+    t12_alert_icon = "🟡"
+
+else:
+    t12_alert_level = "NORMAL"
+    t12_alert_icon = "🟢"
+
+
+# ------------------------------------------------------------
+# EARLY WARNING DASHBOARD
+# ------------------------------------------------------------
+
+st.subheader("📊 Early Warning Dashboard")
+
+t12_c1, t12_c2, t12_c3, t12_c4 = st.columns(4)
+
+with t12_c1:
+    st.metric(
+        "Anomaly Score",
+        f"{t12_anomaly_score:.0f}/100"
+    )
+
+with t12_c2:
+    st.metric(
+        "Alert Level",
+        t12_alert_level
+    )
+
+with t12_c3:
+    st.metric(
+        "Excess Fuel",
+        f"{t12_excess_fuel:,.2f}"
+    )
+
+with t12_c4:
+    st.metric(
+        "Excess Cost",
+        f"{t12_excess_cost:,.2f}"
+    )
+
+
+# ------------------------------------------------------------
+# MANAGEMENT ALERT
+# ------------------------------------------------------------
+
+st.subheader("🚦 Management Alert")
+
+if t12_alert_level == "CRITICAL":
+
+    st.error(
+        f"{t12_alert_icon} CRITICAL — Multiple fuel-performance "
+        "risk indicators require prompt operational and management review."
+    )
+
+elif t12_alert_level == "HIGH":
+
+    st.error(
+        f"{t12_alert_icon} HIGH — Significant fuel-performance "
+        "deviation or operational exposure has been detected."
+    )
+
+elif t12_alert_level == "WATCH":
+
+    st.warning(
+        f"{t12_alert_icon} WATCH — Fuel-performance indicators "
+        "should be monitored and verified."
+    )
+
+else:
+
+    st.success(
+        f"{t12_alert_icon} NORMAL — No significant integrated "
+        "fuel anomaly is currently detected."
+    )
+
+
+# ------------------------------------------------------------
+# DETECTED ANOMALIES
+# ------------------------------------------------------------
+
+st.subheader("🔎 Detected Anomalies")
+
+if t12_anomaly_reasons:
+
+    for reason in t12_anomaly_reasons:
+        st.write(f"• {reason}")
+
+else:
+
+    st.success(
+        "No significant anomaly trigger is currently identified."
+    )
+
+
+# ------------------------------------------------------------
+# POSSIBLE CONTRIBUTING FACTORS
+# ------------------------------------------------------------
+
+st.subheader("🧠 Possible Contributing Factors")
+
+t12_possible_causes = []
+
+if t12_excess_fuel > 0:
+
+    t12_possible_causes.extend(
+        [
+            "RPM/load may be above the efficient operating range.",
+            "Vessel speed may not match the approved economical profile.",
+            "Weather or current may be increasing propulsion demand.",
+            "Draft or trim condition may be increasing resistance.",
+            "Hull or propeller condition may be affecting efficiency.",
+            "Machinery performance may differ from the approved baseline."
+        ]
+    )
+
+if t12_optimization_score < 75:
+
+    t12_possible_causes.append(
+        "Current operating strategy may have additional optimization potential."
+    )
+
+if t12_data_quality_score < 80:
+
+    t12_possible_causes.append(
+        "Measurement or source-data uncertainty may be affecting "
+        "the calculated performance indicators."
+    )
+
+if not t12_possible_causes:
+
+    t12_possible_causes.append(
+        "No specific contributing factor is identified from the "
+        "available upstream intelligence."
+    )
+
+for cause in t12_possible_causes:
+    st.write(f"• {cause}")
+
+
+# ------------------------------------------------------------
+# SAVING OPPORTUNITY
+# ------------------------------------------------------------
+
+st.subheader("💰 Financial Opportunity")
+
+t12_f1, t12_f2 = st.columns(2)
+
+with t12_f1:
+
+    st.metric(
+        "Current Excess Cost",
+        f"{t12_excess_cost:,.2f}"
+    )
+
+with t12_f2:
+
+    st.metric(
+        "Identified Saving Opportunity",
+        f"{t12_saving_opportunity:,.2f}"
+    )
+
+
+# ------------------------------------------------------------
+# PRIORITY ACTIONS
+# ------------------------------------------------------------
+
+st.subheader("📋 Priority Actions")
+
+t12_priority_actions = []
+
+if t12_alert_level in ["CRITICAL", "HIGH"]:
+
+    t12_priority_actions.append(
+        "Verify actual fuel ROB, tank soundings and daily consumption "
+        "before taking operational or commercial action."
+    )
+
+if t12_excess_fuel > 0:
+
+    t12_priority_actions.append(
+        "Compare actual RPM/load and vessel speed against the approved "
+        "fuel-performance baseline."
+    )
+
+    t12_priority_actions.append(
+        "Review weather/current, draft/trim, hull condition, propeller "
+        "condition and machinery performance."
+    )
+
+if t12_excess_cost > 0:
+
+    t12_priority_actions.append(
+        "Verify bunker price, invoices and operating budget to confirm "
+        "the financial impact."
+    )
+
+if 0 < t12_days_to_reserve <= 5:
+
+    t12_priority_actions.append(
+        "Review voyage fuel requirement, reserve policy and bunker "
+        "availability before the projected reserve threshold."
+    )
+
+if t12_data_quality_score < 80:
+
+    t12_priority_actions.append(
+        "Improve source-data verification before escalating the "
+        "anomaly for management decision."
+    )
+
+if not t12_priority_actions:
+
+    t12_priority_actions.append(
+        "Continue monitoring actual fuel consumption against the "
+        "approved vessel baseline."
+    )
+
+for number, action in enumerate(
+    t12_priority_actions,
+    start=1
+):
+    st.write(f"{number}. {action}")
+
+
+# ------------------------------------------------------------
+# DATA QUALITY & VALIDATION
+# ------------------------------------------------------------
+
+st.subheader("🛡️ Data Quality & Validation")
+
+t12_validation = []
+
+if t12_efficiency_score <= 0:
+    t12_validation.append(
+        "Fuel-efficiency score is zero or unavailable."
+    )
+
+if t12_optimization_score <= 0:
+    t12_validation.append(
+        "Optimization score is zero or unavailable."
+    )
+
+if t12_management_score <= 0:
+    t12_validation.append(
+        "Management performance score is zero or unavailable."
+    )
+
+if t12_data_quality_score <= 0:
+    t12_validation.append(
+        "Data-quality score is zero or unavailable."
+    )
+
+
+if not t12_validation:
+
+    st.success(
+        "🟢 Fuel anomaly detection inputs passed "
+        "the basic validation checks."
+    )
+
+else:
+
+    for note in t12_validation:
+        st.warning(f"🟠 {note}")
+
+
+st.info(
+    "Fuel anomaly and early-warning results are decision-support estimates. "
+    "An alert does not by itself establish the cause of abnormal consumption. "
+    "Before operational, technical, safety or commercial action, verify "
+    "actual fuel measurements, tank calibration, fuel density, machinery "
+    "performance, RPM/load, vessel speed, draft/trim, weather/current, "
+    "voyage requirements, reserve requirements and applicable company "
+    "procedures."
+)
+
+
+# ------------------------------------------------------------
+# SAVE TAHAP 12 RESULTS
+# ------------------------------------------------------------
+
+st.session_state["t12_result_vessel"] = (
+    t12_selected_vessel
+)
+
+st.session_state["t12_result_anomaly_score"] = (
+    t12_anomaly_score
+)
+
+st.session_state["t12_result_alert_level"] = (
+    t12_alert_level
+)
+
+st.session_state["t12_result_excess_fuel"] = (
+    t12_excess_fuel
+)
+
+st.session_state["t12_result_excess_cost"] = (
+    t12_excess_cost
+)
+
+st.session_state["t12_result_saving_opportunity"] = (
+    t12_saving_opportunity
+)
+
+st.session_state["t12_result_anomaly_reasons"] = (
+    t12_anomaly_reasons
+)
+
+st.session_state["t12_result_possible_causes"] = (
+    t12_possible_causes
+)
+
+st.session_state["t12_result_priority_actions"] = (
+    t12_priority_actions
+)
+
+
+st.success(
+    "✅ TAHAP 12 ACTIVE — Fuel Anomaly Detection & Early Warning "
+    "Intelligence is operational."
+)
+
+st.info(
+    "TAHAP 12 results are stored in the application session and "
+    "prepared for the next intelligence modules."
+)
+
+
+# ============================================================
+# END TAHAP 12
+# ============================================================
