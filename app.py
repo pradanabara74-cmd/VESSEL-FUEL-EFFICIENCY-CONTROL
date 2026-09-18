@@ -8884,3 +8884,552 @@ st.info(
 # ================================================================
 
 
+# ================================================================
+# TAHAP 17 - FUEL LOSS, LEAKAGE & UNACCOUNTED FUEL INTELLIGENCE
+# ================================================================
+
+st.divider()
+st.header("🔍 Fuel Loss, Leakage & Unaccounted Fuel Intelligence")
+
+st.caption(
+    "Fuel discrepancy detection, unaccounted-fuel analysis, "
+    "ROB variance monitoring, investigation triggers and management actions."
+)
+
+# ------------------------------------------------
+# SAFE NUMBER CONVERTER
+# ------------------------------------------------
+
+def t17_safe_float(value, default=0.0):
+    try:
+        if value is None:
+            return float(default)
+        return float(value)
+    except (TypeError, ValueError):
+        return float(default)
+
+
+# ------------------------------------------------
+# VESSEL CONTEXT
+# ------------------------------------------------
+
+t17_selected_vessel = st.session_state.get(
+    "t16_result_vessel",
+    st.session_state.get(
+        "selected_fleet_vessel",
+        globals().get("vessel_name", "ASL MANTRUS")
+    )
+)
+
+st.subheader("🚢 Fuel Loss Monitoring Vessel")
+st.info(f"Selected Vessel: **{t17_selected_vessel}**")
+
+
+# ------------------------------------------------
+# IMPORT TAHAP 16 RESULTS
+# ------------------------------------------------
+
+t17_opening_rob = t17_safe_float(
+    st.session_state.get("t16_result_opening_rob", 0.0)
+)
+
+t17_bunker_received = t17_safe_float(
+    st.session_state.get("t16_result_bunker_received", 0.0)
+)
+
+t17_available_fuel = t17_safe_float(
+    st.session_state.get("t16_result_available_fuel", 0.0)
+)
+
+t17_recorded_consumption = t17_safe_float(
+    st.session_state.get("t16_result_daily_consumption", 0.0)
+)
+
+t17_expected_closing_rob = t17_safe_float(
+    st.session_state.get("t16_result_expected_closing_rob", 0.0)
+)
+
+t17_measured_closing_rob = t17_safe_float(
+    st.session_state.get("t16_result_measured_closing_rob", 0.0)
+)
+
+
+# ------------------------------------------------
+# LOSS ANALYSIS INPUT
+# ------------------------------------------------
+
+st.subheader("🛢️ Fuel Loss Investigation Data")
+
+t17_c1, t17_c2, t17_c3 = st.columns(3)
+
+with t17_c1:
+
+    t17_verified_opening_rob = st.number_input(
+        "Verified Opening ROB",
+        min_value=0.0,
+        value=float(max(t17_opening_rob, 0.0)),
+        step=100.0,
+        key="t17_verified_opening_rob"
+    )
+
+    t17_verified_bunker = st.number_input(
+        "Verified Bunker Received",
+        min_value=0.0,
+        value=float(max(t17_bunker_received, 0.0)),
+        step=100.0,
+        key="t17_verified_bunker"
+    )
+
+
+with t17_c2:
+
+    t17_verified_consumption = st.number_input(
+        "Verified Recorded Consumption",
+        min_value=0.0,
+        value=float(max(t17_recorded_consumption, 0.0)),
+        step=100.0,
+        key="t17_verified_consumption"
+    )
+
+    t17_other_authorized_out = st.number_input(
+        "Authorized Transfer / Other Out",
+        min_value=0.0,
+        value=0.0,
+        step=100.0,
+        key="t17_other_authorized_out"
+    )
+
+
+with t17_c3:
+
+    t17_actual_closing_rob = st.number_input(
+        "Verified Closing ROB",
+        min_value=0.0,
+        value=float(max(t17_measured_closing_rob, 0.0)),
+        step=100.0,
+        key="t17_actual_closing_rob"
+    )
+
+    t17_measurement_tolerance = st.number_input(
+        "Measurement Tolerance (%)",
+        min_value=0.0,
+        max_value=20.0,
+        value=2.0,
+        step=0.5,
+        key="t17_measurement_tolerance"
+    )
+
+
+# ------------------------------------------------
+# THEORETICAL FUEL BALANCE
+# ------------------------------------------------
+
+t17_theoretical_available = (
+    t17_verified_opening_rob
+    + t17_verified_bunker
+)
+
+t17_theoretical_closing = max(
+    t17_theoretical_available
+    - t17_verified_consumption
+    - t17_other_authorized_out,
+    0.0
+)
+
+
+# ------------------------------------------------
+# UNACCOUNTED FUEL
+# Positive = apparent shortage
+# Negative = measured surplus
+# ------------------------------------------------
+
+t17_unaccounted_fuel = (
+    t17_theoretical_closing
+    - t17_actual_closing_rob
+)
+
+if t17_theoretical_closing > 0:
+    t17_loss_percent = (
+        t17_unaccounted_fuel
+        / t17_theoretical_closing
+    ) * 100.0
+else:
+    t17_loss_percent = 0.0
+
+t17_absolute_loss_percent = abs(t17_loss_percent)
+
+
+# ------------------------------------------------
+# TOLERANCE CALCULATION
+# ------------------------------------------------
+
+t17_tolerance_quantity = (
+    t17_theoretical_closing
+    * t17_measurement_tolerance
+    / 100.0
+)
+
+t17_excess_over_tolerance = max(
+    abs(t17_unaccounted_fuel) - t17_tolerance_quantity,
+    0.0
+)
+
+
+# ------------------------------------------------
+# DISCREPANCY STATUS
+# ------------------------------------------------
+
+if t17_theoretical_closing <= 0:
+    t17_status = "DATA CHECK"
+
+elif t17_absolute_loss_percent <= t17_measurement_tolerance:
+    t17_status = "WITHIN TOLERANCE"
+
+elif t17_absolute_loss_percent <= 5.0:
+    t17_status = "REVIEW REQUIRED"
+
+elif t17_absolute_loss_percent <= 10.0:
+    t17_status = "INVESTIGATION REQUIRED"
+
+else:
+    t17_status = "CRITICAL DISCREPANCY"
+
+
+# ------------------------------------------------
+# RISK LEVEL
+# ------------------------------------------------
+
+if t17_theoretical_closing <= 0:
+    t17_risk_level = "DATA CHECK"
+
+elif t17_absolute_loss_percent <= t17_measurement_tolerance:
+    t17_risk_level = "LOW"
+
+elif t17_absolute_loss_percent <= 5.0:
+    t17_risk_level = "MEDIUM"
+
+elif t17_absolute_loss_percent <= 10.0:
+    t17_risk_level = "HIGH"
+
+else:
+    t17_risk_level = "CRITICAL"
+
+
+# ------------------------------------------------
+# DISCREPANCY TYPE
+# ------------------------------------------------
+
+if abs(t17_unaccounted_fuel) <= t17_tolerance_quantity:
+    t17_discrepancy_type = "No material discrepancy"
+
+elif t17_unaccounted_fuel > 0:
+    t17_discrepancy_type = "Apparent fuel shortage"
+
+else:
+    t17_discrepancy_type = "Apparent fuel surplus"
+
+
+# ------------------------------------------------
+# KPI DASHBOARD
+# ------------------------------------------------
+
+st.subheader("📊 Fuel Loss & Discrepancy Dashboard")
+
+t17_k1, t17_k2, t17_k3, t17_k4 = st.columns(4)
+
+t17_k1.metric(
+    "Theoretical Closing ROB",
+    f"{t17_theoretical_closing:,.1f}"
+)
+
+t17_k2.metric(
+    "Verified Closing ROB",
+    f"{t17_actual_closing_rob:,.1f}"
+)
+
+t17_k3.metric(
+    "Unaccounted Fuel",
+    f"{t17_unaccounted_fuel:,.1f}"
+)
+
+t17_k4.metric(
+    "Discrepancy",
+    f"{t17_loss_percent:,.2f}%"
+)
+
+
+t17_k5, t17_k6, t17_k7, t17_k8 = st.columns(4)
+
+t17_k5.metric(
+    "Tolerance Quantity",
+    f"{t17_tolerance_quantity:,.1f}"
+)
+
+t17_k6.metric(
+    "Above Tolerance",
+    f"{t17_excess_over_tolerance:,.1f}"
+)
+
+t17_k7.metric(
+    "Risk Level",
+    t17_risk_level
+)
+
+t17_k8.metric(
+    "Status",
+    t17_status
+)
+
+
+# ------------------------------------------------
+# INTELLIGENCE ASSESSMENT
+# ------------------------------------------------
+
+st.subheader("🧠 Fuel Discrepancy Intelligence")
+
+if t17_status == "WITHIN TOLERANCE":
+
+    st.success(
+        "Fuel reconciliation difference is within the configured "
+        "measurement tolerance."
+    )
+
+elif t17_status == "REVIEW REQUIRED":
+
+    st.warning(
+        "Fuel discrepancy exceeds the configured tolerance. "
+        "Review measurements and supporting fuel records."
+    )
+
+elif t17_status == "INVESTIGATION REQUIRED":
+
+    st.error(
+        "Significant fuel discrepancy detected. "
+        "A documented reconciliation investigation is recommended."
+    )
+
+elif t17_status == "CRITICAL DISCREPANCY":
+
+    st.error(
+        "Large fuel discrepancy detected. Verify all measurements "
+        "and records promptly and escalate according to company procedures."
+    )
+
+else:
+
+    st.warning(
+        "Insufficient fuel-balance information for reliable discrepancy analysis."
+    )
+
+st.write(f"**Assessment:** {t17_discrepancy_type}")
+
+
+# ------------------------------------------------
+# INVESTIGATION TRIGGERS
+# ------------------------------------------------
+
+st.subheader("🚨 Investigation Triggers")
+
+t17_triggers = []
+
+if t17_verified_opening_rob <= 0:
+    t17_triggers.append(
+        "Opening ROB requires verification."
+    )
+
+if t17_verified_consumption <= 0:
+    t17_triggers.append(
+        "Recorded fuel consumption requires verification."
+    )
+
+if t17_actual_closing_rob <= 0:
+    t17_triggers.append(
+        "Closing ROB requires verification."
+    )
+
+if t17_absolute_loss_percent > t17_measurement_tolerance:
+    t17_triggers.append(
+        "Fuel discrepancy exceeds configured measurement tolerance."
+    )
+
+if t17_absolute_loss_percent > 5:
+    t17_triggers.append(
+        "Material fuel discrepancy requires detailed reconciliation."
+    )
+
+if t17_absolute_loss_percent > 10:
+    t17_triggers.append(
+        "Critical discrepancy threshold has been exceeded."
+    )
+
+if not t17_triggers:
+    t17_triggers.append(
+        "No material fuel-loss investigation trigger detected."
+    )
+
+for t17_i, t17_trigger in enumerate(t17_triggers, start=1):
+    st.write(f"{t17_i}. {t17_trigger}")
+
+
+# ------------------------------------------------
+# PRIORITY ACTIONS
+# ------------------------------------------------
+
+st.subheader("📋 Priority Actions")
+
+t17_priority_actions = []
+
+if t17_absolute_loss_percent > t17_measurement_tolerance:
+
+    t17_priority_actions.append(
+        "Repeat and verify tank soundings using approved calibration tables."
+    )
+
+    t17_priority_actions.append(
+        "Verify bunker delivery figures, density, temperature and supporting documents."
+    )
+
+    t17_priority_actions.append(
+        "Reconcile machinery consumption logs and authorized fuel transfers."
+    )
+
+if t17_absolute_loss_percent > 5:
+
+    t17_priority_actions.append(
+        "Review fuel balance with vessel management and shore technical/operations personnel."
+    )
+
+if t17_absolute_loss_percent > 10:
+
+    t17_priority_actions.append(
+        "Escalate the material discrepancy according to applicable company procedures."
+    )
+
+if not t17_priority_actions:
+
+    t17_priority_actions.append(
+        "Continue routine fuel reconciliation and ROB monitoring."
+    )
+
+for t17_i, t17_action in enumerate(t17_priority_actions, start=1):
+    st.write(f"{t17_i}. {t17_action}")
+
+
+# ------------------------------------------------
+# DATA QUALITY & VALIDATION
+# ------------------------------------------------
+
+st.subheader("🛡️ Data Quality & Validation")
+
+t17_data_warnings = []
+
+if t17_verified_opening_rob <= 0:
+    t17_data_warnings.append(
+        "Verified opening ROB is zero or unavailable."
+    )
+
+if t17_verified_consumption <= 0:
+    t17_data_warnings.append(
+        "Verified fuel consumption is zero or unavailable."
+    )
+
+if t17_actual_closing_rob <= 0:
+    t17_data_warnings.append(
+        "Verified closing ROB is zero or unavailable."
+    )
+
+if t17_data_warnings:
+
+    for t17_warning in t17_data_warnings:
+        st.warning(f"🟠 {t17_warning}")
+
+else:
+
+    st.success(
+        "🟢 Fuel-loss analysis inputs passed the basic validation checks."
+    )
+
+
+# ------------------------------------------------
+# DECISION SUPPORT NOTICE
+# ------------------------------------------------
+
+st.info(
+    "Fuel-loss and unaccounted-fuel results are reconciliation indicators, "
+    "not proof of leakage, theft or any specific cause. Differences may result "
+    "from tank measurement, calibration, trim/list, temperature, density, "
+    "bunker documentation, transfers, machinery consumption or data-entry "
+    "differences. Verify the underlying records and physical measurements "
+    "before technical, commercial, disciplinary or other management action."
+)
+
+
+# ------------------------------------------------
+# SAVE TAHAP 17 RESULTS
+# ------------------------------------------------
+
+st.session_state["t17_result_vessel"] = (
+    t17_selected_vessel
+)
+
+st.session_state["t17_result_theoretical_closing"] = (
+    t17_theoretical_closing
+)
+
+st.session_state["t17_result_actual_closing"] = (
+    t17_actual_closing_rob
+)
+
+st.session_state["t17_result_unaccounted_fuel"] = (
+    t17_unaccounted_fuel
+)
+
+st.session_state["t17_result_loss_percent"] = (
+    t17_loss_percent
+)
+
+st.session_state["t17_result_tolerance_quantity"] = (
+    t17_tolerance_quantity
+)
+
+st.session_state["t17_result_excess_over_tolerance"] = (
+    t17_excess_over_tolerance
+)
+
+st.session_state["t17_result_status"] = (
+    t17_status
+)
+
+st.session_state["t17_result_risk_level"] = (
+    t17_risk_level
+)
+
+st.session_state["t17_result_discrepancy_type"] = (
+    t17_discrepancy_type
+)
+
+st.session_state["t17_result_triggers"] = (
+    t17_triggers
+)
+
+st.session_state["t17_result_priority_actions"] = (
+    t17_priority_actions
+)
+
+
+st.success(
+    "✅ TAHAP 17 ACTIVE — Fuel Loss, Leakage & Unaccounted Fuel "
+    "Intelligence is operational."
+)
+
+st.info(
+    "TAHAP 17 results are stored in the application session "
+    "and prepared for the next intelligence modules."
+)
+
+
+# ================================================================
+# END TAHAP 17
+# ================================================================
+
+
