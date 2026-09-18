@@ -6700,3 +6700,677 @@ st.info(
 # ============================================================
 # END TAHAP 12
 # ============================================================
+
+# ============================================================
+# TAHAP 13 - FUEL FORECASTING & PREDICTIVE CONSUMPTION INTELLIGENCE
+# ============================================================
+
+st.divider()
+st.header("🔮 Fuel Forecasting & Predictive Consumption Intelligence")
+
+st.caption(
+    "Forward-looking fuel consumption, ROB, endurance and bunker requirement "
+    "forecast using available vessel fuel-intelligence results."
+)
+
+
+# ------------------------------------------------------------
+# VESSEL CONTEXT
+# ------------------------------------------------------------
+
+t13_selected_vessel = st.session_state.get(
+    "t12_result_vessel",
+    st.session_state.get(
+        "t11_result_vessel",
+        st.session_state.get(
+            "selected_fleet_vessel",
+            st.session_state.get(
+                "sidebar_vessel_name",
+                globals().get("vessel_name", "ASL MANTRUS")
+            )
+        )
+    )
+)
+
+st.subheader("🚢 Forecast Vessel")
+st.info(
+    f"Predictive fuel analysis for: **{t13_selected_vessel}**"
+)
+
+
+# ------------------------------------------------------------
+# SAFE NUMBER FUNCTION
+# ------------------------------------------------------------
+
+def t13_safe_float(value, default=0.0):
+    try:
+        if value is None:
+            return float(default)
+        return float(value)
+    except (TypeError, ValueError):
+        return float(default)
+
+
+# ------------------------------------------------------------
+# COLLECT UPSTREAM RESULTS
+# ------------------------------------------------------------
+
+t13_current_rob = t13_safe_float(
+    st.session_state.get(
+        "t4_result_rob_1",
+        st.session_state.get("t4_result_projected_rob_1", 0.0)
+    )
+)
+
+t13_daily_consumption = t13_safe_float(
+    st.session_state.get(
+        "t4_result_daily_consumption_1",
+        0.0
+    )
+)
+
+t13_reserve = t13_safe_float(
+    st.session_state.get(
+        "t4_result_reserve_1",
+        0.0
+    )
+)
+
+t13_projected_rob = t13_safe_float(
+    st.session_state.get(
+        "t4_result_projected_rob_1",
+        t13_current_rob
+    )
+)
+
+t13_voyage_requirement = t13_safe_float(
+    st.session_state.get(
+        "t5_result_total_required_1",
+        0.0
+    )
+)
+
+t13_excess_fuel = t13_safe_float(
+    st.session_state.get(
+        "t12_result_excess_fuel",
+        0.0
+    )
+)
+
+t13_excess_cost = t13_safe_float(
+    st.session_state.get(
+        "t12_result_excess_cost",
+        0.0
+    )
+)
+
+t13_saving_opportunity = t13_safe_float(
+    st.session_state.get(
+        "t12_result_saving_opportunity",
+        0.0
+    )
+)
+
+t13_anomaly_score = t13_safe_float(
+    st.session_state.get(
+        "t12_result_anomaly_score",
+        0.0
+    )
+)
+
+t13_alert_level = st.session_state.get(
+    "t12_result_alert_level",
+    "NORMAL"
+)
+
+
+# ------------------------------------------------------------
+# FORECAST INPUT
+# ------------------------------------------------------------
+
+st.subheader("⚙️ Forecast Configuration")
+
+t13_i1, t13_i2, t13_i3 = st.columns(3)
+
+with t13_i1:
+    t13_forecast_days = st.number_input(
+        "Forecast Period (days)",
+        min_value=1,
+        max_value=90,
+        value=7,
+        step=1,
+        key="t13_forecast_days"
+    )
+
+with t13_i2:
+    t13_consumption_adjustment = st.number_input(
+        "Consumption Adjustment (%)",
+        min_value=-50.0,
+        max_value=100.0,
+        value=0.0,
+        step=1.0,
+        key="t13_consumption_adjustment"
+    )
+
+with t13_i3:
+    t13_safety_margin_percent = st.number_input(
+        "Planning Safety Margin (%)",
+        min_value=0.0,
+        max_value=50.0,
+        value=10.0,
+        step=1.0,
+        key="t13_safety_margin_percent"
+    )
+
+
+# ------------------------------------------------------------
+# BASE CONSUMPTION FALLBACK
+# ------------------------------------------------------------
+
+if t13_daily_consumption <= 0:
+
+    t13_daily_consumption = t13_safe_float(
+        st.session_state.get(
+            "daily_fuel_ton",
+            st.session_state.get(
+                "daily_consumption",
+                0.0
+            )
+        )
+    )
+
+
+# ------------------------------------------------------------
+# ADJUSTED DAILY CONSUMPTION
+# ------------------------------------------------------------
+
+t13_adjustment_factor = (
+    1.0 + (t13_consumption_adjustment / 100.0)
+)
+
+t13_adjusted_daily_consumption = max(
+    0.0,
+    t13_daily_consumption * t13_adjustment_factor
+)
+
+
+# ------------------------------------------------------------
+# FORECAST CONSUMPTION
+# ------------------------------------------------------------
+
+t13_forecast_consumption = (
+    t13_adjusted_daily_consumption
+    * float(t13_forecast_days)
+)
+
+t13_safety_margin_fuel = (
+    t13_forecast_consumption
+    * (t13_safety_margin_percent / 100.0)
+)
+
+t13_total_forecast_requirement = (
+    t13_forecast_consumption
+    + t13_safety_margin_fuel
+    + t13_reserve
+)
+
+
+# ------------------------------------------------------------
+# PROJECTED ROB
+# ------------------------------------------------------------
+
+t13_forecast_rob = (
+    t13_current_rob
+    - t13_forecast_consumption
+)
+
+t13_usable_after_reserve = (
+    t13_forecast_rob
+    - t13_reserve
+)
+
+
+# ------------------------------------------------------------
+# ENDURANCE
+# ------------------------------------------------------------
+
+if t13_adjusted_daily_consumption > 0:
+
+    t13_endurance_days = (
+        t13_current_rob
+        / t13_adjusted_daily_consumption
+    )
+
+    t13_usable_endurance_days = (
+        max(0.0, t13_current_rob - t13_reserve)
+        / t13_adjusted_daily_consumption
+    )
+
+else:
+
+    t13_endurance_days = 0.0
+    t13_usable_endurance_days = 0.0
+
+
+# ------------------------------------------------------------
+# BUNKER REQUIREMENT
+# ------------------------------------------------------------
+
+t13_bunker_required = max(
+    0.0,
+    t13_total_forecast_requirement
+    - t13_current_rob
+)
+
+
+# ------------------------------------------------------------
+# FORECAST STATUS
+# ------------------------------------------------------------
+
+if t13_adjusted_daily_consumption <= 0:
+
+    t13_forecast_status = "DATA REQUIRED"
+    t13_status_icon = "⚪"
+
+elif t13_forecast_rob < 0:
+
+    t13_forecast_status = "CRITICAL"
+    t13_status_icon = "🔴"
+
+elif t13_forecast_rob < t13_reserve:
+
+    t13_forecast_status = "RESERVE RISK"
+    t13_status_icon = "🟠"
+
+elif t13_bunker_required > 0:
+
+    t13_forecast_status = "BUNKER REVIEW"
+    t13_status_icon = "🟡"
+
+else:
+
+    t13_forecast_status = "SUFFICIENT"
+    t13_status_icon = "🟢"
+
+
+# ------------------------------------------------------------
+# FORECAST DASHBOARD
+# ------------------------------------------------------------
+
+st.subheader("📊 Predictive Fuel Forecast")
+
+t13_c1, t13_c2, t13_c3, t13_c4 = st.columns(4)
+
+with t13_c1:
+    st.metric(
+        "Current ROB",
+        f"{t13_current_rob:,.2f}"
+    )
+
+with t13_c2:
+    st.metric(
+        "Adjusted Daily Fuel",
+        f"{t13_adjusted_daily_consumption:,.2f}"
+    )
+
+with t13_c3:
+    st.metric(
+        f"{t13_forecast_days}-Day Consumption",
+        f"{t13_forecast_consumption:,.2f}"
+    )
+
+with t13_c4:
+    st.metric(
+        "Forecast ROB",
+        f"{t13_forecast_rob:,.2f}"
+    )
+
+
+t13_c5, t13_c6, t13_c7, t13_c8 = st.columns(4)
+
+with t13_c5:
+    st.metric(
+        "Reserve",
+        f"{t13_reserve:,.2f}"
+    )
+
+with t13_c6:
+    st.metric(
+        "Usable Endurance",
+        f"{t13_usable_endurance_days:,.1f} days"
+    )
+
+with t13_c7:
+    st.metric(
+        "Bunker Required",
+        f"{t13_bunker_required:,.2f}"
+    )
+
+with t13_c8:
+    st.metric(
+        "Forecast Status",
+        t13_forecast_status
+    )
+
+
+# ------------------------------------------------------------
+# FORECAST ALERT
+# ------------------------------------------------------------
+
+st.subheader("🚦 Predictive Status")
+
+if t13_forecast_status == "CRITICAL":
+
+    st.error(
+        f"{t13_status_icon} CRITICAL — Forecast consumption exceeds "
+        "the available fuel quantity within the selected forecast period."
+    )
+
+elif t13_forecast_status == "RESERVE RISK":
+
+    st.error(
+        f"{t13_status_icon} RESERVE RISK — Forecast ROB falls below "
+        "the configured reserve quantity."
+    )
+
+elif t13_forecast_status == "BUNKER REVIEW":
+
+    st.warning(
+        f"{t13_status_icon} BUNKER REVIEW — Additional fuel may be "
+        "required to satisfy forecast consumption, reserve and planning margin."
+    )
+
+elif t13_forecast_status == "DATA REQUIRED":
+
+    st.warning(
+        f"{t13_status_icon} DATA REQUIRED — Daily fuel consumption "
+        "is zero or unavailable. Verify the upstream fuel data."
+    )
+
+else:
+
+    st.success(
+        f"{t13_status_icon} SUFFICIENT — Available fuel is sufficient "
+        "for the selected forecast period under the current assumptions."
+    )
+
+
+# ------------------------------------------------------------
+# FORECAST TABLE
+# ------------------------------------------------------------
+
+st.subheader("📋 Forecast Summary")
+
+t13_forecast_summary = {
+    "Parameter": [
+        "Forecast Period",
+        "Current ROB",
+        "Base Daily Consumption",
+        "Adjusted Daily Consumption",
+        "Forecast Consumption",
+        "Planning Safety Margin",
+        "Reserve Fuel",
+        "Total Forecast Requirement",
+        "Forecast ROB",
+        "Usable Fuel After Reserve",
+        "Total Endurance",
+        "Usable Endurance",
+        "Bunker Requirement",
+        "Upstream Anomaly Score",
+        "Upstream Alert Level"
+    ],
+    "Value": [
+        f"{t13_forecast_days} days",
+        f"{t13_current_rob:,.2f}",
+        f"{t13_daily_consumption:,.2f}",
+        f"{t13_adjusted_daily_consumption:,.2f}",
+        f"{t13_forecast_consumption:,.2f}",
+        f"{t13_safety_margin_fuel:,.2f}",
+        f"{t13_reserve:,.2f}",
+        f"{t13_total_forecast_requirement:,.2f}",
+        f"{t13_forecast_rob:,.2f}",
+        f"{t13_usable_after_reserve:,.2f}",
+        f"{t13_endurance_days:,.1f} days",
+        f"{t13_usable_endurance_days:,.1f} days",
+        f"{t13_bunker_required:,.2f}",
+        f"{t13_anomaly_score:.0f}/100",
+        str(t13_alert_level)
+    ]
+}
+
+st.table(t13_forecast_summary)
+
+
+# ------------------------------------------------------------
+# PREDICTIVE INTELLIGENCE
+# ------------------------------------------------------------
+
+st.subheader("🧠 Predictive Intelligence")
+
+t13_intelligence = []
+
+if t13_adjusted_daily_consumption <= 0:
+
+    t13_intelligence.append(
+        "A reliable fuel forecast cannot be calculated until a valid "
+        "daily consumption value is available."
+    )
+
+else:
+
+    t13_intelligence.append(
+        f"At the current adjusted consumption rate, estimated usable "
+        f"endurance is approximately {t13_usable_endurance_days:.1f} days."
+    )
+
+if t13_forecast_rob < t13_reserve:
+
+    t13_intelligence.append(
+        "Projected ROB enters or passes the configured reserve level "
+        "within the selected forecast horizon."
+    )
+
+if t13_bunker_required > 0:
+
+    t13_intelligence.append(
+        f"Estimated additional bunker requirement is approximately "
+        f"{t13_bunker_required:,.2f} fuel units under the current assumptions."
+    )
+
+if t13_anomaly_score >= 45:
+
+    t13_intelligence.append(
+        "The upstream anomaly score is elevated; consumption forecasting "
+        "should therefore be verified against actual vessel measurements."
+    )
+
+if t13_excess_fuel > 0:
+
+    t13_intelligence.append(
+        "Existing excess consumption may reduce endurance if it continues."
+    )
+
+if t13_saving_opportunity > 0:
+
+    t13_intelligence.append(
+        "Upstream optimization intelligence has identified a saving "
+        "opportunity that may improve the forecast if operationally achievable."
+    )
+
+if not t13_intelligence:
+
+    t13_intelligence.append(
+        "No significant predictive fuel exception is currently identified."
+    )
+
+for item in t13_intelligence:
+    st.write(f"• {item}")
+
+
+# ------------------------------------------------------------
+# PRIORITY ACTIONS
+# ------------------------------------------------------------
+
+st.subheader("📋 Priority Actions")
+
+t13_priority_actions = []
+
+if t13_adjusted_daily_consumption <= 0:
+
+    t13_priority_actions.append(
+        "Verify daily fuel consumption before using the predictive forecast."
+    )
+
+if t13_forecast_status in [
+    "CRITICAL",
+    "RESERVE RISK",
+    "BUNKER REVIEW"
+]:
+
+    t13_priority_actions.append(
+        "Verify actual ROB using approved tank sounding and calibration data."
+    )
+
+    t13_priority_actions.append(
+        "Confirm remaining voyage distance, expected duration, weather/current "
+        "and machinery consumption before final bunker planning."
+    )
+
+if t13_bunker_required > 0:
+
+    t13_priority_actions.append(
+        "Review bunker quantity, supplier availability, delivery location "
+        "and applicable reserve requirements."
+    )
+
+if t13_anomaly_score >= 45:
+
+    t13_priority_actions.append(
+        "Investigate the upstream fuel anomaly before relying on the "
+        "forecast for commercial or operational decisions."
+    )
+
+if not t13_priority_actions:
+
+    t13_priority_actions.append(
+        "Continue monitoring ROB and actual daily consumption against "
+        "the predictive fuel forecast."
+    )
+
+for number, action in enumerate(
+    t13_priority_actions,
+    start=1
+):
+    st.write(f"{number}. {action}")
+
+
+# ------------------------------------------------------------
+# DATA QUALITY & VALIDATION
+# ------------------------------------------------------------
+
+st.subheader("🛡️ Data Quality & Validation")
+
+t13_validation = []
+
+if t13_current_rob <= 0:
+    t13_validation.append(
+        "Current ROB is zero or unavailable."
+    )
+
+if t13_daily_consumption <= 0:
+    t13_validation.append(
+        "Daily fuel consumption is zero or unavailable."
+    )
+
+if t13_reserve < 0:
+    t13_validation.append(
+        "Reserve fuel cannot be negative."
+    )
+
+
+if not t13_validation:
+
+    st.success(
+        "🟢 Fuel forecasting inputs passed the basic validation checks."
+    )
+
+else:
+
+    for note in t13_validation:
+        st.warning(f"🟠 {note}")
+
+
+st.info(
+    "Predictive fuel figures are planning estimates, not guaranteed future "
+    "consumption. Actual results can differ because of RPM/load, vessel speed, "
+    "draft/trim, loading or towing condition, weather/current, hull and "
+    "propeller condition, machinery condition and voyage changes. Verify "
+    "measured ROB, tank calibration, fuel density, actual consumption, voyage "
+    "requirements and statutory/company reserves before operational or "
+    "commercial decisions."
+)
+
+
+# ------------------------------------------------------------
+# SAVE TAHAP 13 RESULTS
+# ------------------------------------------------------------
+
+st.session_state["t13_result_vessel"] = (
+    t13_selected_vessel
+)
+
+st.session_state["t13_result_forecast_days"] = (
+    t13_forecast_days
+)
+
+st.session_state["t13_result_adjusted_daily_consumption"] = (
+    t13_adjusted_daily_consumption
+)
+
+st.session_state["t13_result_forecast_consumption"] = (
+    t13_forecast_consumption
+)
+
+st.session_state["t13_result_forecast_rob"] = (
+    t13_forecast_rob
+)
+
+st.session_state["t13_result_endurance_days"] = (
+    t13_endurance_days
+)
+
+st.session_state["t13_result_usable_endurance_days"] = (
+    t13_usable_endurance_days
+)
+
+st.session_state["t13_result_bunker_required"] = (
+    t13_bunker_required
+)
+
+st.session_state["t13_result_forecast_status"] = (
+    t13_forecast_status
+)
+
+st.session_state["t13_result_intelligence"] = (
+    t13_intelligence
+)
+
+st.session_state["t13_result_priority_actions"] = (
+    t13_priority_actions
+)
+
+
+st.success(
+    "✅ TAHAP 13 ACTIVE — Fuel Forecasting & Predictive Consumption "
+    "Intelligence is operational."
+)
+
+st.info(
+    "TAHAP 13 results are stored in the application session and "
+    "prepared for the next intelligence modules."
+)
+
+
+# ============================================================
+# END TAHAP 13
+# ============================================================
