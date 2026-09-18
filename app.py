@@ -12187,4 +12187,441 @@ st.info(
 # END TAHAP 22
 # ============================================================
 
+# ============================================================
+# TAHAP 23 - FUEL EFFICIENCY ALERT & MANAGEMENT DECISION
+# INTELLIGENCE
+# ============================================================
+
+st.divider()
+st.header("🚨 Fuel Efficiency Alert & Management Decision Intelligence")
+
+st.caption(
+    "Management decision-support module combining fuel efficiency, "
+    "financial exposure and operational indicators into prioritized alerts."
+)
+
+
+# ------------------------------------------------------------
+# SAFE NUMBER HELPER
+# ------------------------------------------------------------
+
+def t23_safe_float(value, default=0.0):
+    try:
+        if value is None:
+            return float(default)
+        return float(value)
+    except (TypeError, ValueError):
+        return float(default)
+
+
+# ------------------------------------------------------------
+# VESSEL CONTEXT
+# ------------------------------------------------------------
+
+t23_selected_vessel = st.session_state.get(
+    "selected_fleet_vessel",
+    st.session_state.get(
+        "sidebar_vessel_name",
+        globals().get("vessel_name", "ASL MANTRUS")
+    )
+)
+
+st.subheader("🚢 Management Alert Vessel")
+st.info(f"Selected Vessel: **{t23_selected_vessel}**")
+
+
+# ------------------------------------------------------------
+# LOAD PREVIOUS INTELLIGENCE RESULTS
+# ------------------------------------------------------------
+
+t23_kpi_score = t23_safe_float(
+    st.session_state.get(
+        "t21_result_kpi_score",
+        st.session_state.get(
+            "t22_result_kpi_score",
+            0.0
+        )
+    )
+)
+
+t23_baseline_cost = t23_safe_float(
+    st.session_state.get(
+        "t22_result_baseline_cost",
+        0.0
+    )
+)
+
+t23_potential_cost_saving = t23_safe_float(
+    st.session_state.get(
+        "t22_result_target_cost_saving",
+        0.0
+    )
+)
+
+t23_potential_fuel_saving = t23_safe_float(
+    st.session_state.get(
+        "t22_result_target_fuel_saving",
+        0.0
+    )
+)
+
+t23_period_fuel = t23_safe_float(
+    st.session_state.get(
+        "t22_result_period_fuel",
+        0.0
+    )
+)
+
+
+# ------------------------------------------------------------
+# MANAGEMENT THRESHOLDS
+# ------------------------------------------------------------
+
+st.subheader("⚙️ Management Alert Thresholds")
+
+t23_c1, t23_c2, t23_c3 = st.columns(3)
+
+with t23_c1:
+    t23_warning_kpi = st.number_input(
+        "KPI Warning Threshold",
+        min_value=0.0,
+        max_value=100.0,
+        value=80.0,
+        step=1.0,
+        key="t23_warning_kpi"
+    )
+
+with t23_c2:
+    t23_critical_kpi = st.number_input(
+        "KPI Critical Threshold",
+        min_value=0.0,
+        max_value=100.0,
+        value=60.0,
+        step=1.0,
+        key="t23_critical_kpi"
+    )
+
+with t23_c3:
+    t23_cost_alert_threshold = st.number_input(
+        "Cost Saving Alert Threshold",
+        min_value=0.0,
+        value=1000.0,
+        step=100.0,
+        key="t23_cost_alert_threshold"
+    )
+
+
+# ------------------------------------------------------------
+# ALERT ENGINE
+# ------------------------------------------------------------
+
+t23_alert_level = "NORMAL"
+t23_alert_score = 0
+t23_alerts = []
+t23_priority_actions = []
+
+
+# KPI ALERT
+
+if t23_kpi_score > 0:
+
+    if t23_kpi_score < t23_critical_kpi:
+
+        t23_alert_level = "CRITICAL"
+        t23_alert_score += 3
+
+        t23_alerts.append(
+            "Fuel-efficiency KPI is below the configured critical threshold."
+        )
+
+        t23_priority_actions.append(
+            "Review verified fuel-consumption, engine-performance, "
+            "voyage and operating-condition records."
+        )
+
+    elif t23_kpi_score < t23_warning_kpi:
+
+        t23_alert_level = "WARNING"
+        t23_alert_score += 2
+
+        t23_alerts.append(
+            "Fuel-efficiency KPI is below the configured warning threshold."
+        )
+
+        t23_priority_actions.append(
+            "Investigate the contributors to the reduced fuel-efficiency KPI."
+        )
+
+else:
+
+    t23_alerts.append(
+        "Fuel-efficiency KPI is unavailable for the current assessment."
+    )
+
+    t23_priority_actions.append(
+        "Verify the source data required for the fuel-efficiency KPI."
+    )
+
+
+# ------------------------------------------------------------
+# FINANCIAL OPPORTUNITY ALERT
+# ------------------------------------------------------------
+
+if (
+    t23_potential_cost_saving >=
+    t23_cost_alert_threshold
+    and
+    t23_potential_cost_saving > 0
+):
+
+    t23_alert_score += 1
+
+    t23_alerts.append(
+        "Potential fuel-cost saving exceeds the configured "
+        "management alert threshold."
+    )
+
+    t23_priority_actions.append(
+        "Review the identified fuel-saving opportunity and verify "
+        "whether operational measures are practical and appropriate."
+    )
+
+
+# ------------------------------------------------------------
+# DATA AVAILABILITY ALERT
+# ------------------------------------------------------------
+
+if t23_period_fuel <= 0:
+
+    t23_alert_score += 1
+
+    t23_alerts.append(
+        "Assessment-period fuel data is zero or unavailable."
+    )
+
+    t23_priority_actions.append(
+        "Verify actual fuel-consumption and ROB records."
+    )
+
+
+# ------------------------------------------------------------
+# FINAL ALERT CLASSIFICATION
+# ------------------------------------------------------------
+
+if t23_alert_score >= 3:
+    t23_alert_level = "CRITICAL"
+
+elif t23_alert_score >= 2:
+    t23_alert_level = "WARNING"
+
+elif t23_alert_score >= 1:
+    t23_alert_level = "ADVISORY"
+
+else:
+    t23_alert_level = "NORMAL"
+
+
+# ------------------------------------------------------------
+# MANAGEMENT DASHBOARD
+# ------------------------------------------------------------
+
+st.subheader("📊 Management Alert Dashboard")
+
+t23_m1, t23_m2, t23_m3, t23_m4 = st.columns(4)
+
+with t23_m1:
+    st.metric(
+        "Fuel Efficiency KPI",
+        f"{t23_kpi_score:.1f}"
+        if t23_kpi_score > 0
+        else "N/A"
+    )
+
+with t23_m2:
+    st.metric(
+        "Alert Score",
+        f"{t23_alert_score}"
+    )
+
+with t23_m3:
+    st.metric(
+        "Potential Fuel Saving",
+        f"{t23_potential_fuel_saving:,.2f}"
+    )
+
+with t23_m4:
+    st.metric(
+        "Potential Cost Saving",
+        f"${t23_potential_cost_saving:,.2f}"
+    )
+
+
+# ------------------------------------------------------------
+# ALERT STATUS
+# ------------------------------------------------------------
+
+st.subheader("🚦 Management Alert Status")
+
+if t23_alert_level == "CRITICAL":
+
+    st.error(
+        "🔴 CRITICAL — Management review is required. "
+        "Verify the underlying operational data before action."
+    )
+
+elif t23_alert_level == "WARNING":
+
+    st.warning(
+        "🟠 WARNING — Fuel-efficiency performance requires review."
+    )
+
+elif t23_alert_level == "ADVISORY":
+
+    st.info(
+        "🔵 ADVISORY — Management attention or data verification "
+        "is recommended."
+    )
+
+else:
+
+    st.success(
+        "🟢 NORMAL — No management alert has been triggered "
+        "by the configured thresholds."
+    )
+
+
+# ------------------------------------------------------------
+# ACTIVE ALERTS
+# ------------------------------------------------------------
+
+st.subheader("🔔 Active Intelligence Alerts")
+
+if t23_alerts:
+
+    for t23_index, t23_alert in enumerate(
+        t23_alerts,
+        start=1
+    ):
+        st.write(
+            f"{t23_index}. {t23_alert}"
+        )
+
+else:
+
+    st.success(
+        "No active fuel-efficiency management alerts."
+    )
+
+
+# ------------------------------------------------------------
+# PRIORITY ACTIONS
+# ------------------------------------------------------------
+
+st.subheader("📋 Priority Actions")
+
+if not t23_priority_actions:
+
+    t23_priority_actions.append(
+        "Continue routine fuel-efficiency, SFOC, ROB, "
+        "voyage-performance and fuel-cost monitoring."
+    )
+
+for t23_index, t23_action in enumerate(
+    t23_priority_actions,
+    start=1
+):
+    st.write(
+        f"{t23_index}. {t23_action}"
+    )
+
+
+# ------------------------------------------------------------
+# DATA QUALITY & VALIDATION
+# ------------------------------------------------------------
+
+st.subheader("🛡️ Data Quality & Validation")
+
+if t23_period_fuel > 0 and t23_baseline_cost > 0:
+
+    st.success(
+        "🟢 Fuel and financial source data passed "
+        "the basic validation checks."
+    )
+
+else:
+
+    st.warning(
+        "🟠 One or more source indicators are zero or unavailable. "
+        "Alert interpretation should be verified against source records."
+    )
+
+
+# ------------------------------------------------------------
+# DECISION SUPPORT NOTICE
+# ------------------------------------------------------------
+
+st.info(
+    "Fuel-efficiency alerts and management classifications are "
+    "decision-support indicators generated from configured thresholds "
+    "and available operational data. They do not by themselves establish "
+    "machinery condition, crew performance, fuel loss, commercial "
+    "responsibility or the cause of an efficiency change. Verify actual "
+    "fuel measurements, ROB, engine performance, RPM/load, vessel speed, "
+    "draft/trim, weather/current, voyage conditions, hull/propeller "
+    "condition and applicable OEM/company requirements before action."
+)
+
+
+# ------------------------------------------------------------
+# STORE RESULTS FOR NEXT INTELLIGENCE MODULE
+# ------------------------------------------------------------
+
+st.session_state["t23_result_alert_level"] = (
+    t23_alert_level
+)
+
+st.session_state["t23_result_alert_score"] = (
+    t23_alert_score
+)
+
+st.session_state["t23_result_alerts"] = (
+    t23_alerts
+)
+
+st.session_state["t23_result_priority_actions"] = (
+    t23_priority_actions
+)
+
+st.session_state["t23_result_kpi_score"] = (
+    t23_kpi_score
+)
+
+st.session_state["t23_result_baseline_cost"] = (
+    t23_baseline_cost
+)
+
+st.session_state["t23_result_potential_cost_saving"] = (
+    t23_potential_cost_saving
+)
+
+
+# ------------------------------------------------------------
+# TAHAP 23 STATUS
+# ------------------------------------------------------------
+
+st.success(
+    "✅ TAHAP 23 ACTIVE — Fuel Efficiency Alert & "
+    "Management Decision Intelligence is operational."
+)
+
+st.info(
+    "TAHAP 23 results are stored in the application session "
+    "and prepared for the next intelligence modules."
+)
+
+
+# ============================================================
+# END TAHAP 23
+# ============================================================
+
 
