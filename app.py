@@ -15289,4 +15289,404 @@ st.info(
 # END TAHAP 30
 # ============================================================
 
+# ============================================================
+# TAHAP 31
+# FLEET FUEL EFFICIENCY TREND, FORECAST &
+# EARLY WARNING INTELLIGENCE
+# ============================================================
+
+st.markdown("---")
+st.header("📈 Fuel Efficiency Trend, Forecast & Early Warning Intelligence")
+
+st.caption(
+    "Management-level trend assessment and early-warning intelligence "
+    "using available fuel-efficiency performance information."
+)
+
+
+# ------------------------------------------------------------
+# SAFE HELPERS
+# ------------------------------------------------------------
+
+def t31_safe_float(value, default=0.0):
+    try:
+        if value is None:
+            return default
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+# ------------------------------------------------------------
+# READ UPSTREAM RESULTS
+# ------------------------------------------------------------
+
+t31_kpi_score = t31_safe_float(
+    st.session_state.get(
+        "t30_result_kpi_score",
+        st.session_state.get("t21_result_kpi_score", 0.0)
+    )
+)
+
+t31_potential_saving = t31_safe_float(
+    st.session_state.get(
+        "t30_result_potential_saving",
+        st.session_state.get(
+            "t23_result_potential_cost_saving",
+            0.0
+        )
+    )
+)
+
+t31_decision_level = str(
+    st.session_state.get(
+        "t30_result_decision_level",
+        "INSUFFICIENT DATA"
+    )
+)
+
+t31_priority = str(
+    st.session_state.get(
+        "t30_result_priority",
+        st.session_state.get(
+            "t28_result_priority",
+            "Not Available"
+        )
+    )
+)
+
+t31_risk = str(
+    st.session_state.get(
+        "t30_result_risk",
+        st.session_state.get(
+            "t29_result_risk",
+            "Not Available"
+        )
+    )
+)
+
+t31_opportunity = str(
+    st.session_state.get(
+        "t30_result_opportunity",
+        st.session_state.get(
+            "t29_result_opportunity",
+            "Not Available"
+        )
+    )
+)
+
+
+# ------------------------------------------------------------
+# UPSTREAM AVAILABILITY
+# ------------------------------------------------------------
+
+t31_upstream_available = any(
+    [
+        t31_kpi_score > 0,
+        t31_potential_saving > 0,
+        t31_priority != "Not Available",
+        t31_risk != "Not Available",
+        t31_opportunity != "Not Available",
+    ]
+)
+
+
+# ------------------------------------------------------------
+# PERFORMANCE TREND CLASSIFICATION
+# ------------------------------------------------------------
+
+t31_decision_upper = t31_decision_level.upper()
+t31_priority_upper = t31_priority.upper()
+t31_risk_upper = t31_risk.upper()
+
+if (
+    "CRITICAL" in t31_risk_upper
+    or "IMMEDIATE" in t31_decision_upper
+):
+    t31_trend_status = "ADVERSE TREND"
+
+elif (
+    "HIGH" in t31_risk_upper
+    or "HIGH" in t31_priority_upper
+):
+    t31_trend_status = "WATCH TREND"
+
+elif t31_upstream_available:
+    t31_trend_status = "STABLE / MONITOR"
+
+else:
+    t31_trend_status = "INSUFFICIENT DATA"
+
+
+# ------------------------------------------------------------
+# FORECAST / EARLY WARNING CLASSIFICATION
+# ------------------------------------------------------------
+
+if t31_trend_status == "ADVERSE TREND":
+    t31_warning_level = "HIGH"
+
+elif t31_trend_status == "WATCH TREND":
+    t31_warning_level = "MEDIUM"
+
+elif t31_trend_status == "STABLE / MONITOR":
+    t31_warning_level = "LOW"
+
+else:
+    t31_warning_level = "DATA REQUIRED"
+
+
+# ------------------------------------------------------------
+# EXECUTIVE OVERVIEW
+# ------------------------------------------------------------
+
+st.subheader("📊 Trend Intelligence Overview")
+
+t31_col1, t31_col2, t31_col3 = st.columns(3)
+
+with t31_col1:
+    st.metric(
+        "Fuel Efficiency KPI",
+        f"{t31_kpi_score:.1f}"
+        if t31_kpi_score > 0
+        else "N/A"
+    )
+
+with t31_col2:
+    st.metric(
+        "Trend Status",
+        t31_trend_status
+    )
+
+with t31_col3:
+    st.metric(
+        "Early Warning",
+        t31_warning_level
+    )
+
+
+# ------------------------------------------------------------
+# FINANCIAL OPPORTUNITY
+# ------------------------------------------------------------
+
+st.subheader("💰 Forecast Opportunity")
+
+st.metric(
+    "Current Potential Saving Reference",
+    f"${t31_potential_saving:,.2f}"
+)
+
+st.caption(
+    "The value above is an upstream decision-support reference "
+    "and is not an independent prediction of future financial results."
+)
+
+
+# ------------------------------------------------------------
+# EARLY WARNING DISPLAY
+# ------------------------------------------------------------
+
+st.subheader("🚨 Early Warning Intelligence")
+
+if t31_warning_level == "HIGH":
+
+    st.error(
+        "🔴 HIGH EARLY WARNING — Available upstream indicators "
+        "require prompt management review and source-data validation."
+    )
+
+elif t31_warning_level == "MEDIUM":
+
+    st.warning(
+        "🟠 MEDIUM EARLY WARNING — Fuel-efficiency performance "
+        "should be monitored closely and verified."
+    )
+
+elif t31_warning_level == "LOW":
+
+    st.success(
+        "🟢 LOW EARLY WARNING — Available indicators support "
+        "routine monitoring at this time."
+    )
+
+else:
+
+    st.info(
+        "⚪ DATA REQUIRED — Additional verified operational data "
+        "is required for meaningful trend assessment."
+    )
+
+
+# ------------------------------------------------------------
+# MANAGEMENT WATCH LIST
+# ------------------------------------------------------------
+
+st.subheader("👁️ Management Watch List")
+
+t31_watch_list = []
+
+if t31_warning_level == "HIGH":
+
+    t31_watch_list = [
+        "Verify actual daily fuel consumption and ROB.",
+        "Review engine RPM/load and operating profile.",
+        "Review vessel speed, draft and trim.",
+        "Check weather, current and sea-state influence.",
+        "Review hull and propeller condition where relevant.",
+        "Validate the identified financial saving opportunity.",
+        "Review active efficiency-improvement actions.",
+    ]
+
+elif t31_warning_level == "MEDIUM":
+
+    t31_watch_list = [
+        "Monitor fuel-consumption trend.",
+        "Review engine load and vessel speed trend.",
+        "Verify voyage and environmental conditions.",
+        "Track fuel-efficiency improvement actions.",
+        "Review potential saving against verified results.",
+    ]
+
+elif t31_warning_level == "LOW":
+
+    t31_watch_list = [
+        "Continue routine fuel-efficiency monitoring.",
+        "Maintain accurate ROB and bunker records.",
+        "Review KPI trends during management reporting.",
+    ]
+
+else:
+
+    t31_watch_list = [
+        "Complete missing fuel and operational records.",
+        "Verify upstream intelligence inputs.",
+        "Re-run assessment when sufficient data is available.",
+    ]
+
+
+for t31_i, t31_item in enumerate(
+    t31_watch_list,
+    start=1
+):
+    st.write(f"{t31_i}. {t31_item}")
+
+
+# ------------------------------------------------------------
+# TREND INTERPRETATION
+# ------------------------------------------------------------
+
+st.subheader("🧭 Management Interpretation")
+
+if t31_trend_status == "ADVERSE TREND":
+
+    st.write(
+        "Available upstream indicators show conditions that warrant "
+        "management attention. The underlying operational data should "
+        "be verified before determining cause or corrective action."
+    )
+
+elif t31_trend_status == "WATCH TREND":
+
+    st.write(
+        "Available indicators justify closer monitoring. "
+        "Trend persistence should be checked against verified "
+        "fuel, engine, voyage and environmental records."
+    )
+
+elif t31_trend_status == "STABLE / MONITOR":
+
+    st.write(
+        "Available indicators do not currently trigger the higher "
+        "early-warning classifications. Continue routine monitoring "
+        "and verify changes against operational records."
+    )
+
+else:
+
+    st.write(
+        "The available information is insufficient for a meaningful "
+        "trend interpretation."
+    )
+
+
+# ------------------------------------------------------------
+# DATA QUALITY & VALIDATION
+# ------------------------------------------------------------
+
+st.subheader("🛡️ Data Quality & Validation")
+
+if t31_upstream_available:
+
+    st.success(
+        "🟢 Upstream fuel-efficiency intelligence is available "
+        "for trend and early-warning assessment."
+    )
+
+else:
+
+    st.warning(
+        "🟠 Upstream intelligence is incomplete. Trend and warning "
+        "results should be interpreted with the available-data limitations."
+    )
+
+
+st.info(
+    "Trend, forecast and early-warning classifications are "
+    "decision-support indicators based on available upstream information "
+    "and configured logic. They are not independent predictions of future "
+    "fuel consumption, machinery condition, financial results or voyage "
+    "performance. Verify actual fuel measurements, tank soundings, ROB, "
+    "bunker records, engine performance, RPM/load, vessel speed, "
+    "draft/trim, weather/current, sea state, voyage conditions and "
+    "applicable OEM/company requirements before management action."
+)
+
+
+# ------------------------------------------------------------
+# STORE TAHAP 31 RESULTS
+# ------------------------------------------------------------
+
+st.session_state["t31_result_kpi_score"] = (
+    t31_kpi_score
+)
+
+st.session_state["t31_result_potential_saving"] = (
+    t31_potential_saving
+)
+
+st.session_state["t31_result_trend_status"] = (
+    t31_trend_status
+)
+
+st.session_state["t31_result_warning_level"] = (
+    t31_warning_level
+)
+
+st.session_state["t31_result_watch_list"] = (
+    t31_watch_list
+)
+
+st.session_state["t31_result_upstream_available"] = (
+    t31_upstream_available
+)
+
+
+# ------------------------------------------------------------
+# TAHAP 31 STATUS
+# ------------------------------------------------------------
+
+st.success(
+    "✅ TAHAP 31 ACTIVE — Fuel Efficiency Trend, Forecast & "
+    "Early Warning Intelligence is operational."
+)
+
+st.info(
+    "TAHAP 31 results are stored in the application session "
+    "and prepared for the next intelligence modules."
+)
+
+
+# ============================================================
+# END TAHAP 31
+# ============================================================
+
 
