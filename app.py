@@ -18956,5 +18956,275 @@ st.info(
 # END TAHAP 36
 # ============================================================
 
+# ================================================================
+# TAHAP 37
+# FUEL EFFICIENCY OPERATIONAL RECOMMENDATION
+# & CORRECTIVE ACTION INTELLIGENCE
+# ================================================================
+
+st.markdown("---")
+st.header("🧭 Fuel Efficiency Operational Recommendation & Corrective Action Intelligence")
+
+st.caption(
+    "TAHAP 37 — Consolidated decision-support recommendations "
+    "from upstream fuel-efficiency intelligence."
+)
+
+# ----------------------------------------------------------------
+# READ UPSTREAM INTELLIGENCE SAFELY
+# ----------------------------------------------------------------
+
+t37_anomaly = st.session_state.get(
+    "t32_result_upstream_available",
+    st.session_state.get("t32_upstream_available", False)
+)
+
+t37_engine = st.session_state.get(
+    "t33_result_upstream_available",
+    st.session_state.get("t33_upstream_available", False)
+)
+
+t37_root_cause = st.session_state.get(
+    "t34_result_upstream_available",
+    st.session_state.get("t34_upstream_available", False)
+)
+
+t37_hull_propeller = st.session_state.get(
+    "t35_result_upstream_available",
+    st.session_state.get("t35_upstream_available", False)
+)
+
+t37_fuel_reconciliation = st.session_state.get(
+    "t36_result_upstream_available",
+    st.session_state.get("t36_upstream_available", False)
+)
+
+t37_upstream_flags = [
+    bool(t37_anomaly),
+    bool(t37_engine),
+    bool(t37_root_cause),
+    bool(t37_hull_propeller),
+    bool(t37_fuel_reconciliation),
+]
+
+t37_available_count = sum(t37_upstream_flags)
+
+# ----------------------------------------------------------------
+# UPSTREAM INTELLIGENCE STATUS
+# ----------------------------------------------------------------
+
+st.subheader("📡 Upstream Intelligence Status")
+
+c1, c2, c3, c4, c5 = st.columns(5)
+
+c1.metric(
+    "Anomaly",
+    "Available" if t37_anomaly else "Limited"
+)
+
+c2.metric(
+    "Engine",
+    "Available" if t37_engine else "Limited"
+)
+
+c3.metric(
+    "Root Cause",
+    "Available" if t37_root_cause else "Limited"
+)
+
+c4.metric(
+    "Hull / Propeller",
+    "Available" if t37_hull_propeller else "Limited"
+)
+
+c5.metric(
+    "ROB / Bunker",
+    "Available" if t37_fuel_reconciliation else "Limited"
+)
+
+# ----------------------------------------------------------------
+# OPERATIONAL ASSESSMENT
+# ----------------------------------------------------------------
+
+st.subheader("🎯 Operational Assessment")
+
+if t37_available_count >= 4:
+    t37_priority = "HIGH"
+    t37_status = "Strong upstream intelligence coverage"
+
+    st.success(
+        "🟢 Sufficient upstream intelligence is available for "
+        "operational recommendation screening."
+    )
+
+elif t37_available_count >= 2:
+    t37_priority = "MEDIUM"
+    t37_status = "Partial upstream intelligence coverage"
+
+    st.warning(
+        "🟠 Only part of the upstream intelligence is currently "
+        "available. Recommendations should be interpreted with "
+        "the available-data limitations."
+    )
+
+else:
+    t37_priority = "REVIEW"
+    t37_status = "Limited upstream intelligence coverage"
+
+    st.warning(
+        "🟠 Upstream intelligence is currently limited. "
+        "Verify operational records before implementing "
+        "corrective actions."
+    )
+
+# ----------------------------------------------------------------
+# RECOMMENDED OPERATIONAL ACTIONS
+# ----------------------------------------------------------------
+
+st.subheader("📋 Recommended Operational Actions")
+
+t37_actions = []
+
+if t37_anomaly:
+    t37_actions.append(
+        "Review detected fuel-consumption anomalies against "
+        "verified operational and voyage records."
+    )
+
+if t37_engine:
+    t37_actions.append(
+        "Verify engine performance parameters, RPM/load, "
+        "temperatures, pressures and applicable OEM limits."
+    )
+
+if t37_root_cause:
+    t37_actions.append(
+        "Review the identified diagnostic indicators and verify "
+        "possible contributing operational factors."
+    )
+
+if t37_hull_propeller:
+    t37_actions.append(
+        "Review hull and propeller performance indicators against "
+        "speed, draft/trim, weather, current and inspection records."
+    )
+
+if t37_fuel_reconciliation:
+    t37_actions.append(
+        "Reconcile ROB, bunker receipts, transfers and recorded "
+        "fuel consumption against verified tank measurements."
+    )
+
+if not t37_actions:
+    t37_actions = [
+        "Verify actual fuel measurements and tank soundings.",
+        "Review ROB and bunker documentation.",
+        "Verify engine performance and RPM/load records.",
+        "Review vessel speed, draft and trim.",
+        "Review weather, current and voyage conditions.",
+        "Collect sufficient verified data before corrective action."
+    ]
+
+for i, action in enumerate(t37_actions, start=1):
+    st.write(f"{i}. {action}")
+
+# ----------------------------------------------------------------
+# MANAGEMENT PRIORITY
+# ----------------------------------------------------------------
+
+st.subheader("📊 Management Priority")
+
+m1, m2, m3 = st.columns(3)
+
+m1.metric(
+    "Upstream Modules Available",
+    f"{t37_available_count}/5"
+)
+
+m2.metric(
+    "Assessment Priority",
+    t37_priority
+)
+
+m3.metric(
+    "Recommended Actions",
+    len(t37_actions)
+)
+
+# ----------------------------------------------------------------
+# DATA QUALITY & VALIDATION
+# ----------------------------------------------------------------
+
+st.subheader("🛡️ Data Quality & Validation")
+
+if t37_available_count >= 4:
+    st.success(
+        "🟢 Upstream fuel-efficiency intelligence is available "
+        "for operational recommendation assessment."
+    )
+else:
+    st.warning(
+        "🟠 Only part of the required upstream intelligence is "
+        "currently available. Validate recommendations against "
+        "verified vessel records."
+    )
+
+st.info(
+    "Operational Recommendation & Corrective Action Intelligence "
+    "is a decision-support screening module. Recommendations do "
+    "not independently establish machinery failure, fuel loss, "
+    "crew performance, commercial responsibility or causation. "
+    "Verify actual fuel measurements, tank soundings, ROB, bunker "
+    "records, engine parameters, RPM/load, vessel speed, draft/trim, "
+    "weather/current, sea state, voyage conditions, hull/propeller "
+    "condition, fuel properties and applicable OEM/company "
+    "requirements before technical, operational, safety, "
+    "procurement, financial or commercial action."
+)
+
+# ----------------------------------------------------------------
+# STORE TAHAP 37 RESULTS
+# ----------------------------------------------------------------
+
+t37_result = {
+    "module": (
+        "Fuel Efficiency Operational Recommendation "
+        "& Corrective Action Intelligence"
+    ),
+    "upstream_modules_available": t37_available_count,
+    "priority": t37_priority,
+    "status": t37_status,
+    "recommended_actions": t37_actions,
+}
+
+st.session_state["t37_result"] = t37_result
+st.session_state["t37_result_upstream_available"] = (
+    t37_available_count > 0
+)
+st.session_state["t37_upstream_available"] = (
+    t37_available_count > 0
+)
+st.session_state["t37_priority"] = t37_priority
+st.session_state["t37_actions"] = t37_actions
+
+# ----------------------------------------------------------------
+# TAHAP 37 STATUS
+# ----------------------------------------------------------------
+
+st.success(
+    "✅ TAHAP 37 ACTIVE — Fuel Efficiency Operational "
+    "Recommendation & Corrective Action Intelligence "
+    "is operational."
+)
+
+st.info(
+    "TAHAP 37 results are stored in the application session "
+    "and prepared for the next intelligence modules."
+)
+
+# ================================================================
+# END TAHAP 37
+# ================================================================
+
 
 
