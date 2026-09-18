@@ -7829,3 +7829,557 @@ st.info(
 # ================================================================
 # END TAHAP 14
 # ================================================================
+
+# ================================================================
+# TAHAP 15 - FUEL BUDGET & PROCUREMENT CONTROL INTELLIGENCE
+# ================================================================
+
+st.divider()
+st.header("💰 Fuel Budget & Procurement Control Intelligence")
+
+st.caption(
+    "Fuel procurement budget control, bunker-cost variance, "
+    "budget exposure, procurement status and management actions."
+)
+
+# ------------------------------------------------
+# VESSEL CONTEXT
+# ------------------------------------------------
+
+t15_selected_vessel = st.session_state.get(
+    "selected_fleet_vessel",
+    st.session_state.get(
+        "sidebar_vessel_name",
+        globals().get("vessel_name", "ASL MANTRUS")
+    )
+)
+
+st.subheader("🚢 Budget Control Vessel")
+st.info(
+    f"Fuel budget and procurement control for: "
+    f"**{t15_selected_vessel}**"
+)
+
+
+# ------------------------------------------------
+# SAFE NUMBER FUNCTION
+# ------------------------------------------------
+
+def t15_safe_float(value, default=0.0):
+    try:
+        if value is None:
+            return float(default)
+        return float(value)
+    except (TypeError, ValueError):
+        return float(default)
+
+
+# ------------------------------------------------
+# DATA FROM TAHAP 14
+# ------------------------------------------------
+
+t15_bunker_required = t15_safe_float(
+    st.session_state.get(
+        "t14_result_bunker_required",
+        0.0
+    )
+)
+
+t15_previous_estimated_cost = t15_safe_float(
+    st.session_state.get(
+        "t14_result_estimated_cost",
+        0.0
+    )
+)
+
+t15_current_rob = t15_safe_float(
+    st.session_state.get(
+        "t14_result_current_rob",
+        0.0
+    )
+)
+
+t15_daily_consumption = t15_safe_float(
+    st.session_state.get(
+        "t14_result_daily_consumption",
+        0.0
+    )
+)
+
+
+# ------------------------------------------------
+# PROCUREMENT & BUDGET INPUT
+# ------------------------------------------------
+
+st.subheader("📝 Procurement & Budget Data")
+
+t15_c1, t15_c2, t15_c3 = st.columns(3)
+
+with t15_c1:
+
+    t15_planned_quantity = st.number_input(
+        "Planned Bunker Quantity",
+        min_value=0.0,
+        value=float(max(t15_bunker_required, 0.0)),
+        step=1.0,
+        key="t15_planned_quantity"
+    )
+
+    t15_budget_price = st.number_input(
+        "Approved Budget Price / Unit",
+        min_value=0.0,
+        value=650.0,
+        step=10.0,
+        key="t15_budget_price"
+    )
+
+
+with t15_c2:
+
+    t15_supplier_price = st.number_input(
+        "Supplier Quotation / Unit",
+        min_value=0.0,
+        value=650.0,
+        step=10.0,
+        key="t15_supplier_price"
+    )
+
+    t15_delivery_cost = st.number_input(
+        "Delivery / Port / Additional Cost",
+        min_value=0.0,
+        value=0.0,
+        step=100.0,
+        key="t15_delivery_cost"
+    )
+
+
+with t15_c3:
+
+    t15_approved_budget = st.number_input(
+        "Approved Procurement Budget",
+        min_value=0.0,
+        value=float(max(t15_previous_estimated_cost, 0.0)),
+        step=1000.0,
+        key="t15_approved_budget"
+    )
+
+    t15_contingency_percent = st.number_input(
+        "Budget Contingency (%)",
+        min_value=0.0,
+        max_value=100.0,
+        value=5.0,
+        step=1.0,
+        key="t15_contingency_percent"
+    )
+
+
+# ------------------------------------------------
+# CALCULATIONS
+# ------------------------------------------------
+
+t15_budget_quantity_cost = (
+    t15_planned_quantity *
+    t15_budget_price
+)
+
+t15_supplier_quantity_cost = (
+    t15_planned_quantity *
+    t15_supplier_price
+)
+
+t15_total_procurement_cost = (
+    t15_supplier_quantity_cost +
+    t15_delivery_cost
+)
+
+t15_contingency_value = (
+    t15_approved_budget *
+    t15_contingency_percent /
+    100.0
+)
+
+t15_budget_with_contingency = (
+    t15_approved_budget +
+    t15_contingency_value
+)
+
+t15_price_variance = (
+    t15_supplier_price -
+    t15_budget_price
+)
+
+if t15_budget_price > 0:
+    t15_price_variance_percent = (
+        t15_price_variance /
+        t15_budget_price *
+        100.0
+    )
+else:
+    t15_price_variance_percent = 0.0
+
+t15_cost_variance = (
+    t15_total_procurement_cost -
+    t15_approved_budget
+)
+
+if t15_approved_budget > 0:
+    t15_cost_variance_percent = (
+        t15_cost_variance /
+        t15_approved_budget *
+        100.0
+    )
+else:
+    t15_cost_variance_percent = 0.0
+
+t15_budget_remaining = (
+    t15_approved_budget -
+    t15_total_procurement_cost
+)
+
+t15_contingency_remaining = (
+    t15_budget_with_contingency -
+    t15_total_procurement_cost
+)
+
+
+# ------------------------------------------------
+# BUDGET CONTROL DASHBOARD
+# ------------------------------------------------
+
+st.subheader("📊 Fuel Budget Control Dashboard")
+
+t15_m1, t15_m2, t15_m3, t15_m4 = st.columns(4)
+
+t15_m1.metric(
+    "Planned Quantity",
+    f"{t15_planned_quantity:,.2f}"
+)
+
+t15_m2.metric(
+    "Budget Price",
+    f"${t15_budget_price:,.2f}"
+)
+
+t15_m3.metric(
+    "Supplier Price",
+    f"${t15_supplier_price:,.2f}",
+    delta=f"${t15_price_variance:,.2f}"
+)
+
+t15_m4.metric(
+    "Total Procurement Cost",
+    f"${t15_total_procurement_cost:,.2f}"
+)
+
+
+t15_m5, t15_m6, t15_m7, t15_m8 = st.columns(4)
+
+t15_m5.metric(
+    "Approved Budget",
+    f"${t15_approved_budget:,.2f}"
+)
+
+t15_m6.metric(
+    "Budget + Contingency",
+    f"${t15_budget_with_contingency:,.2f}"
+)
+
+t15_m7.metric(
+    "Budget Remaining",
+    f"${t15_budget_remaining:,.2f}"
+)
+
+t15_m8.metric(
+    "Cost Variance",
+    f"{t15_cost_variance_percent:,.1f}%"
+)
+
+
+# ------------------------------------------------
+# PROCUREMENT CONTROL STATUS
+# ------------------------------------------------
+
+st.subheader("🚦 Procurement Control Status")
+
+if t15_planned_quantity <= 0:
+
+    t15_status = "QUANTITY REQUIRED"
+
+    st.warning(
+        "Planned bunker quantity is zero. "
+        "Verify bunker requirement before procurement approval."
+    )
+
+elif t15_supplier_price <= 0:
+
+    t15_status = "PRICE REQUIRED"
+
+    st.warning(
+        "Supplier quotation is zero or unavailable."
+    )
+
+elif t15_approved_budget <= 0:
+
+    t15_status = "BUDGET REQUIRED"
+
+    st.warning(
+        "Approved procurement budget is zero or unavailable."
+    )
+
+elif t15_total_procurement_cost > t15_budget_with_contingency:
+
+    t15_status = "CRITICAL BUDGET OVERRUN"
+
+    st.error(
+        "Estimated procurement cost exceeds the approved budget "
+        "including contingency."
+    )
+
+elif t15_total_procurement_cost > t15_approved_budget:
+
+    t15_status = "CONTINGENCY REQUIRED"
+
+    st.warning(
+        "Estimated procurement cost exceeds the base approved budget "
+        "but remains within the entered contingency allowance."
+    )
+
+elif t15_supplier_price > t15_budget_price:
+
+    t15_status = "PRICE ABOVE BUDGET"
+
+    st.warning(
+        "Supplier quotation is above the approved budget price."
+    )
+
+else:
+
+    t15_status = "WITHIN BUDGET"
+
+    st.success(
+        "Estimated procurement cost is within the entered "
+        "approved budget."
+    )
+
+
+# ------------------------------------------------
+# MANAGEMENT INTELLIGENCE
+# ------------------------------------------------
+
+st.subheader("🧠 Management Intelligence")
+
+t15_intelligence = []
+
+if t15_planned_quantity <= 0:
+    t15_intelligence.append(
+        "Bunker quantity must be verified before commercial approval."
+    )
+
+if t15_supplier_price > t15_budget_price and t15_budget_price > 0:
+    t15_intelligence.append(
+        f"Supplier price is {t15_price_variance_percent:,.1f}% "
+        f"above the entered budget price."
+    )
+
+if t15_supplier_price < t15_budget_price and t15_budget_price > 0:
+    t15_intelligence.append(
+        f"Supplier price is "
+        f"{abs(t15_price_variance_percent):,.1f}% "
+        f"below the entered budget price."
+    )
+
+if t15_cost_variance > 0:
+    t15_intelligence.append(
+        f"Estimated procurement cost exceeds the base approved "
+        f"budget by ${t15_cost_variance:,.2f}."
+    )
+
+if (
+    t15_approved_budget > 0 and
+    t15_total_procurement_cost <= t15_approved_budget
+):
+    t15_intelligence.append(
+        f"Estimated remaining base budget after procurement is "
+        f"${max(t15_budget_remaining, 0.0):,.2f}."
+    )
+
+if (
+    t15_total_procurement_cost >
+    t15_budget_with_contingency and
+    t15_budget_with_contingency > 0
+):
+    t15_intelligence.append(
+        f"Additional funding exposure above budget plus contingency is "
+        f"${abs(t15_contingency_remaining):,.2f}."
+    )
+
+if not t15_intelligence:
+    t15_intelligence.append(
+        "Enter verified procurement quantity, supplier quotation "
+        "and approved budget to generate management intelligence."
+    )
+
+for item in t15_intelligence:
+    st.write(f"• {item}")
+
+
+# ------------------------------------------------
+# PRIORITY ACTIONS
+# ------------------------------------------------
+
+st.subheader("📋 Priority Actions")
+
+t15_priority_actions = []
+
+if t15_planned_quantity <= 0:
+    t15_priority_actions.append(
+        "Verify bunker requirement and required delivery quantity."
+    )
+
+if t15_supplier_price <= 0:
+    t15_priority_actions.append(
+        "Obtain and verify supplier bunker quotation."
+    )
+
+if t15_supplier_price > t15_budget_price:
+    t15_priority_actions.append(
+        "Review supplier quotation against approved budget price "
+        "and alternative commercial options."
+    )
+
+if t15_total_procurement_cost > t15_approved_budget:
+    t15_priority_actions.append(
+        "Review procurement cost against approved operating budget "
+        "before commercial approval."
+    )
+
+if (
+    t15_total_procurement_cost >
+    t15_budget_with_contingency
+):
+    t15_priority_actions.append(
+        "Escalate projected budget overrun for management review "
+        "and authorization."
+    )
+
+if not t15_priority_actions:
+    t15_priority_actions.append(
+        "Continue monitoring bunker requirement, supplier price "
+        "and procurement budget."
+    )
+
+for idx, action in enumerate(
+    t15_priority_actions,
+    start=1
+):
+    st.write(f"{idx}. {action}")
+
+
+# ------------------------------------------------
+# DATA QUALITY & VALIDATION
+# ------------------------------------------------
+
+st.subheader("🛡️ Data Quality & Validation")
+
+t15_validation = []
+
+if t15_planned_quantity <= 0:
+    t15_validation.append(
+        "Planned bunker quantity is zero or unavailable."
+    )
+
+if t15_budget_price <= 0:
+    t15_validation.append(
+        "Approved budget price is zero or unavailable."
+    )
+
+if t15_supplier_price <= 0:
+    t15_validation.append(
+        "Supplier quotation is zero or unavailable."
+    )
+
+if t15_approved_budget <= 0:
+    t15_validation.append(
+        "Approved procurement budget is zero or unavailable."
+    )
+
+if not t15_validation:
+
+    st.success(
+        "🟢 Fuel budget and procurement inputs passed "
+        "the basic validation checks."
+    )
+
+else:
+
+    for note in t15_validation:
+        st.warning(f"🟠 {note}")
+
+
+st.info(
+    "Fuel budget and procurement-control figures are decision-support "
+    "estimates. Before commercial approval or bunker purchasing, verify "
+    "the required bunker quantity, actual supplier quotation, fuel "
+    "specification, currency basis, taxes, delivery charges, port costs, "
+    "contract terms, approved operating budget and applicable company "
+    "procurement procedures."
+)
+
+
+# ------------------------------------------------
+# SAVE TAHAP 15 RESULTS
+# ------------------------------------------------
+
+st.session_state["t15_result_status"] = t15_status
+
+st.session_state["t15_result_planned_quantity"] = (
+    t15_planned_quantity
+)
+
+st.session_state["t15_result_supplier_price"] = (
+    t15_supplier_price
+)
+
+st.session_state["t15_result_total_procurement_cost"] = (
+    t15_total_procurement_cost
+)
+
+st.session_state["t15_result_approved_budget"] = (
+    t15_approved_budget
+)
+
+st.session_state["t15_result_budget_remaining"] = (
+    t15_budget_remaining
+)
+
+st.session_state["t15_result_cost_variance"] = (
+    t15_cost_variance
+)
+
+st.session_state["t15_result_cost_variance_percent"] = (
+    t15_cost_variance_percent
+)
+
+st.session_state["t15_result_priority_actions"] = (
+    t15_priority_actions
+)
+
+st.session_state["t15_result_intelligence"] = (
+    t15_intelligence
+)
+
+
+st.success(
+    "✅ TAHAP 15 ACTIVE — Fuel Budget & Procurement Control "
+    "Intelligence is operational."
+)
+
+st.info(
+    "TAHAP 15 results are stored in the application session "
+    "and prepared for the next intelligence modules."
+)
+
+
+# ================================================================
+# END TAHAP 15
+# ================================================================
