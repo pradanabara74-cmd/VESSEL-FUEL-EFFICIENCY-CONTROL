@@ -135,58 +135,7 @@ ENGINE_REFERENCE = {
 # ============================================================
 
 st.markdown(
-    """
-    <style>
-    .main-title {
-        font-size: 34px;
-        font-weight: 800;
-        color: #0B3D5C;
-        margin-bottom: 0px;
-    }
-
-    .sub-title {
-        font-size: 16px;
-        color: #5B6770;
-        margin-bottom: 20px;
-    }
-
-    .info-box {
-        padding: 14px;
-        border-radius: 10px;
-        background-color: #F3F7FA;
-        border-left: 5px solid #0B3D5C;
-        margin-bottom: 15px;
-    }
-
-    .status-normal {
-        padding: 14px;
-        border-radius: 8px;
-        background-color: #E8F5E9;
-        font-weight: 700;
-    }
-
-    .status-warning {
-        padding: 14px;
-        border-radius: 8px;
-        background-color: #FFF3E0;
-        font-weight: 700;
-    }
-
-    .status-critical {
-        padding: 14px;
-        border-radius: 8px;
-        background-color: #FFEBEE;
-        font-weight: 700;
-    }
-
-    .status-low {
-        padding: 14px;
-        border-radius: 8px;
-        background-color: #E3F2FD;
-        font-weight: 700;
-    }
-    </style>
-    """,
+    """ <style> .main-title { font-size: 34px; font-weight: 800; color: #0B3D5C; margin-bottom: 0px; } .sub-title { font-size: 16px; color: #5B6770; margin-bottom: 20px; } .info-box { padding: 14px; border-radius: 10px; background-color: #F3F7FA; border-left: 5px solid #0B3D5C; margin-bottom: 15px; } .status-normal { padding: 14px; border-radius: 8px; background-color: #E8F5E9; font-weight: 700; } .status-warning { padding: 14px; border-radius: 8px; background-color: #FFF3E0; font-weight: 700; } .status-critical { padding: 14px; border-radius: 8px; background-color: #FFEBEE; font-weight: 700; } .status-low { padding: 14px; border-radius: 8px; background-color: #E3F2FD; font-weight: 700; } </style> """,
     unsafe_allow_html=True,
 )
 
@@ -208,12 +157,7 @@ def safe_divide(a, b):
     return a / b
 
 
-def propeller_power(
-    rated_kw,
-    actual_rpm,
-    rated_rpm,
-    exponent=3.0,
-):
+def propeller_power( rated_kw, actual_rpm, rated_rpm, exponent=3.0, ):
     if rated_kw <= 0 or rated_rpm <= 0:
         return 0.0
 
@@ -222,10 +166,7 @@ def propeller_power(
     return rated_kw * (ratio ** exponent)
 
 
-def estimated_load_percent(
-    actual_power_kw,
-    rated_kw,
-):
+def estimated_load_percent( actual_power_kw, rated_kw, ):
     if rated_kw <= 0:
         return 0.0
 
@@ -235,16 +176,8 @@ def estimated_load_percent(
     )
 
 
-def corrected_sfoc(
-    base_sfoc,
-    load_percent,
-):
-    """
-    Generic part-load correction for estimation only.
-
-    It is not a substitute for the manufacturer's
-    certified SFOC/load curve.
-    """
+def corrected_sfoc( base_sfoc, load_percent, ):
+    """ Generic part-load correction for estimation only. It is not a substitute for the manufacturer's certified SFOC/load curve. """
 
     if load_percent >= 85:
         factor = 1.00
@@ -260,17 +193,7 @@ def corrected_sfoc(
     return base_sfoc * factor
 
 
-def calculate_engine(
-    rated_kw,
-    rated_rpm,
-    actual_rpm,
-    base_sfoc,
-    density,
-    running_hours,
-    speed_knots,
-    exponent,
-    engine_count,
-):
+def calculate_engine( rated_kw, rated_rpm, actual_rpm, base_sfoc, density, running_hours, speed_knots, exponent, engine_count, ):
     power_one_kw = propeller_power(
         rated_kw,
         actual_rpm,
@@ -347,13 +270,7 @@ st.markdown(
 )
 
 st.markdown(
-    """
-    <div class="info-box">
-    <b>Purpose:</b> Vessel fuel monitoring, RPM/load analysis,
-    fuel-efficiency control, cost monitoring and excess-fuel
-    detection.
-    </div>
-    """,
+    """ <div class="info-box"> <b>Purpose:</b> Vessel fuel monitoring, RPM/load analysis, fuel-efficiency control, cost monitoring and excess-fuel detection. </div> """,
     unsafe_allow_html=True,
 )
 
@@ -830,52 +747,28 @@ st.markdown("### 🚦 Fuel Efficiency Status")
 if variance_percent < -5:
 
     st.markdown(
-        """
-        <div class="status-low">
-        🔵 BELOW ESTIMATE — Actual fuel consumption is
-        materially below the current engineering estimate.
-        Verify measurement quality and operating conditions.
-        </div>
-        """,
+        """ <div class="status-low"> 🔵 BELOW ESTIMATE — Actual fuel consumption is materially below the current engineering estimate. Verify measurement quality and operating conditions. </div> """,
         unsafe_allow_html=True,
     )
 
 elif variance_percent <= 5:
 
     st.markdown(
-        """
-        <div class="status-normal">
-        ✅ NORMAL — Actual fuel consumption is within
-        ±5% of the current engineering estimate.
-        </div>
-        """,
+        """ <div class="status-normal"> ✅ NORMAL — Actual fuel consumption is within ±5% of the current engineering estimate. </div> """,
         unsafe_allow_html=True,
     )
 
 elif variance_percent <= 15:
 
     st.markdown(
-        """
-        <div class="status-warning">
-        ⚠️ HIGH CONSUMPTION — Actual fuel consumption
-        is more than 5% above the current estimate.
-        Investigation is recommended.
-        </div>
-        """,
+        """ <div class="status-warning"> ⚠️ HIGH CONSUMPTION — Actual fuel consumption is more than 5% above the current estimate. Investigation is recommended. </div> """,
         unsafe_allow_html=True,
     )
 
 else:
 
     st.markdown(
-        """
-        <div class="status-critical">
-        🔴 CRITICAL DEVIATION — Actual consumption is
-        more than 15% above the current estimate.
-        Investigate engine load, hull/propeller condition,
-        weather, current, operating mode and measurement data.
-        </div>
-        """,
+        """ <div class="status-critical"> 🔴 CRITICAL DEVIATION — Actual consumption is more than 15% above the current estimate. Investigate engine load, hull/propeller condition, weather, current, operating mode and measurement data. </div> """,
         unsafe_allow_html=True,
     )
 
@@ -1046,91 +939,7 @@ for recommendation in recommendations:
 with st.expander("📐 Engineering Formula & Method"):
 
     st.markdown(
-        r"""
-### Power conversion
-
-\[
-1\ HP = 0.745699872\ kW
-\]
-
-### Propeller-law estimate
-
-\[
-P_{actual}
-=
-P_{rated}
-\left(
-\frac{RPM_{actual}}
-{RPM_{rated}}
-\right)^n
-\]
-
-The default is:
-
-\[
-n = 3
-\]
-
-This is a conventional propeller-demand approximation,
-not a universal engine fuel curve.
-
-### Fuel mass flow
-
-\[
-Fuel_{kg/h}
-=
-\frac{
-Power_{kW}
-\times
-SFOC_{g/kWh}
-}{1000}
-\]
-
-### Fuel volume flow
-
-\[
-Fuel_{L/h}
-=
-\frac{
-Fuel_{kg/h}
-}{
-Density_{kg/L}
-}
-\]
-
-### Daily fuel
-
-\[
-Fuel_{L/day}
-=
-Fuel_{L/h}
-\times
-RunningHours
-\]
-
-### Fuel intensity
-
-\[
-Fuel_{L/NM}
-=
-\frac{
-Fuel_{L/h}
-}{
-Speed_{knots}
-}
-\]
-
-### Excess fuel
-
-\[
-Excess_{L/day}
-=
-\max(
-Actual_{L/h}-Expected_{L/h},0
-)
-\times RunningHours
-\]
-"""
+        r""" ### Power conversion \[ 1\ HP = 0.745699872\ kW \] ### Propeller-law estimate \[ P_{actual} = P_{rated} \left( \frac{RPM_{actual}} {RPM_{rated}} \right)^n \] The default is: \[ n = 3 \] This is a conventional propeller-demand approximation, not a universal engine fuel curve. ### Fuel mass flow \[ Fuel_{kg/h} = \frac{ Power_{kW} \times SFOC_{g/kWh} }{1000} \] ### Fuel volume flow \[ Fuel_{L/h} = \frac{ Fuel_{kg/h} }{ Density_{kg/L} } \] ### Daily fuel \[ Fuel_{L/day} = Fuel_{L/h} \times RunningHours \] ### Fuel intensity \[ Fuel_{L/NM} = \frac{ Fuel_{L/h} }{ Speed_{knots} } \] ### Excess fuel \[ Excess_{L/day} = \max( Actual_{L/h}-Expected_{L/h},0 ) \times RunningHours \] """
     )
 
 # ============================================================
@@ -1184,24 +993,7 @@ else:
 # ============================================================
 
 st.warning(
-    """
-ENGINEERING NOTICE
-
-Expected fuel consumption in this application is an
-engineering estimate unless the exact manufacturer
-performance curve or calibrated vessel data has been entered.
-
-RPM alone does not uniquely determine fuel consumption.
-
-For commercial, operational or contractual decisions,
-validate the calculation against the exact installed engine
-rating, manufacturer performance/SFOC curve, propeller/hull
-characteristics, fuel density, sea-trial data and calibrated
-fuel-flow or tank measurement data.
-
-Towing, anchor handling and DP operations can differ
-substantially from a conventional free-sailing propeller curve.
-"""
+    """ ENGINEERING NOTICE Expected fuel consumption in this application is an engineering estimate unless the exact manufacturer performance curve or calibrated vessel data has been entered. RPM alone does not uniquely determine fuel consumption. For commercial, operational or contractual decisions, validate the calculation against the exact installed engine rating, manufacturer performance/SFOC curve, propeller/hull characteristics, fuel density, sea-trial data and calibrated fuel-flow or tank measurement data. Towing, anchor handling and DP operations can differ substantially from a conventional free-sailing propeller curve. """
 )
 
 st.caption(
@@ -2788,4 +2580,185 @@ st.info(
 
 # ============================================================
 # END TAHAP 4
+# ============================================================
+
+# ============================================================
+# TAHAP 5 — VOYAGE FUEL PLANNING & ENDURANCE INTELLIGENCE
+# ============================================================
+
+st.divider()
+st.header("🧭 Voyage Fuel Planning & Endurance Intelligence")
+st.caption(
+    "Voyage fuel requirement, sailing endurance, reserve protection and "
+    "bunker sufficiency analysis connected to TAHAP 1–4."
+)
+
+t5_selected_vessel = st.session_state.get(
+    "selected_fleet_vessel",
+    st.session_state.get("sidebar_vessel_name", globals().get("vessel_name", "ASL MANTRUS"))
+)
+
+st.subheader("🚢 Voyage Planning Vessel")
+st.info(f"Voyage fuel planning for: **{t5_selected_vessel}**")
+
+# Inputs use unique keys so they cannot collide with earlier Streamlit widgets.
+st.subheader("⚙️ Voyage Planning Data")
+t5_c1, t5_c2, t5_c3 = st.columns(3)
+
+with t5_c1:
+    t5_distance_nm = st.number_input(
+        "Planned Voyage Distance (NM)", min_value=0.0, value=500.0,
+        step=10.0, key="t5_distance_nm"
+    )
+    t5_speed_kn = st.number_input(
+        "Planned Average Speed (knots)", min_value=0.1, value=10.0,
+        step=0.1, key="t5_speed_kn"
+    )
+
+with t5_c2:
+    t5_daily_consumption_l = st.number_input(
+        "Planning Fuel Consumption (L/day)", min_value=0.0,
+        value=float(st.session_state.get("t4_result_daily_consumption_l", 6000.0)),
+        step=100.0, key="t5_daily_consumption_l"
+    )
+    t5_weather_margin_pct = st.number_input(
+        "Weather / Operational Margin (%)", min_value=0.0, max_value=100.0,
+        value=10.0, step=1.0, key="t5_weather_margin_pct"
+    )
+
+with t5_c3:
+    t5_port_allowance_l = st.number_input(
+        "Port / Maneuvering Allowance (L)", min_value=0.0, value=2000.0,
+        step=100.0, key="t5_port_allowance_l"
+    )
+    t5_extra_days = st.number_input(
+        "Contingency / Standby (days)", min_value=0.0, value=1.0,
+        step=0.5, key="t5_extra_days"
+    )
+
+# Bring forward verified TAHAP 4 results.
+t5_current_rob_l = float(st.session_state.get("t4_result_rob_l", 0.0))
+t5_reserve_l = float(st.session_state.get("t4_result_reserve_l", 0.0))
+t5_projected_rob_l = float(st.session_state.get("t4_result_projected_rob_l", t5_current_rob_l))
+t5_bunker_status_from_t4 = st.session_state.get("t4_result_bunker_status", "UNKNOWN")
+
+# Core calculations.
+t5_sailing_hours = (float(t5_distance_nm) / float(t5_speed_kn)) if t5_speed_kn > 0 else 0.0
+t5_sailing_days = t5_sailing_hours / 24.0
+t5_base_voyage_fuel_l = t5_sailing_days * float(t5_daily_consumption_l)
+t5_weather_margin_l = t5_base_voyage_fuel_l * float(t5_weather_margin_pct) / 100.0
+t5_standby_fuel_l = float(t5_extra_days) * float(t5_daily_consumption_l)
+t5_operational_requirement_l = (
+    t5_base_voyage_fuel_l + t5_weather_margin_l +
+    float(t5_port_allowance_l) + t5_standby_fuel_l
+)
+t5_total_required_l = t5_operational_requirement_l + t5_reserve_l
+t5_surplus_deficit_l = t5_projected_rob_l - t5_total_required_l
+t5_arrival_rob_l = t5_projected_rob_l - t5_operational_requirement_l
+
+if t5_daily_consumption_l > 0:
+    t5_available_endurance_days = max(t5_projected_rob_l - t5_reserve_l, 0.0) / t5_daily_consumption_l
+else:
+    t5_available_endurance_days = 0.0
+
+if t5_total_required_l <= 0:
+    t5_status = "DATA REQUIRED"
+elif t5_surplus_deficit_l < 0:
+    t5_status = "CRITICAL — INSUFFICIENT FUEL"
+elif t5_arrival_rob_l < (t5_reserve_l * 1.10):
+    t5_status = "WARNING — LOW ARRIVAL MARGIN"
+else:
+    t5_status = "SUFFICIENT"
+
+st.subheader("📊 Voyage Fuel Planning Dashboard")
+t5_m1, t5_m2, t5_m3, t5_m4 = st.columns(4)
+t5_m1.metric("Sailing Time", f"{t5_sailing_days:.2f} days")
+t5_m2.metric("Operational Fuel", f"{t5_operational_requirement_l:,.0f} L")
+t5_m3.metric("Required incl. Reserve", f"{t5_total_required_l:,.0f} L")
+t5_m4.metric("Projected ROB Before Voyage", f"{t5_projected_rob_l:,.0f} L")
+
+t5_m5, t5_m6, t5_m7, t5_m8 = st.columns(4)
+t5_m5.metric("Arrival ROB", f"{t5_arrival_rob_l:,.0f} L")
+t5_m6.metric("Safety Reserve", f"{t5_reserve_l:,.0f} L")
+t5_m7.metric("Fuel Surplus / Deficit", f"{t5_surplus_deficit_l:+,.0f} L")
+t5_m8.metric("Usable Endurance", f"{t5_available_endurance_days:.2f} days")
+
+st.subheader("🚦 Voyage Fuel Status")
+if t5_status == "SUFFICIENT":
+    st.success("🟢 SUFFICIENT — Projected fuel covers the voyage plan and configured reserve.")
+elif t5_status.startswith("WARNING"):
+    st.warning("🟠 WARNING — Fuel is calculated as sufficient, but arrival margin is close to the configured reserve.")
+elif t5_status.startswith("CRITICAL"):
+    st.error(
+        f"🔴 CRITICAL — Estimated fuel shortfall is {abs(t5_surplus_deficit_l):,.0f} L. "
+        "Review voyage assumptions and bunker requirement before departure."
+    )
+else:
+    st.warning("🟠 Complete the voyage and consumption inputs before relying on this calculation.")
+
+st.subheader("🧠 Voyage Intelligence")
+t5_findings = []
+if t5_distance_nm <= 0:
+    t5_findings.append("Planned voyage distance has not been entered.")
+if t5_daily_consumption_l <= 0:
+    t5_findings.append("Planning fuel consumption is missing or zero.")
+if t5_weather_margin_pct < 5:
+    t5_findings.append("Weather / operational margin is below 5%; verify against company voyage-planning requirements.")
+if t5_surplus_deficit_l < 0:
+    t5_findings.append(f"Additional fuel requirement is approximately {abs(t5_surplus_deficit_l):,.0f} L under the current assumptions.")
+if t5_arrival_rob_l < t5_reserve_l:
+    t5_findings.append("Estimated arrival ROB falls below the configured minimum reserve.")
+if t5_bunker_status_from_t4 in ["LOW", "CRITICAL"]:
+    t5_findings.append("TAHAP 4 indicates an elevated bunker-inventory condition; reconcile bunker status before voyage approval.")
+if not t5_findings:
+    t5_findings.append("No basic voyage-fuel exception is detected under the current planning assumptions.")
+for item in t5_findings:
+    st.write("•", item)
+
+st.subheader("📋 Priority Actions")
+t5_priority_actions = []
+if t5_surplus_deficit_l < 0:
+    t5_priority_actions.append("Plan additional bunker before departure and verify available tank capacity.")
+if t5_arrival_rob_l < t5_reserve_l:
+    t5_priority_actions.append("Do not rely on the current voyage fuel plan until the minimum arrival reserve is restored.")
+if t5_weather_margin_pct < 5:
+    t5_priority_actions.append("Review weather and operational contingency allowance against company procedures.")
+t5_priority_actions.append("Verify route distance, expected speed, weather/current, consumption rate and port/maneuvering allowance before final voyage approval.")
+for i, action in enumerate(t5_priority_actions, start=1):
+    st.write(f"{i}. {action}")
+
+st.subheader("🛡️ Data Quality & Validation")
+t5_validation = []
+if t5_projected_rob_l <= 0:
+    t5_validation.append("Projected ROB from TAHAP 4 is zero or unavailable.")
+if t5_daily_consumption_l <= 0:
+    t5_validation.append("Daily fuel consumption must be greater than zero.")
+if t5_speed_kn <= 0:
+    t5_validation.append("Planned speed must be greater than zero.")
+if not t5_validation:
+    st.success("🟢 Voyage planning inputs passed the basic validation checks.")
+else:
+    for note in t5_validation:
+        st.warning(f"🟠 {note}")
+
+st.info(
+    "Voyage fuel figures are planning estimates. Before operational approval, verify the actual route, "
+    "weather/current, vessel condition, loading/towing condition, measured ROB, tank calibration, "
+    "fuel density, expected machinery consumption, statutory/company reserves and Master/company requirements."
+)
+
+# Save TAHAP 5 outputs for downstream intelligence modules.
+st.session_state["t5_result_status"] = t5_status
+st.session_state["t5_result_sailing_days"] = t5_sailing_days
+st.session_state["t5_result_operational_fuel_l"] = t5_operational_requirement_l
+st.session_state["t5_result_total_required_l"] = t5_total_required_l
+st.session_state["t5_result_arrival_rob_l"] = t5_arrival_rob_l
+st.session_state["t5_result_surplus_deficit_l"] = t5_surplus_deficit_l
+st.session_state["t5_result_priority_actions"] = t5_priority_actions
+
+st.success("✅ TAHAP 5 ACTIVE — Voyage Fuel Planning & Endurance Intelligence is operational.")
+st.info("TAHAP 5 results are stored in the application session and ready for the next intelligence modules.")
+
+# ============================================================
+# END TAHAP 5
 # ============================================================
