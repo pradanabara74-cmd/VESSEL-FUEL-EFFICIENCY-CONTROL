@@ -7374,3 +7374,458 @@ st.info(
 # ============================================================
 # END TAHAP 13
 # ============================================================
+
+# ================================================================
+# TAHAP 14 - BUNKER PLANNING & PROCUREMENT INTELLIGENCE
+# ================================================================
+
+st.divider()
+st.header("⛽ Bunker Planning & Procurement Intelligence")
+
+st.caption(
+    "Bunker requirement, procurement planning, reserve protection, "
+    "estimated purchasing cost and bunker decision support."
+)
+
+# ------------------------------------------------
+# VESSEL CONTEXT
+# ------------------------------------------------
+
+t14_selected_vessel = st.session_state.get(
+    "selected_fleet_vessel",
+    st.session_state.get(
+        "sidebar_vessel_name",
+        globals().get("vessel_name", "ASL MANTRUS")
+    )
+)
+
+st.subheader("🚢 Bunker Planning Vessel")
+st.info(f"Bunker planning analysis for: **{t14_selected_vessel}**")
+
+
+# ------------------------------------------------
+# SAFE DATA FROM PREVIOUS STAGES
+# ------------------------------------------------
+
+def t14_safe_float(value, default=0.0):
+    try:
+        if value is None:
+            return float(default)
+        return float(value)
+    except (TypeError, ValueError):
+        return float(default)
+
+
+t14_current_rob = t14_safe_float(
+    st.session_state.get(
+        "t13_result_current_rob",
+        st.session_state.get(
+            "t8_result_current_rob",
+            st.session_state.get("t4_result_projected_rob_l", 0.0)
+        )
+    )
+)
+
+t14_daily_consumption = t14_safe_float(
+    st.session_state.get(
+        "t13_result_daily_consumption",
+        st.session_state.get(
+            "t6_result_actual_daily_fuel",
+            st.session_state.get("daily_fuel", 0.0)
+        )
+    )
+)
+
+t14_forecast_consumption = t14_safe_float(
+    st.session_state.get(
+        "t13_result_forecast_consumption",
+        t14_daily_consumption
+    )
+)
+
+
+# ------------------------------------------------
+# BUNKER PLANNING INPUT
+# ------------------------------------------------
+
+st.subheader("📝 Bunker Procurement Data")
+
+t14_c1, t14_c2, t14_c3 = st.columns(3)
+
+with t14_c1:
+
+    t14_required_days = st.number_input(
+        "Required Operating Days",
+        min_value=0.0,
+        value=10.0,
+        step=1.0,
+        key="t14_required_days"
+    )
+
+    t14_safety_days = st.number_input(
+        "Safety Reserve (Days)",
+        min_value=0.0,
+        value=3.0,
+        step=0.5,
+        key="t14_safety_days"
+    )
+
+
+with t14_c2:
+
+    t14_manual_daily_consumption = st.number_input(
+        "Planning Daily Fuel Consumption",
+        min_value=0.0,
+        value=float(max(t14_forecast_consumption, 0.0)),
+        step=0.1,
+        key="t14_manual_daily_consumption"
+    )
+
+    t14_manual_rob = st.number_input(
+        "Current ROB for Planning",
+        min_value=0.0,
+        value=float(max(t14_current_rob, 0.0)),
+        step=1.0,
+        key="t14_manual_rob"
+    )
+
+
+with t14_c3:
+
+    t14_bunker_price = st.number_input(
+        "Estimated Bunker Price / Unit",
+        min_value=0.0,
+        value=650.0,
+        step=10.0,
+        key="t14_bunker_price"
+    )
+
+    t14_extra_margin_percent = st.number_input(
+        "Procurement Margin (%)",
+        min_value=0.0,
+        max_value=100.0,
+        value=5.0,
+        step=1.0,
+        key="t14_extra_margin_percent"
+    )
+
+
+# ------------------------------------------------
+# CALCULATIONS
+# ------------------------------------------------
+
+t14_total_required_days = (
+    t14_required_days + t14_safety_days
+)
+
+t14_base_requirement = (
+    t14_manual_daily_consumption *
+    t14_total_required_days
+)
+
+t14_margin_fuel = (
+    t14_base_requirement *
+    t14_extra_margin_percent / 100.0
+)
+
+t14_total_requirement = (
+    t14_base_requirement +
+    t14_margin_fuel
+)
+
+t14_bunker_required = max(
+    t14_total_requirement -
+    t14_manual_rob,
+    0.0
+)
+
+t14_estimated_cost = (
+    t14_bunker_required *
+    t14_bunker_price
+)
+
+if t14_manual_daily_consumption > 0:
+    t14_current_endurance = (
+        t14_manual_rob /
+        t14_manual_daily_consumption
+    )
+else:
+    t14_current_endurance = 0.0
+
+
+# ------------------------------------------------
+# BUNKER REQUIREMENT DASHBOARD
+# ------------------------------------------------
+
+st.subheader("📊 Bunker Requirement Dashboard")
+
+t14_m1, t14_m2, t14_m3, t14_m4 = st.columns(4)
+
+t14_m1.metric(
+    "Current ROB",
+    f"{t14_manual_rob:,.2f}"
+)
+
+t14_m2.metric(
+    "Current Endurance",
+    f"{t14_current_endurance:,.1f} days"
+)
+
+t14_m3.metric(
+    "Total Fuel Requirement",
+    f"{t14_total_requirement:,.2f}"
+)
+
+t14_m4.metric(
+    "Bunker Required",
+    f"{t14_bunker_required:,.2f}"
+)
+
+
+t14_m5, t14_m6, t14_m7 = st.columns(3)
+
+t14_m5.metric(
+    "Operating Requirement",
+    f"{t14_base_requirement:,.2f}"
+)
+
+t14_m6.metric(
+    "Procurement Margin",
+    f"{t14_margin_fuel:,.2f}"
+)
+
+t14_m7.metric(
+    "Estimated Procurement Cost",
+    f"${t14_estimated_cost:,.2f}"
+)
+
+
+# ------------------------------------------------
+# PROCUREMENT STATUS
+# ------------------------------------------------
+
+st.subheader("🚦 Procurement Status")
+
+if t14_manual_daily_consumption <= 0:
+
+    t14_status = "DATA REQUIRED"
+
+    st.warning(
+        "Daily fuel consumption is zero or unavailable. "
+        "Enter verified planning consumption before bunker approval."
+    )
+
+elif t14_manual_rob <= 0:
+
+    t14_status = "ROB REQUIRED"
+
+    st.warning(
+        "Current ROB is zero or unavailable. "
+        "Enter verified measured ROB before bunker procurement."
+    )
+
+elif t14_bunker_required <= 0:
+
+    t14_status = "SUFFICIENT ROB"
+
+    st.success(
+        "Current ROB is sufficient for the entered operating period, "
+        "reserve and procurement margin."
+    )
+
+elif t14_current_endurance < t14_safety_days:
+
+    t14_status = "CRITICAL"
+
+    st.error(
+        "Current fuel endurance is below the entered safety reserve. "
+        "Immediate bunker planning and operational verification are required."
+    )
+
+else:
+
+    t14_status = "BUNKER REQUIRED"
+
+    st.warning(
+        "Additional bunker is required to meet the entered operating "
+        "requirement, safety reserve and procurement margin."
+    )
+
+
+# ------------------------------------------------
+# PROCUREMENT INTELLIGENCE
+# ------------------------------------------------
+
+st.subheader("🧠 Procurement Intelligence")
+
+t14_intelligence = []
+
+if t14_manual_daily_consumption <= 0:
+    t14_intelligence.append(
+        "Verified daily fuel consumption is required before calculating "
+        "the final bunker quantity."
+    )
+
+if t14_manual_rob <= 0:
+    t14_intelligence.append(
+        "Verified current ROB is required before procurement approval."
+    )
+
+if t14_bunker_required > 0:
+    t14_intelligence.append(
+        f"Indicative additional bunker requirement is "
+        f"{t14_bunker_required:,.2f} fuel units."
+    )
+
+if t14_estimated_cost > 0:
+    t14_intelligence.append(
+        f"Indicative procurement cost is "
+        f"${t14_estimated_cost:,.2f} at the entered bunker price."
+    )
+
+if (
+    t14_manual_daily_consumption > 0 and
+    t14_bunker_required <= 0
+):
+    t14_intelligence.append(
+        "Entered ROB currently covers the calculated operating requirement, "
+        "reserve and procurement margin."
+    )
+
+if not t14_intelligence:
+    t14_intelligence.append(
+        "Enter verified ROB and consumption data to generate bunker "
+        "procurement intelligence."
+    )
+
+for item in t14_intelligence:
+    st.write(f"• {item}")
+
+
+# ------------------------------------------------
+# PRIORITY ACTIONS
+# ------------------------------------------------
+
+st.subheader("📋 Priority Actions")
+
+t14_priority_actions = []
+
+if t14_manual_rob <= 0:
+    t14_priority_actions.append(
+        "Verify actual ROB using approved tank sounding and calibration data."
+    )
+
+if t14_manual_daily_consumption <= 0:
+    t14_priority_actions.append(
+        "Verify actual daily fuel consumption and machinery operating profile."
+    )
+
+if t14_bunker_required > 0:
+    t14_priority_actions.append(
+        "Confirm bunker availability, supplier quotation, delivery location "
+        "and required delivery quantity."
+    )
+
+if t14_estimated_cost > 0:
+    t14_priority_actions.append(
+        "Verify bunker price, currency, taxes, port charges, supplier terms "
+        "and approved operating budget."
+    )
+
+if not t14_priority_actions:
+    t14_priority_actions.append(
+        "Continue monitoring ROB and consumption against voyage requirements."
+    )
+
+for idx, action in enumerate(t14_priority_actions, start=1):
+    st.write(f"{idx}. {action}")
+
+
+# ------------------------------------------------
+# DATA QUALITY & VALIDATION
+# ------------------------------------------------
+
+st.subheader("🛡️ Data Quality & Validation")
+
+t14_validation = []
+
+if t14_manual_rob <= 0:
+    t14_validation.append(
+        "Current ROB is zero or unavailable."
+    )
+
+if t14_manual_daily_consumption <= 0:
+    t14_validation.append(
+        "Daily fuel consumption is zero or unavailable."
+    )
+
+if t14_bunker_price <= 0:
+    t14_validation.append(
+        "Bunker price is zero or unavailable."
+    )
+
+if not t14_validation:
+
+    st.success(
+        "🟢 Bunker planning inputs passed the basic validation checks."
+    )
+
+else:
+
+    for note in t14_validation:
+        st.warning(f"🟠 {note}")
+
+
+st.info(
+    "Bunker planning and procurement figures are decision-support estimates. "
+    "Before purchasing fuel or making operational, commercial or voyage "
+    "decisions, verify actual tank soundings, calibration tables, fuel "
+    "density, measured ROB, machinery consumption, voyage requirements, "
+    "weather/current, statutory/company reserves, bunker specifications, "
+    "supplier quotations, port restrictions and applicable company procedures."
+)
+
+
+# ------------------------------------------------
+# SAVE TAHAP 14 RESULTS
+# ------------------------------------------------
+
+st.session_state["t14_result_status"] = t14_status
+st.session_state["t14_result_current_rob"] = t14_manual_rob
+st.session_state["t14_result_daily_consumption"] = (
+    t14_manual_daily_consumption
+)
+st.session_state["t14_result_current_endurance"] = (
+    t14_current_endurance
+)
+st.session_state["t14_result_total_requirement"] = (
+    t14_total_requirement
+)
+st.session_state["t14_result_bunker_required"] = (
+    t14_bunker_required
+)
+st.session_state["t14_result_estimated_cost"] = (
+    t14_estimated_cost
+)
+st.session_state["t14_result_priority_actions"] = (
+    t14_priority_actions
+)
+st.session_state["t14_result_intelligence"] = (
+    t14_intelligence
+)
+
+
+st.success(
+    "✅ TAHAP 14 ACTIVE — Bunker Planning & Procurement "
+    "Intelligence is operational."
+)
+
+st.info(
+    "TAHAP 14 results are stored in the application session "
+    "and prepared for the next intelligence modules."
+)
+
+
+# ================================================================
+# END TAHAP 14
+# ================================================================
