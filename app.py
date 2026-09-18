@@ -5096,3 +5096,1026 @@ st.info(
 # ================================================================
 # END TAHAP 9
 # ================================================================
+
+# ================================================================
+# TAHAP 10 - MANAGEMENT KPI & FUEL PERFORMANCE CONTROL INTELLIGENCE
+# ================================================================
+
+st.divider()
+st.header("📊 Management KPI & Fuel Performance Control Intelligence")
+
+st.caption(
+    "Executive fuel-performance control integrating inventory, voyage, "
+    "consumption deviation, financial impact, risk and optimization results."
+)
+
+
+# ------------------------------------------------
+# VESSEL CONTEXT
+# ------------------------------------------------
+
+t10_selected_vessel = st.session_state.get(
+    "selected_fleet_vessel",
+    st.session_state.get(
+        "sidebar_vessel_name",
+        globals().get("vessel_name", "ASL MANTRUS")
+    )
+)
+
+st.subheader("🚢 Management Control Vessel")
+st.info(f"Management fuel-performance assessment for: **{t10_selected_vessel}**")
+
+
+# ------------------------------------------------
+# COLLECT PREVIOUS INTELLIGENCE RESULTS
+# ------------------------------------------------
+
+t10_rob_l = float(
+    st.session_state.get("t4_result_rob_l", 0.0) or 0.0
+)
+
+t10_rob_percent = float(
+    st.session_state.get("t4_result_rob_percent", 0.0) or 0.0
+)
+
+t10_daily_consumption_l = float(
+    st.session_state.get(
+        "t4_result_daily_consumption_l",
+        0.0
+    ) or 0.0
+)
+
+t10_sailing_days = float(
+    st.session_state.get(
+        "t5_result_sailing_days",
+        0.0
+    ) or 0.0
+)
+
+t10_arrival_rob_l = float(
+    st.session_state.get(
+        "t5_result_arrival_rob_l",
+        0.0
+    ) or 0.0
+)
+
+t10_surplus_deficit_l = float(
+    st.session_state.get(
+        "t8_result_surplus_deficit_l",
+        st.session_state.get(
+            "t5_result_surplus_deficit_l",
+            0.0
+        )
+    ) or 0.0
+)
+
+t10_excess_period_fuel = float(
+    st.session_state.get(
+        "t8_result_excess_period_fuel",
+        st.session_state.get(
+            "t6_result_excess_period_fuel",
+            0.0
+        )
+    ) or 0.0
+)
+
+t10_cost_impact = float(
+    st.session_state.get(
+        "t8_result_cost_impact",
+        0.0
+    ) or 0.0
+)
+
+t10_projected_cost = float(
+    st.session_state.get(
+        "t8_result_projected_cost",
+        0.0
+    ) or 0.0
+)
+
+t10_saving_opportunity = float(
+    st.session_state.get(
+        "t8_result_saving_opportunity",
+        0.0
+    ) or 0.0
+)
+
+t10_target_daily_consumption_l = float(
+    st.session_state.get(
+        "t9_result_target_daily_consumption_l",
+        t10_daily_consumption_l
+    ) or 0.0
+)
+
+t10_daily_fuel_saving_l = float(
+    st.session_state.get(
+        "t9_result_daily_fuel_saving_l",
+        0.0
+    ) or 0.0
+)
+
+t10_period_fuel_saving_l = float(
+    st.session_state.get(
+        "t9_result_period_fuel_saving_l",
+        0.0
+    ) or 0.0
+)
+
+t10_optimized_endurance_days = float(
+    st.session_state.get(
+        "t9_result_optimized_endurance_days",
+        0.0
+    ) or 0.0
+)
+
+t10_endurance_gain_days = float(
+    st.session_state.get(
+        "t9_result_endurance_gain_days",
+        0.0
+    ) or 0.0
+)
+
+t10_estimated_saving_value = float(
+    st.session_state.get(
+        "t9_result_estimated_saving_value",
+        0.0
+    ) or 0.0
+)
+
+t10_t9_status = st.session_state.get(
+    "t9_result_status",
+    "NOT AVAILABLE"
+)
+
+
+# ------------------------------------------------
+# MANAGEMENT KPI CALCULATIONS
+# ------------------------------------------------
+
+if t10_daily_consumption_l > 0:
+    t10_reduction_pct = (
+        (
+            t10_daily_consumption_l
+            - t10_target_daily_consumption_l
+        )
+        / t10_daily_consumption_l
+    ) * 100.0
+else:
+    t10_reduction_pct = 0.0
+
+
+if t10_daily_consumption_l > 0:
+    t10_excess_ratio_pct = (
+        t10_excess_period_fuel
+        / max(t10_daily_consumption_l, 1.0)
+    ) * 100.0
+else:
+    t10_excess_ratio_pct = 0.0
+
+
+# ------------------------------------------------
+# FUEL SECURITY SCORE
+# ------------------------------------------------
+
+if t10_rob_l <= 0:
+    t10_fuel_security_score = 0
+
+elif t10_surplus_deficit_l < 0:
+    t10_fuel_security_score = 25
+
+elif 0 < t10_rob_percent <= 20:
+    t10_fuel_security_score = 50
+
+elif 20 < t10_rob_percent <= 40:
+    t10_fuel_security_score = 75
+
+else:
+    t10_fuel_security_score = 100
+
+
+# ------------------------------------------------
+# EFFICIENCY SCORE
+# ------------------------------------------------
+
+if t10_daily_consumption_l <= 0:
+    t10_efficiency_score = 0
+
+elif t10_excess_period_fuel <= 0:
+    t10_efficiency_score = 100
+
+elif t10_reduction_pct >= 10:
+    t10_efficiency_score = 85
+
+elif t10_reduction_pct >= 5:
+    t10_efficiency_score = 75
+
+else:
+    t10_efficiency_score = 60
+
+
+# ------------------------------------------------
+# OPTIMIZATION SCORE
+# ------------------------------------------------
+
+if t10_daily_consumption_l <= 0:
+    t10_optimization_score = 0
+
+elif t10_daily_fuel_saving_l > 0:
+    t10_optimization_score = 100
+
+else:
+    t10_optimization_score = 70
+
+
+# ------------------------------------------------
+# DATA QUALITY SCORE
+# ------------------------------------------------
+
+t10_data_quality_score = 100
+
+if t10_rob_l <= 0:
+    t10_data_quality_score -= 35
+
+if t10_daily_consumption_l <= 0:
+    t10_data_quality_score -= 35
+
+if t10_sailing_days <= 0:
+    t10_data_quality_score -= 15
+
+if t10_target_daily_consumption_l <= 0:
+    t10_data_quality_score -= 15
+
+t10_data_quality_score = max(
+    min(t10_data_quality_score, 100),
+    0
+)
+
+
+# ------------------------------------------------
+# OVERALL MANAGEMENT SCORE
+# ------------------------------------------------
+
+t10_overall_score = (
+    (t10_fuel_security_score * 0.35)
+    + (t10_efficiency_score * 0.30)
+    + (t10_optimization_score * 0.20)
+    + (t10_data_quality_score * 0.15)
+)
+
+t10_overall_score = round(t10_overall_score, 1)
+
+
+# ------------------------------------------------
+# MANAGEMENT STATUS
+# ------------------------------------------------
+
+if t10_rob_l <= 0 or t10_daily_consumption_l <= 0:
+    t10_management_status = "DATA ATTENTION"
+
+elif t10_surplus_deficit_l < 0:
+    t10_management_status = "CRITICAL FUEL CONTROL"
+
+elif t10_overall_score >= 90:
+    t10_management_status = "STRONG CONTROL"
+
+elif t10_overall_score >= 75:
+    t10_management_status = "CONTROLLED"
+
+elif t10_overall_score >= 60:
+    t10_management_status = "MONITOR"
+
+else:
+    t10_management_status = "MANAGEMENT ACTION REQUIRED"
+
+
+# ------------------------------------------------
+# EXECUTIVE KPI DASHBOARD
+# ------------------------------------------------
+
+st.subheader("📈 Executive Fuel KPI Dashboard")
+
+t10_k1, t10_k2, t10_k3, t10_k4 = st.columns(4)
+
+t10_k1.metric(
+    "Overall Control Score",
+    f"{t10_overall_score:.1f}/100"
+)
+
+t10_k2.metric(
+    "Fuel Security",
+    f"{t10_fuel_security_score}/100"
+)
+
+t10_k3.metric(
+    "Efficiency",
+    f"{t10_efficiency_score}/100"
+)
+
+t10_k4.metric(
+    "Optimization",
+    f"{t10_optimization_score}/100"
+)
+
+t10_k5, t10_k6, t10_k7, t10_k8 = st.columns(4)
+
+t10_k5.metric(
+    "ROB",
+    f"{t10_rob_l:,.0f} L"
+)
+
+t10_k6.metric(
+    "Daily Consumption",
+    f"{t10_daily_consumption_l:,.1f} L/day"
+)
+
+t10_k7.metric(
+    "Target Consumption",
+    f"{t10_target_daily_consumption_l:,.1f} L/day"
+)
+
+t10_k8.metric(
+    "Management Status",
+    t10_management_status
+)
+
+
+# ------------------------------------------------
+# PERFORMANCE CONTROL TABLE
+# ------------------------------------------------
+
+st.subheader("📋 Performance Control Matrix")
+
+t10_control_df = pd.DataFrame(
+    {
+        "Control Area": [
+            "Fuel Security",
+            "Fuel Efficiency",
+            "Optimization",
+            "Data Quality",
+            "Overall Management Control",
+        ],
+        "Score": [
+            t10_fuel_security_score,
+            t10_efficiency_score,
+            t10_optimization_score,
+            t10_data_quality_score,
+            t10_overall_score,
+        ],
+        "Maximum": [
+            100,
+            100,
+            100,
+            100,
+            100,
+        ],
+    }
+)
+
+st.dataframe(
+    t10_control_df,
+    use_container_width=True,
+    hide_index=True
+)
+
+
+# ------------------------------------------------
+# MANAGEMENT INTELLIGENCE
+# ------------------------------------------------
+
+st.subheader("🧠 Management Intelligence")
+
+t10_intelligence = []
+
+if t10_surplus_deficit_l < 0:
+    t10_intelligence.append(
+        "Fuel sufficiency requires immediate management review because "
+        "the integrated voyage assessment indicates a deficit."
+    )
+
+if 0 < t10_rob_percent <= 20:
+    t10_intelligence.append(
+        "ROB is within the reserve-protection range. Bunker planning and "
+        "voyage fuel requirements should be reviewed."
+    )
+
+if t10_excess_period_fuel > 0:
+    t10_intelligence.append(
+        "Excess fuel consumption remains an efficiency-control issue and "
+        "should be investigated against RPM/load, speed and operating conditions."
+    )
+
+if t10_daily_fuel_saving_l > 0:
+    t10_intelligence.append(
+        f"The current optimization target indicates a potential saving of "
+        f"approximately {t10_daily_fuel_saving_l:,.1f} L/day."
+    )
+
+if t10_endurance_gain_days > 0:
+    t10_intelligence.append(
+        f"Optimized operation indicates a theoretical endurance improvement "
+        f"of approximately {t10_endurance_gain_days:,.1f} days."
+    )
+
+if t10_cost_impact > 0:
+    t10_intelligence.append(
+        f"Recorded integrated cost impact is approximately "
+        f"{t10_cost_impact:,.2f} in the configured financial basis."
+    )
+
+if not t10_intelligence:
+    t10_intelligence.append(
+        "Fuel-performance indicators are currently within the configured "
+        "management-control logic."
+    )
+
+for t10_item in t10_intelligence:
+    st.write(f"• {t10_item}")
+
+
+# ------------------------------------------------
+# MANAGEMENT PRIORITY ACTIONS
+# ------------------------------------------------
+
+st.subheader("📌 Management Priority Actions")
+
+t10_priority_actions = []
+
+if t10_rob_l <= 0:
+    t10_priority_actions.append(
+        "Verify actual ROB using tank soundings and approved calibration tables."
+    )
+
+if t10_surplus_deficit_l < 0:
+    t10_priority_actions.append(
+        "Review bunker requirement, voyage requirement and reserve protection."
+    )
+
+if t10_excess_period_fuel > 0:
+    t10_priority_actions.append(
+        "Investigate excess consumption against RPM/load, vessel speed, "
+        "weather/current, draft/trim and hull/propeller condition."
+    )
+
+if t10_daily_fuel_saving_l > 0:
+    t10_priority_actions.append(
+        "Track actual consumption against the optimization target and record "
+        "verified fuel savings."
+    )
+
+if t10_data_quality_score < 100:
+    t10_priority_actions.append(
+        "Complete missing or unreliable operational inputs before management approval."
+    )
+
+t10_priority_actions.append(
+    "Review fuel performance during the next vessel-management reporting cycle."
+)
+
+for t10_i, t10_action in enumerate(
+    t10_priority_actions,
+    start=1
+):
+    st.write(f"{t10_i}. {t10_action}")
+
+
+# ------------------------------------------------
+# EXECUTIVE SUMMARY
+# ------------------------------------------------
+
+st.subheader("🗂️ Executive Management Summary")
+
+t10_summary_df = pd.DataFrame(
+    {
+        "Parameter": [
+            "Vessel",
+            "Management Status",
+            "Overall Control Score",
+            "Fuel Security Score",
+            "Efficiency Score",
+            "Optimization Score",
+            "Data Quality Score",
+            "ROB",
+            "Current Daily Consumption",
+            "Target Daily Consumption",
+            "Potential Daily Saving",
+            "Period Fuel Saving",
+            "Optimized Endurance",
+            "Endurance Gain",
+            "Optimization Status",
+        ],
+        "Result": [
+            t10_selected_vessel,
+            t10_management_status,
+            f"{t10_overall_score:.1f}/100",
+            f"{t10_fuel_security_score}/100",
+            f"{t10_efficiency_score}/100",
+            f"{t10_optimization_score}/100",
+            f"{t10_data_quality_score}/100",
+            f"{t10_rob_l:,.0f} L",
+            f"{t10_daily_consumption_l:,.1f} L/day",
+            f"{t10_target_daily_consumption_l:,.1f} L/day",
+            f"{t10_daily_fuel_saving_l:,.1f} L/day",
+            f"{t10_period_fuel_saving_l:,.1f} L",
+            f"{t10_optimized_endurance_days:,.1f} days",
+            f"{t10_endurance_gain_days:,.1f} days",
+            t10_t9_status,
+        ],
+    }
+)
+
+st.dataframe(
+    t10_summary_df,
+    use_container_width=True,
+    hide_index=True
+)
+
+
+# ------------------------------------------------
+# DATA QUALITY & VALIDATION
+# ------------------------------------------------
+
+st.subheader("🛡️ Data Quality & Validation")
+
+t10_validation = []
+
+if t10_rob_l <= 0:
+    t10_validation.append(
+        "Fuel ROB is zero or unavailable."
+    )
+
+if t10_daily_consumption_l <= 0:
+    t10_validation.append(
+        "Daily fuel consumption is zero or unavailable."
+    )
+
+if t10_target_daily_consumption_l <= 0:
+    t10_validation.append(
+        "Optimization target consumption is zero or unavailable."
+    )
+
+if not t10_validation:
+    st.success(
+        "🟢 Management fuel-control inputs passed the basic validation checks."
+    )
+else:
+    for t10_note in t10_validation:
+        st.warning(f"🟠 {t10_note}")
+
+
+st.info(
+    "Management KPI scores are decision-support indicators generated from "
+    "the application's configured logic. They are not substitutes for verified "
+    "tank measurements, engine performance analysis, OEM limits, navigation "
+    "requirements, charter obligations, statutory/company fuel reserves, "
+    "approved budgets or Master/company authorization."
+)
+
+
+# ------------------------------------------------
+# SAVE TAHAP 10 RESULTS
+# ------------------------------------------------
+
+st.session_state["t10_result_management_status"] = (
+    t10_management_status
+)
+
+st.session_state["t10_result_overall_score"] = (
+    t10_overall_score
+)
+
+st.session_state["t10_result_fuel_security_score"] = (
+    t10_fuel_security_score
+)
+
+st.session_state["t10_result_efficiency_score"] = (
+    t10_efficiency_score
+)
+
+st.session_state["t10_result_optimization_score"] = (
+    t10_optimization_score
+)
+
+st.session_state["t10_result_data_quality_score"] = (
+    t10_data_quality_score
+)
+
+st.session_state["t10_result_priority_actions"] = (
+    t10_priority_actions
+)
+
+st.session_state["t10_result_intelligence"] = (
+    t10_intelligence
+)
+
+
+st.success(
+    "✅ TAHAP 10 ACTIVE — Management KPI & Fuel Performance "
+    "Control Intelligence is operational."
+)
+
+st.info(
+    "TAHAP 10 results are stored in the application session "
+    "and prepared for the next intelligence modules."
+)
+
+
+# ================================================================
+# END TAHAP 10
+# ================================================================
+
+# ============================================================
+# TAHAP 11 - FLEET BENCHMARK & PERFORMANCE RANKING INTELLIGENCE
+# ============================================================
+
+st.divider()
+st.header("🏆 Fleet Benchmark & Performance Ranking Intelligence")
+
+st.caption(
+    "Integrated vessel performance benchmarking using fuel efficiency, "
+    "optimization, data quality, operating risk and management KPI results."
+)
+
+# ------------------------------------------------------------
+# VESSEL CONTEXT
+# ------------------------------------------------------------
+
+t11_selected_vessel = st.session_state.get(
+    "selected_fleet_vessel",
+    st.session_state.get(
+        "sidebar_vessel_name",
+        globals().get("vessel_name", "ASL MANTRUS")
+    )
+)
+
+st.subheader("🚢 Benchmark Vessel")
+st.info(f"Performance benchmark analysis for: **{t11_selected_vessel}**")
+
+
+# ------------------------------------------------------------
+# SAFE NUMBER FUNCTION
+# ------------------------------------------------------------
+
+def t11_safe_float(value, default=0.0):
+    try:
+        if value is None:
+            return float(default)
+        return float(value)
+    except (TypeError, ValueError):
+        return float(default)
+
+
+# ------------------------------------------------------------
+# COLLECT PREVIOUS INTELLIGENCE RESULTS
+# ------------------------------------------------------------
+
+t11_efficiency_score = t11_safe_float(
+    st.session_state.get("t10_result_efficiency_score", 0.0)
+)
+
+t11_optimization_score = t11_safe_float(
+    st.session_state.get("t10_result_optimization_score", 0.0)
+)
+
+t11_data_quality_score = t11_safe_float(
+    st.session_state.get("t10_result_data_quality_score", 0.0)
+)
+
+t11_excess_fuel = t11_safe_float(
+    st.session_state.get("t6_result_excess_period_fuel", 0.0)
+)
+
+t11_excess_cost = t11_safe_float(
+    st.session_state.get("t6_result_excess_period_cost", 0.0)
+)
+
+t11_saving_opportunity = t11_safe_float(
+    st.session_state.get("t9_result_saving_opportunity", 0.0)
+)
+
+t11_days_to_reserve = t11_safe_float(
+    st.session_state.get("t8_result_days_to_reserve", 0.0)
+)
+
+
+# ------------------------------------------------------------
+# SCORE NORMALIZATION
+# ------------------------------------------------------------
+
+def t11_normalize_score(value):
+    value = t11_safe_float(value, 0.0)
+    return max(0.0, min(100.0, value))
+
+
+t11_efficiency_score = t11_normalize_score(t11_efficiency_score)
+t11_optimization_score = t11_normalize_score(t11_optimization_score)
+t11_data_quality_score = t11_normalize_score(t11_data_quality_score)
+
+
+# ------------------------------------------------------------
+# MANAGEMENT PERFORMANCE SCORE
+# ------------------------------------------------------------
+
+t11_management_score = (
+    (t11_efficiency_score * 0.40)
+    + (t11_optimization_score * 0.35)
+    + (t11_data_quality_score * 0.25)
+)
+
+t11_management_score = round(
+    t11_normalize_score(t11_management_score),
+    1
+)
+
+
+# ------------------------------------------------------------
+# PERFORMANCE CLASSIFICATION
+# ------------------------------------------------------------
+
+if t11_management_score >= 90:
+    t11_performance_class = "EXCELLENT"
+    t11_performance_icon = "🟢"
+
+elif t11_management_score >= 80:
+    t11_performance_class = "GOOD"
+    t11_performance_icon = "🟢"
+
+elif t11_management_score >= 70:
+    t11_performance_class = "MONITOR"
+    t11_performance_icon = "🟡"
+
+elif t11_management_score >= 60:
+    t11_performance_class = "ATTENTION"
+    t11_performance_icon = "🟠"
+
+else:
+    t11_performance_class = "CRITICAL REVIEW"
+    t11_performance_icon = "🔴"
+
+
+# ------------------------------------------------------------
+# MANAGEMENT KPI DASHBOARD
+# ------------------------------------------------------------
+
+st.subheader("📊 Fleet Performance Benchmark")
+
+t11_c1, t11_c2, t11_c3, t11_c4 = st.columns(4)
+
+with t11_c1:
+    st.metric(
+        "Management Score",
+        f"{t11_management_score:.1f}/100"
+    )
+
+with t11_c2:
+    st.metric(
+        "Fuel Efficiency",
+        f"{t11_efficiency_score:.1f}/100"
+    )
+
+with t11_c3:
+    st.metric(
+        "Optimization",
+        f"{t11_optimization_score:.1f}/100"
+    )
+
+with t11_c4:
+    st.metric(
+        "Data Quality",
+        f"{t11_data_quality_score:.1f}/100"
+    )
+
+
+st.subheader("🎯 Performance Classification")
+
+if t11_performance_class in ["EXCELLENT", "GOOD"]:
+    st.success(
+        f"{t11_performance_icon} {t11_performance_class} — "
+        "Vessel fuel-performance indicators are within the stronger "
+        "management benchmark range."
+    )
+
+elif t11_performance_class == "MONITOR":
+    st.warning(
+        f"{t11_performance_icon} {t11_performance_class} — "
+        "Performance remains acceptable for monitoring, but improvement "
+        "opportunities should be reviewed."
+    )
+
+else:
+    st.error(
+        f"{t11_performance_icon} {t11_performance_class} — "
+        "Performance indicators require management review and verification."
+    )
+
+
+# ------------------------------------------------------------
+# COMMERCIAL & OPERATIONAL EXPOSURE
+# ------------------------------------------------------------
+
+st.subheader("💰 Operational & Commercial Exposure")
+
+t11_e1, t11_e2, t11_e3, t11_e4 = st.columns(4)
+
+with t11_e1:
+    st.metric(
+        "Excess Fuel",
+        f"{t11_excess_fuel:,.2f}"
+    )
+
+with t11_e2:
+    st.metric(
+        "Excess Cost",
+        f"{t11_excess_cost:,.2f}"
+    )
+
+with t11_e3:
+    st.metric(
+        "Saving Opportunity",
+        f"{t11_saving_opportunity:,.2f}"
+    )
+
+with t11_e4:
+    if t11_days_to_reserve > 0:
+        st.metric(
+            "Days to Reserve",
+            f"{t11_days_to_reserve:.1f} days"
+        )
+    else:
+        st.metric(
+            "Days to Reserve",
+            "N/A"
+        )
+
+
+# ------------------------------------------------------------
+# BENCHMARK INTELLIGENCE
+# ------------------------------------------------------------
+
+st.subheader("🧠 Benchmark Intelligence")
+
+t11_intelligence = []
+
+if t11_efficiency_score >= 80:
+    t11_intelligence.append(
+        "Fuel-efficiency KPI is currently within the stronger internal "
+        "performance range."
+    )
+else:
+    t11_intelligence.append(
+        "Fuel-efficiency KPI indicates potential for further operational "
+        "performance improvement."
+    )
+
+if t11_optimization_score < 80:
+    t11_intelligence.append(
+        "Optimization potential remains and should be reviewed against "
+        "speed, RPM/load, voyage requirements and machinery limitations."
+    )
+
+if t11_excess_fuel > 0:
+    t11_intelligence.append(
+        "Excess fuel consumption has been detected in the upstream "
+        "performance intelligence results."
+    )
+
+if t11_excess_cost > 0:
+    t11_intelligence.append(
+        "Excess fuel consumption is producing a measurable financial impact."
+    )
+
+if t11_saving_opportunity > 0:
+    t11_intelligence.append(
+        "A fuel-cost saving opportunity has been identified by the "
+        "optimization intelligence module."
+    )
+
+if t11_data_quality_score < 70:
+    t11_intelligence.append(
+        "Data quality should be improved before relying on the benchmark "
+        "for higher-impact management decisions."
+    )
+
+if not t11_intelligence:
+    t11_intelligence.append(
+        "No significant benchmark exception is currently identified."
+    )
+
+for item in t11_intelligence:
+    st.write(f"• {item}")
+
+
+# ------------------------------------------------------------
+# PRIORITY ACTIONS
+# ------------------------------------------------------------
+
+st.subheader("📋 Priority Actions")
+
+t11_priority_actions = []
+
+if t11_management_score < 70:
+    t11_priority_actions.append(
+        "Perform management review of fuel-efficiency, optimization and "
+        "data-quality indicators."
+    )
+
+if t11_excess_fuel > 0:
+    t11_priority_actions.append(
+        "Investigate excess consumption against RPM/load, vessel speed, "
+        "weather/current, draft/trim, hull condition and propeller condition."
+    )
+
+if t11_excess_cost > 0:
+    t11_priority_actions.append(
+        "Verify the commercial impact against actual bunker price, invoices "
+        "and approved operating budget."
+    )
+
+if t11_data_quality_score < 80:
+    t11_priority_actions.append(
+        "Verify source data including fuel measurements, tank soundings, "
+        "engine readings and voyage information."
+    )
+
+if not t11_priority_actions:
+    t11_priority_actions.append(
+        "Continue monitoring vessel performance against the approved "
+        "operational and fuel-efficiency baseline."
+    )
+
+for number, action in enumerate(t11_priority_actions, start=1):
+    st.write(f"{number}. {action}")
+
+
+# ------------------------------------------------------------
+# DATA QUALITY & VALIDATION
+# ------------------------------------------------------------
+
+st.subheader("🛡️ Data Quality & Validation")
+
+t11_validation = []
+
+if t11_data_quality_score <= 0:
+    t11_validation.append(
+        "Management data-quality score is zero or unavailable."
+    )
+
+if t11_efficiency_score <= 0:
+    t11_validation.append(
+        "Fuel-efficiency score is zero or unavailable."
+    )
+
+if t11_optimization_score <= 0:
+    t11_validation.append(
+        "Optimization score is zero or unavailable."
+    )
+
+if not t11_validation:
+    st.success(
+        "🟢 Fleet benchmark inputs passed the basic validation checks."
+    )
+else:
+    for note in t11_validation:
+        st.warning(f"🟠 {note}")
+
+
+st.info(
+    "Fleet benchmark results are decision-support estimates and are not a "
+    "substitute for verified vessel measurements or approved company "
+    "performance standards. Before technical, commercial or management "
+    "action, verify actual fuel consumption, engine performance, vessel "
+    "condition, voyage conditions, bunker records, financial data and "
+    "applicable company procedures."
+)
+
+
+# ------------------------------------------------------------
+# SAVE TAHAP 11 RESULTS
+# ------------------------------------------------------------
+
+st.session_state["t11_result_vessel"] = t11_selected_vessel
+st.session_state["t11_result_management_score"] = t11_management_score
+st.session_state["t11_result_performance_class"] = t11_performance_class
+st.session_state["t11_result_efficiency_score"] = t11_efficiency_score
+st.session_state["t11_result_optimization_score"] = t11_optimization_score
+st.session_state["t11_result_data_quality_score"] = t11_data_quality_score
+st.session_state["t11_result_excess_fuel"] = t11_excess_fuel
+st.session_state["t11_result_excess_cost"] = t11_excess_cost
+st.session_state["t11_result_saving_opportunity"] = t11_saving_opportunity
+st.session_state["t11_result_intelligence"] = t11_intelligence
+st.session_state["t11_result_priority_actions"] = t11_priority_actions
+
+
+st.success(
+    "✅ TAHAP 11 ACTIVE — Fleet Benchmark & Performance Ranking "
+    "Intelligence is operational."
+)
+
+st.info(
+    "TAHAP 11 results are stored in the application session and "
+    "prepared for the next intelligence modules."
+)
+
+
+# ============================================================
+# END TAHAP 11
+# ============================================================
