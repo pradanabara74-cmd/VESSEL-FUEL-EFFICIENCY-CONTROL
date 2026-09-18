@@ -19532,6 +19532,208 @@ st.info(
 # ================================================================
 # END TAHAP 38
 # ================================================================
+# ================================================================
+# TAHAP 39
+# FLEET FUEL EFFICIENCY KPI & PERFORMANCE SCORECARD INTELLIGENCE
+# ================================================================
+
+st.markdown("---")
+st.header("📊 Fleet Fuel Efficiency KPI & Performance Scorecard Intelligence")
+
+st.write(
+    "Consolidated decision-support assessment of fuel-efficiency "
+    "performance, operational indicators, anomaly status, technical "
+    "performance and improvement verification."
+)
+
+# ----------------------------------------------------------------
+# UPSTREAM INTELLIGENCE
+# ----------------------------------------------------------------
+
+t39_upstream_keys = [
+    "t30_result_upstream_available",
+    "t31_result_upstream_available",
+    "t32_result_upstream_available",
+    "t33_result_upstream_available",
+    "t34_result_upstream_available",
+    "t35_result_upstream_available",
+    "t36_result_upstream_available",
+    "t37_result_upstream_available",
+    "t38_result_upstream_available",
+]
+
+t39_available_count = sum(
+    1
+    for key in t39_upstream_keys
+    if bool(st.session_state.get(key, False))
+)
+
+t39_total_sources = len(t39_upstream_keys)
+
+if t39_total_sources > 0:
+    t39_data_coverage = (
+        t39_available_count / t39_total_sources
+    ) * 100
+else:
+    t39_data_coverage = 0.0
+
+# ----------------------------------------------------------------
+# MANAGEMENT KPI SCORECARD
+# ----------------------------------------------------------------
+
+st.subheader("📈 Management KPI Scorecard")
+
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    st.metric(
+        "Upstream Modules Available",
+        f"{t39_available_count}/{t39_total_sources}"
+    )
+
+with col2:
+    st.metric(
+        "Intelligence Coverage",
+        f"{t39_data_coverage:.0f}%"
+    )
+
+with col3:
+    if t39_data_coverage >= 80:
+        t39_readiness = "HIGH"
+    elif t39_data_coverage >= 50:
+        t39_readiness = "MODERATE"
+    else:
+        t39_readiness = "LIMITED"
+
+    st.metric(
+        "Decision-Support Readiness",
+        t39_readiness
+    )
+
+# ----------------------------------------------------------------
+# PERFORMANCE CLASSIFICATION
+# ----------------------------------------------------------------
+
+st.subheader("🎯 Performance Classification")
+
+if t39_data_coverage >= 80:
+    t39_classification = "MANAGEMENT REVIEW READY"
+
+    st.success(
+        "🟢 Available upstream intelligence provides broad coverage "
+        "for management fuel-efficiency review."
+    )
+
+elif t39_data_coverage >= 50:
+    t39_classification = "PARTIAL DATA COVERAGE"
+
+    st.warning(
+        "🟠 Fuel-efficiency intelligence is partially available. "
+        "Management conclusions should be interpreted with the "
+        "available-data limitations."
+    )
+
+else:
+    t39_classification = "INSUFFICIENT DATA COVERAGE"
+
+    st.warning(
+        "🟠 Available upstream information is currently limited. "
+        "Additional verified operational data is required before "
+        "drawing supported performance conclusions."
+    )
+
+# ----------------------------------------------------------------
+# MANAGEMENT PRIORITIES
+# ----------------------------------------------------------------
+
+st.subheader("📋 Management Review Priorities")
+
+st.markdown(
+    """
+1. Verify actual fuel consumption and ROB records.
+2. Review vessel speed, RPM/load and voyage operating conditions.
+3. Review engine-performance and degradation indicators.
+4. Review hull and propeller performance indicators.
+5. Reconcile bunker, ROB and fuel-consumption records.
+6. Review detected anomalies and diagnostic findings.
+7. Review corrective actions and their implementation status.
+8. Confirm effectiveness using verified post-action operating data.
+9. Compare performance only under reasonably comparable operating conditions.
+10. Escalate material deviations for appropriate technical and management review.
+"""
+)
+
+# ----------------------------------------------------------------
+# DATA QUALITY & VALIDATION
+# ----------------------------------------------------------------
+
+st.subheader("🛡️ Data Quality & Validation")
+
+if t39_data_coverage >= 80:
+    st.success(
+        "🟢 Upstream fuel-efficiency intelligence is broadly available "
+        "for KPI and performance-scorecard assessment."
+    )
+
+elif t39_data_coverage > 0:
+    st.warning(
+        "🟠 Only part of the upstream intelligence is currently available. "
+        "Interpret KPI and scorecard results with the available-data limitations."
+    )
+
+else:
+    st.warning(
+        "🟠 Upstream intelligence is currently unavailable for a supported "
+        "fleet fuel-efficiency KPI assessment."
+    )
+
+st.info(
+    "Fleet Fuel Efficiency KPI & Performance Scorecard Intelligence is a "
+    "decision-support module based on configured logic and available "
+    "operational information. KPI classifications do not independently "
+    "establish machinery condition, crew performance, fuel loss, commercial "
+    "responsibility, causation or future financial results. Verify actual fuel "
+    "measurements, tank soundings, ROB, bunker records, engine parameters, "
+    "RPM/load, vessel speed, draft/trim, weather/current, sea state, voyage "
+    "conditions, hull/propeller condition, fuel properties and applicable "
+    "OEM/company requirements before technical, operational, safety, "
+    "procurement, financial or commercial action."
+)
+
+# ----------------------------------------------------------------
+# STORE TAHAP 39 RESULTS
+# ----------------------------------------------------------------
+
+st.session_state["t39_result"] = {
+    "available_upstream_modules": t39_available_count,
+    "total_upstream_modules": t39_total_sources,
+    "data_coverage_percent": round(t39_data_coverage, 1),
+    "decision_support_readiness": t39_readiness,
+    "performance_classification": t39_classification,
+}
+
+st.session_state["t39_result_upstream_available"] = (
+    t39_available_count > 0
+)
+
+# ----------------------------------------------------------------
+# TAHAP 39 STATUS
+# ----------------------------------------------------------------
+
+st.success(
+    "✅ TAHAP 39 ACTIVE — Fleet Fuel Efficiency KPI & Performance "
+    "Scorecard Intelligence is operational."
+)
+
+st.info(
+    "TAHAP 39 results are stored in the application session "
+    "and prepared for the next intelligence modules."
+)
+
+# ================================================================
+# END TAHAP 39
+# ================================================================
+
 
 
 
