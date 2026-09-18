@@ -13793,4 +13793,375 @@ st.info(
 # END TAHAP 26
 # ============================================================
 
+# ============================================================
+# TAHAP 27
+# FLEET / VESSEL FUEL EFFICIENCY BENCHMARK
+# & PERFORMANCE COMPARISON INTELLIGENCE
+# ============================================================
+
+st.markdown("---")
+st.header("🚢 Fleet Fuel Efficiency Benchmark")
+st.caption(
+    "TAHAP 27 — Vessel fuel-efficiency benchmarking, "
+    "performance comparison and management attention."
+)
+
+# ------------------------------------------------------------
+# SAFE HELPERS
+# ------------------------------------------------------------
+
+def t27_safe_float(value, default=0.0):
+    try:
+        if value is None:
+            return default
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+# ------------------------------------------------------------
+# COLLECT UPSTREAM RESULTS
+# ------------------------------------------------------------
+
+t27_kpi_score = t27_safe_float(
+    st.session_state.get("t21_result_kpi_score", 0.0)
+)
+
+t27_potential_saving = t27_safe_float(
+    st.session_state.get(
+        "t23_result_potential_cost_saving",
+        0.0
+    )
+)
+
+t27_total_actions = int(
+    t27_safe_float(
+        st.session_state.get(
+            "t26_result_total_actions",
+            0
+        )
+    )
+)
+
+t27_open_actions = int(
+    t27_safe_float(
+        st.session_state.get(
+            "t26_result_open_actions",
+            0
+        )
+    )
+)
+
+
+# ------------------------------------------------------------
+# PERFORMANCE REFERENCE
+# ------------------------------------------------------------
+
+st.subheader("📊 Performance Benchmark")
+
+if t27_kpi_score > 0:
+
+    if t27_kpi_score >= 90:
+        t27_performance_band = "High Efficiency"
+        t27_attention = "Routine Monitoring"
+
+    elif t27_kpi_score >= 75:
+        t27_performance_band = "Normal / Acceptable"
+        t27_attention = "Monitor Performance"
+
+    elif t27_kpi_score >= 60:
+        t27_performance_band = "Improvement Opportunity"
+        t27_attention = "Management Review"
+
+    else:
+        t27_performance_band = "Priority Review"
+        t27_attention = "Detailed Verification Required"
+
+else:
+    t27_performance_band = "Insufficient KPI Data"
+    t27_attention = "Verify Source Data"
+
+
+# ------------------------------------------------------------
+# KPI DISPLAY
+# ------------------------------------------------------------
+
+c1, c2, c3, c4 = st.columns(4)
+
+c1.metric(
+    "Efficiency KPI",
+    f"{t27_kpi_score:.1f}"
+    if t27_kpi_score > 0
+    else "N/A"
+)
+
+c2.metric(
+    "Performance Band",
+    t27_performance_band
+)
+
+c3.metric(
+    "Open Actions",
+    t27_open_actions
+)
+
+c4.metric(
+    "Potential Saving",
+    f"${t27_potential_saving:,.2f}"
+)
+
+
+# ------------------------------------------------------------
+# BENCHMARK INTERPRETATION
+# ------------------------------------------------------------
+
+st.subheader("🎯 Benchmark Interpretation")
+
+if t27_kpi_score > 0:
+
+    st.write(
+        f"Current fuel-efficiency KPI: "
+        f"**{t27_kpi_score:.1f}**"
+    )
+
+    st.write(
+        f"Performance classification: "
+        f"**{t27_performance_band}**"
+    )
+
+    st.write(
+        f"Management attention: "
+        f"**{t27_attention}**"
+    )
+
+else:
+
+    st.warning(
+        "A verified KPI score is not currently available. "
+        "Benchmark classification is therefore limited."
+    )
+
+
+# ------------------------------------------------------------
+# PERFORMANCE GAP
+# ------------------------------------------------------------
+
+st.subheader("📈 Performance Gap")
+
+t27_reference_score = 90.0
+
+if t27_kpi_score > 0:
+
+    t27_gap = (
+        t27_reference_score -
+        t27_kpi_score
+    )
+
+    if t27_gap < 0:
+        t27_gap = 0.0
+
+    st.metric(
+        "Gap to Configured Reference",
+        f"{t27_gap:.1f} points"
+    )
+
+else:
+    t27_gap = 0.0
+
+    st.metric(
+        "Gap to Configured Reference",
+        "N/A"
+    )
+
+
+# ------------------------------------------------------------
+# MANAGEMENT ATTENTION
+# ------------------------------------------------------------
+
+st.subheader("⚠️ Management Attention")
+
+t27_management_actions = []
+
+if t27_kpi_score <= 0:
+
+    t27_management_actions.append(
+        "Verify the underlying fuel-efficiency KPI data "
+        "before benchmarking."
+    )
+
+elif t27_kpi_score < 75:
+
+    t27_management_actions.append(
+        "Review verified fuel consumption, engine performance, "
+        "RPM/load and voyage operating conditions."
+    )
+
+elif t27_kpi_score < 90:
+
+    t27_management_actions.append(
+        "Continue performance monitoring and evaluate "
+        "identified efficiency-improvement opportunities."
+    )
+
+else:
+
+    t27_management_actions.append(
+        "Maintain routine monitoring and verify that the "
+        "observed efficiency level remains sustainable."
+    )
+
+if t27_open_actions > 0:
+
+    t27_management_actions.append(
+        f"Follow up {t27_open_actions} active/open "
+        "fuel-efficiency action(s) from TAHAP 26."
+    )
+
+if t27_potential_saving > 0:
+
+    t27_management_actions.append(
+        "Track verified financial results against the "
+        "identified potential saving."
+    )
+
+for i, item in enumerate(
+    t27_management_actions,
+    start=1
+):
+    st.write(f"{i}. {item}")
+
+
+# ------------------------------------------------------------
+# BENCHMARK SUMMARY TABLE
+# ------------------------------------------------------------
+
+st.subheader("📋 Benchmark Summary")
+
+t27_benchmark_table = [
+    {
+        "Indicator": "Fuel Efficiency KPI",
+        "Current Result":
+            f"{t27_kpi_score:.1f}"
+            if t27_kpi_score > 0
+            else "N/A",
+        "Reference": "Configured KPI reference",
+    },
+    {
+        "Indicator": "Performance Band",
+        "Current Result": t27_performance_band,
+        "Reference": "Configured classification thresholds",
+    },
+    {
+        "Indicator": "Open Actions",
+        "Current Result": str(t27_open_actions),
+        "Reference": "TAHAP 26 Action Tracker",
+    },
+    {
+        "Indicator": "Potential Saving",
+        "Current Result":
+            f"${t27_potential_saving:,.2f}",
+        "Reference": "Upstream financial intelligence",
+    },
+]
+
+st.dataframe(
+    t27_benchmark_table,
+    use_container_width=True,
+    hide_index=True
+)
+
+
+# ------------------------------------------------------------
+# DATA QUALITY & VALIDATION
+# ------------------------------------------------------------
+
+st.subheader("🛡️ Data Quality & Validation")
+
+t27_data_available = (
+    t27_kpi_score > 0
+    or t27_potential_saving > 0
+    or t27_total_actions > 0
+)
+
+if t27_data_available:
+
+    st.success(
+        "🟢 Upstream performance intelligence is available "
+        "for benchmark analysis."
+    )
+
+else:
+
+    st.warning(
+        "🟠 Upstream performance information is limited. "
+        "Benchmark results should be interpreted with "
+        "available-data limitations."
+    )
+
+
+# ------------------------------------------------------------
+# IMPORTANT BENCHMARK LIMITATION
+# ------------------------------------------------------------
+
+st.info(
+    "Fuel-efficiency benchmark classifications are "
+    "decision-support indicators based on configured references "
+    "and available operational data. They are not automatically "
+    "a like-for-like comparison between vessels. Vessel type, "
+    "engine configuration, loading condition, draft/trim, "
+    "RPM/load, speed, weather/current, sea state, voyage profile, "
+    "fuel properties and machinery condition should be considered "
+    "before management conclusions are made."
+)
+
+
+# ------------------------------------------------------------
+# STORE TAHAP 27 RESULTS
+# ------------------------------------------------------------
+
+st.session_state[
+    "t27_result_kpi_score"
+] = t27_kpi_score
+
+st.session_state[
+    "t27_result_performance_band"
+] = t27_performance_band
+
+st.session_state[
+    "t27_result_attention"
+] = t27_attention
+
+st.session_state[
+    "t27_result_gap"
+] = t27_gap
+
+st.session_state[
+    "t27_result_management_actions"
+] = t27_management_actions
+
+st.session_state[
+    "t27_result_data_available"
+] = t27_data_available
+
+
+# ------------------------------------------------------------
+# TAHAP 27 STATUS
+# ------------------------------------------------------------
+
+st.success(
+    "✅ TAHAP 27 ACTIVE — Fleet / Vessel Fuel Efficiency "
+    "Benchmark & Performance Comparison Intelligence "
+    "is operational."
+)
+
+st.info(
+    "TAHAP 27 results are stored in the application session "
+    "and prepared for the next intelligence modules."
+)
+
+
+# ============================================================
+# END TAHAP 27
+# ============================================================
+
 
