@@ -21122,8 +21122,14 @@ st.success(
 )
 
 st.info(
-    "TAHAP 45 results are stored in the application session "
-    "and prepared for the next intelligence module."
+    "✅ FINAL SYSTEM STATUS — TAHAP 1–45 COMPLETE. "
+    "Vessel Fuel Efficiency & Control Intelligence Center "
+    "has completed the configured intelligence-module sequence "
+    "and is ready for final deployment validation."
+)
+
+st.success(
+    "🚀 SYSTEM BUILD COMPLETE — FINAL DEPLOYMENT VALIDATION READY"
 )
 
 
