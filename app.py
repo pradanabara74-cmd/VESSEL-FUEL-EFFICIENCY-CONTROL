@@ -2245,3 +2245,544 @@ st.info(
 # ============================================================
 # END TAHAP 3
 # ============================================================
+
+# ============================================================
+# TAHAP 4 — BUNKER & FUEL INVENTORY INTELLIGENCE
+# ============================================================
+
+st.divider()
+
+st.header("⛽ Bunker & Fuel Inventory Intelligence")
+
+st.caption(
+    "Bunker inventory, fuel ROB, consumption endurance and "
+    "fuel-supply intelligence connected to Fleet, Technical "
+    "and Fuel Performance modules."
+)
+
+# ------------------------------------------------------------
+# SELECTED VESSEL FROM PREVIOUS MODULES
+# ------------------------------------------------------------
+
+t4_selected_vessel = st.session_state.get(
+    "selected_vessel",
+    st.session_state.get(
+        "sidebar_vessel_name",
+        globals().get("vessel_name", "ASL MANTRUS")
+    )
+)
+
+st.subheader("🚢 Vessel Bunker Status")
+
+st.info(
+    f"Bunker & fuel inventory analysis for: **{t4_selected_vessel}**"
+)
+
+# ------------------------------------------------------------
+# BUNKER OPERATIONAL DATA
+# ------------------------------------------------------------
+
+st.subheader("⚙️ Bunker Operational Data")
+
+t4_col1, t4_col2, t4_col3 = st.columns(3)
+
+with t4_col1:
+    t4_tank_capacity_l = st.number_input(
+        "Fuel Tank Capacity (L)",
+        min_value=1.0,
+        value=100000.0,
+        step=1000.0,
+        key="t4_tank_capacity_l"
+    )
+
+    t4_rob_l = st.number_input(
+        "Current ROB (L)",
+        min_value=0.0,
+        value=50000.0,
+        step=500.0,
+        key="t4_rob_l"
+    )
+
+with t4_col2:
+    t4_daily_consumption_l = st.number_input(
+        "Daily Fuel Consumption (L/day)",
+        min_value=0.0,
+        value=float(
+            st.session_state.get(
+                "t3_expected_fuel_lph", 250.0
+            )
+        ) * 24.0,
+        step=100.0,
+        key="t4_daily_consumption_l"
+    )
+
+    t4_reserve_percent = st.number_input(
+        "Minimum Reserve (%)",
+        min_value=0.0,
+        max_value=100.0,
+        value=20.0,
+        step=1.0,
+        key="t4_reserve_percent"
+    )
+
+with t4_col3:
+    t4_bunker_price = st.number_input(
+        "Fuel Price (USD/L)",
+        min_value=0.0,
+        value=1.0,
+        step=0.01,
+        key="t4_bunker_price"
+    )
+
+    t4_planned_bunker_l = st.number_input(
+        "Planned Bunker Quantity (L)",
+        min_value=0.0,
+        value=0.0,
+        step=1000.0,
+        key="t4_planned_bunker_l"
+    )
+
+# ------------------------------------------------------------
+# BUNKER INVENTORY CALCULATIONS
+# ------------------------------------------------------------
+
+# Protect calculations from invalid/zero inputs
+t4_safe_capacity_l = max(float(t4_tank_capacity_l), 1.0)
+t4_safe_daily_consumption_l = max(float(t4_daily_consumption_l), 0.0)
+
+# Current ROB percentage
+t4_rob_percent = (
+    float(t4_rob_l) / t4_safe_capacity_l
+) * 100.0
+
+# Minimum reserve quantity
+t4_reserve_l = (
+    t4_safe_capacity_l * float(t4_reserve_percent) / 100.0
+)
+
+# Fuel available above reserve
+t4_usable_fuel_l = max(
+    float(t4_rob_l) - t4_reserve_l,
+    0.0
+)
+
+# Endurance calculations
+if t4_safe_daily_consumption_l > 0:
+    t4_endurance_days_total = (
+        float(t4_rob_l) / t4_safe_daily_consumption_l
+    )
+
+    t4_endurance_days_usable = (
+        t4_usable_fuel_l / t4_safe_daily_consumption_l
+    )
+else:
+    t4_endurance_days_total = 0.0
+    t4_endurance_days_usable = 0.0
+
+# ROB after planned bunker
+t4_projected_rob_l = min(
+    float(t4_rob_l) + float(t4_planned_bunker_l),
+    t4_safe_capacity_l
+)
+
+t4_projected_rob_percent = (
+    t4_projected_rob_l / t4_safe_capacity_l
+) * 100.0
+
+# Available tank space
+t4_available_space_l = max(
+    t4_safe_capacity_l - float(t4_rob_l),
+    0.0
+)
+
+# Planned bunker quantity that can physically fit
+t4_accepted_bunker_l = min(
+    float(t4_planned_bunker_l),
+    t4_available_space_l
+)
+
+# Estimated bunker cost
+t4_planned_bunker_cost = (
+    t4_accepted_bunker_l * float(t4_bunker_price)
+)
+
+# Days until minimum reserve is reached
+if t4_safe_daily_consumption_l > 0:
+    t4_days_to_reserve = (
+        max(float(t4_rob_l) - t4_reserve_l, 0.0)
+        / t4_safe_daily_consumption_l
+    )
+else:
+    t4_days_to_reserve = 0.0
+
+# ------------------------------------------------------------
+# BUNKER INVENTORY DASHBOARD
+# ------------------------------------------------------------
+
+st.subheader("📊 Bunker Inventory Dashboard")
+
+t4_m1, t4_m2, t4_m3, t4_m4 = st.columns(4)
+
+with t4_m1:
+    st.metric(
+        "Current ROB",
+        f"{t4_rob_l:,.0f} L"
+    )
+
+with t4_m2:
+    st.metric(
+        "Tank Utilization",
+        f"{t4_rob_percent:.1f}%"
+    )
+
+with t4_m3:
+    st.metric(
+        "Minimum Reserve",
+        f"{t4_reserve_l:,.0f} L"
+    )
+
+with t4_m4:
+    st.metric(
+        "Usable Fuel",
+        f"{t4_usable_fuel_l:,.0f} L"
+    )
+
+
+t4_m5, t4_m6, t4_m7, t4_m8 = st.columns(4)
+
+with t4_m5:
+    st.metric(
+        "Daily Consumption",
+        f"{t4_daily_consumption_l:,.0f} L/day"
+    )
+
+with t4_m6:
+    st.metric(
+        "Total Endurance",
+        f"{t4_endurance_days_total:.1f} days"
+    )
+
+with t4_m7:
+    st.metric(
+        "Endurance Above Reserve",
+        f"{t4_endurance_days_usable:.1f} days"
+    )
+
+with t4_m8:
+    st.metric(
+        "Days to Reserve",
+        f"{t4_days_to_reserve:.1f} days"
+    )
+
+
+# ------------------------------------------------------------
+# AUTOMATIC BUNKER STATUS
+# ------------------------------------------------------------
+
+st.subheader("🚦 Bunker Status")
+
+if float(t4_rob_l) <= 0:
+    t4_bunker_status = "EMPTY"
+
+    st.error(
+        "🔴 EMPTY — No usable bunker quantity is currently recorded."
+    )
+
+elif float(t4_rob_l) <= t4_reserve_l:
+    t4_bunker_status = "CRITICAL"
+
+    st.error(
+        "🔴 CRITICAL — Current ROB is at or below the configured "
+        "minimum reserve level."
+    )
+
+elif t4_days_to_reserve <= 1.0:
+    t4_bunker_status = "CRITICAL"
+
+    st.error(
+        "🔴 CRITICAL — Estimated fuel remaining above reserve "
+        "is approximately one day or less."
+    )
+
+elif t4_days_to_reserve <= 3.0:
+    t4_bunker_status = "LOW"
+
+    st.warning(
+        "🟠 LOW — Fuel reserve threshold may be reached within "
+        "approximately three days."
+    )
+
+elif t4_rob_percent <= 40.0:
+    t4_bunker_status = "MONITOR"
+
+    st.warning(
+        "🟡 MONITOR — Current ROB is below 40% of configured "
+        "tank capacity."
+    )
+
+else:
+    t4_bunker_status = "NORMAL"
+
+    st.success(
+        "🟢 NORMAL — Current bunker inventory is above the "
+        "configured minimum reserve."
+    )
+
+# ------------------------------------------------------------
+# PROJECTED BUNKER & COST INTELLIGENCE
+# ------------------------------------------------------------
+
+st.subheader("⛽ Projected Bunker & Cost Intelligence")
+
+t4_p1, t4_p2, t4_p3, t4_p4 = st.columns(4)
+
+with t4_p1:
+    st.metric(
+        "Available Tank Space",
+        f"{t4_available_space_l:,.0f} L"
+    )
+
+with t4_p2:
+    st.metric(
+        "Planned Bunker",
+        f"{t4_planned_bunker_l:,.0f} L"
+    )
+
+with t4_p3:
+    st.metric(
+        "Accepted Bunker",
+        f"{t4_accepted_bunker_l:,.0f} L"
+    )
+
+with t4_p4:
+    st.metric(
+        "Estimated Bunker Cost",
+        f"USD {t4_planned_bunker_cost:,.2f}"
+    )
+
+
+t4_p5, t4_p6 = st.columns(2)
+
+with t4_p5:
+    st.metric(
+        "Projected ROB",
+        f"{t4_projected_rob_l:,.0f} L"
+    )
+
+with t4_p6:
+    st.metric(
+        "Projected Tank Utilization",
+        f"{t4_projected_rob_percent:.1f}%"
+    )
+
+
+# ------------------------------------------------------------
+# BUNKER PLANNING VALIDATION
+# ------------------------------------------------------------
+
+st.subheader("🛡️ Bunker Planning Validation")
+
+if float(t4_planned_bunker_l) > t4_available_space_l:
+    st.error(
+        "🔴 OVER-CAPACITY WARNING — Planned bunker quantity exceeds "
+        "the currently available tank capacity."
+    )
+
+    st.info(
+        f"Maximum bunker quantity that can currently be accepted: "
+        f"{t4_available_space_l:,.0f} L."
+    )
+
+elif float(t4_planned_bunker_l) > 0:
+    st.success(
+        "🟢 Planned bunker quantity is within the currently "
+        "available tank capacity."
+    )
+
+else:
+    st.info(
+        "ℹ️ No additional bunker quantity is currently planned."
+    )
+
+# ------------------------------------------------------------
+# BUNKER INTELLIGENCE
+# ------------------------------------------------------------
+
+st.subheader("🧠 Bunker Intelligence")
+
+t4_intelligence = []
+
+if t4_bunker_status == "EMPTY":
+    t4_intelligence.append(
+        "No usable bunker quantity is currently recorded."
+    )
+
+elif t4_bunker_status == "CRITICAL":
+    t4_intelligence.append(
+        "Fuel inventory has reached a critical operating condition."
+    )
+
+elif t4_bunker_status == "LOW":
+    t4_intelligence.append(
+        "Fuel reserve threshold may be reached within approximately three days."
+    )
+
+elif t4_bunker_status == "MONITOR":
+    t4_intelligence.append(
+        "Fuel inventory should be monitored closely because ROB is below 40%."
+    )
+
+else:
+    t4_intelligence.append(
+        "Current bunker inventory is within the normal operating range."
+    )
+
+
+if float(t4_planned_bunker_l) > t4_available_space_l:
+    t4_intelligence.append(
+        "Planned bunker quantity exceeds available tank space."
+    )
+
+elif float(t4_planned_bunker_l) > 0:
+    t4_intelligence.append(
+        "Planned bunker quantity can be accommodated within available tank capacity."
+    )
+
+
+if t4_safe_daily_consumption_l > 0:
+    t4_intelligence.append(
+        f"Estimated time until minimum reserve is reached: "
+        f"{t4_days_to_reserve:.1f} days."
+    )
+
+
+for t4_item in t4_intelligence:
+    st.write(f"• {t4_item}")
+
+
+# ------------------------------------------------------------
+# PRIORITY ACTIONS
+# ------------------------------------------------------------
+
+st.subheader("📋 Priority Actions")
+
+t4_priority_actions = []
+
+if t4_bunker_status == "EMPTY":
+    t4_priority_actions.append(
+        "Verify ROB immediately and arrange fuel supply before operation."
+    )
+
+elif t4_bunker_status == "CRITICAL":
+    t4_priority_actions.append(
+        "Review voyage requirements and arrange bunker supply immediately."
+    )
+
+elif t4_bunker_status == "LOW":
+    t4_priority_actions.append(
+        "Prepare bunker replenishment plan and confirm the next suitable bunker location."
+    )
+
+elif t4_bunker_status == "MONITOR":
+    t4_priority_actions.append(
+        "Monitor daily fuel consumption and ROB trend."
+    )
+
+else:
+    t4_priority_actions.append(
+        "Continue routine ROB and daily fuel-consumption monitoring."
+    )
+
+
+if float(t4_planned_bunker_l) > t4_available_space_l:
+    t4_priority_actions.append(
+        f"Reduce planned bunker quantity to no more than "
+        f"{t4_available_space_l:,.0f} L based on current available tank space."
+    )
+
+
+if st.session_state.get("t3_fuel_status") in ["HIGH", "CRITICAL"]:
+    t4_priority_actions.append(
+        "Review the elevated fuel-consumption condition identified in TAHAP 3 "
+        "before finalizing the bunker plan."
+    )
+
+
+for t4_number, t4_action in enumerate(t4_priority_actions, start=1):
+    st.write(f"{t4_number}. {t4_action}")
+
+# ------------------------------------------------------------
+# DATA QUALITY & VALIDATION
+# ------------------------------------------------------------
+
+st.subheader("🛡️ Data Quality & Validation")
+
+t4_data_quality_notes = []
+
+if float(t4_tank_capacity_l) <= 0:
+    t4_data_quality_notes.append(
+        "Fuel tank capacity must be verified."
+    )
+
+if float(t4_rob_l) > float(t4_tank_capacity_l):
+    t4_data_quality_notes.append(
+        "Current ROB exceeds configured tank capacity. Verify tank and ROB data."
+    )
+
+if float(t4_daily_consumption_l) <= 0:
+    t4_data_quality_notes.append(
+        "Daily fuel consumption must be greater than zero for endurance calculations."
+    )
+
+if float(t4_reserve_percent) <= 0:
+    t4_data_quality_notes.append(
+        "Minimum reserve percentage should be reviewed."
+    )
+
+if not t4_data_quality_notes:
+    st.success(
+        "🟢 Bunker operational inputs passed the basic validation checks."
+    )
+else:
+    for t4_note in t4_data_quality_notes:
+        st.warning(f"🟠 {t4_note}")
+
+st.info(
+    "Bunker endurance and projected ROB are operational planning estimates. "
+    "Before bunker procurement or voyage decisions, verify actual tank soundings, "
+    "tank calibration tables, fuel density, daily consumption, safety reserve, "
+    "voyage requirements and applicable company procedures."
+)
+
+
+# ------------------------------------------------------------
+# SAVE TAHAP 4 RESULTS FOR NEXT MODULES
+# ------------------------------------------------------------
+
+st.session_state["t4_bunker_status"] = t4_bunker_status
+st.session_state["t4_rob_l"] = float(t4_rob_l)
+st.session_state["t4_rob_percent"] = t4_rob_percent
+st.session_state["t4_daily_consumption_l"] = float(t4_daily_consumption_l)
+st.session_state["t4_reserve_l"] = t4_reserve_l
+st.session_state["t4_usable_fuel_l"] = t4_usable_fuel_l
+st.session_state["t4_endurance_days_total"] = t4_endurance_days_total
+st.session_state["t4_endurance_days_usable"] = t4_endurance_days_usable
+st.session_state["t4_days_to_reserve"] = t4_days_to_reserve
+st.session_state["t4_projected_rob_l"] = t4_projected_rob_l
+st.session_state["t4_projected_rob_percent"] = t4_projected_rob_percent
+st.session_state["t4_planned_bunker_cost"] = t4_planned_bunker_cost
+st.session_state["t4_priority_actions"] = t4_priority_actions
+
+st.success(
+    "✅ TAHAP 4 ACTIVE — Bunker & Fuel Inventory Intelligence is operational."
+)
+
+st.info(
+    "Bunker and fuel-inventory results from TAHAP 4 are stored in the "
+    "application session and prepared for the next intelligence modules."
+)
+
+
+# ============================================================
+# END TAHAP 4
+# ============================================================
