@@ -18241,5 +18241,720 @@ st.info(
 # ============================================================
 # END TAHAP 35
 # ============================================================
+# ============================================================
+# TAHAP 36
+# FUEL LOSS / ROB & BUNKER RECONCILIATION INTELLIGENCE
+# ============================================================
+
+st.divider()
+
+st.header("⛽ Fuel Loss / ROB & Bunker Reconciliation Intelligence")
+
+st.caption(
+    "TAHAP 36 — Decision-support screening for fuel inventory balance, "
+    "ROB reconciliation, bunker quantities and potential fuel discrepancies."
+)
+
+
+# ------------------------------------------------------------
+# SAFE HELPERS
+# ------------------------------------------------------------
+
+def t36_safe_float(value, default=None):
+    try:
+        if value is None:
+            return default
+
+        if isinstance(value, str):
+            value = value.strip().replace(",", "")
+
+            if value == "":
+                return default
+
+        return float(value)
+
+    except (TypeError, ValueError):
+        return default
+
+
+def t36_get_first(keys, default=None):
+    for key in keys:
+        if key in st.session_state:
+            value = st.session_state.get(key)
+
+            if value is not None:
+                return value
+
+    return default
+
+
+# ------------------------------------------------------------
+# READ UPSTREAM INTELLIGENCE
+# ------------------------------------------------------------
+
+t36_t34_available = bool(
+    st.session_state.get("t34_result_upstream_available", False)
+)
+
+t36_t35_available = bool(
+    st.session_state.get("t35_result_upstream_available", False)
+)
+
+t36_upstream_available = any(
+    [
+        t36_t34_available,
+        t36_t35_available,
+    ]
+)
+
+
+# ------------------------------------------------------------
+# READ AVAILABLE ROB / BUNKER DATA
+# ------------------------------------------------------------
+
+t36_opening_rob = t36_safe_float(
+    t36_get_first(
+        [
+            "opening_rob",
+            "rob_opening",
+            "initial_rob",
+            "start_rob",
+            "fuel_rob_opening",
+        ]
+    )
+)
+
+t36_bunker_received = t36_safe_float(
+    t36_get_first(
+        [
+            "bunker_received",
+            "bunker_quantity",
+            "bunkered_quantity",
+            "fuel_received",
+            "bunker_added",
+        ]
+    )
+)
+
+t36_reported_consumption = t36_safe_float(
+    t36_get_first(
+        [
+            "reported_fuel_consumption",
+            "actual_fuel_consumption",
+            "fuel_consumption",
+            "daily_fuel_consumption",
+            "current_fuel_consumption",
+        ]
+    )
+)
+
+t36_closing_rob = t36_safe_float(
+    t36_get_first(
+        [
+            "closing_rob",
+            "rob_closing",
+            "final_rob",
+            "end_rob",
+            "fuel_rob_closing",
+        ]
+    )
+)
+
+t36_fuel_price = t36_safe_float(
+    t36_get_first(
+        [
+            "fuel_price",
+            "bunker_price",
+            "fuel_price_per_ton",
+            "fuel_price_per_mt",
+        ]
+    )
+)
+
+t36_potential_saving = t36_safe_float(
+    t36_get_first(
+        [
+            "potential_saving",
+            "potential_savings",
+            "estimated_saving",
+        ],
+        0.0,
+    ),
+    0.0,
+)
+
+
+# ------------------------------------------------------------
+# DATA AVAILABILITY
+# ------------------------------------------------------------
+
+t36_has_opening = t36_opening_rob is not None
+t36_has_bunker = t36_bunker_received is not None
+t36_has_consumption = t36_reported_consumption is not None
+t36_has_closing = t36_closing_rob is not None
+
+t36_complete_balance_data = all(
+    [
+        t36_has_opening,
+        t36_has_consumption,
+        t36_has_closing,
+    ]
+)
+
+t36_any_fuel_data = any(
+    [
+        t36_has_opening,
+        t36_has_bunker,
+        t36_has_consumption,
+        t36_has_closing,
+    ]
+)
+
+t36_data_available = (
+    t36_upstream_available
+    or t36_any_fuel_data
+)
+
+
+# ------------------------------------------------------------
+# NORMALIZE OPTIONAL BUNKER VALUE
+# ------------------------------------------------------------
+
+t36_bunker_for_calc = (
+    t36_bunker_received
+    if t36_bunker_received is not None
+    else 0.0
+)
+
+
+# ------------------------------------------------------------
+# CALCULATE EXPECTED CLOSING ROB
+# ------------------------------------------------------------
+
+t36_expected_closing_rob = None
+
+if (
+    t36_opening_rob is not None
+    and t36_reported_consumption is not None
+):
+
+    t36_expected_closing_rob = (
+        t36_opening_rob
+        + t36_bunker_for_calc
+        - t36_reported_consumption
+    )
+
+
+# ------------------------------------------------------------
+# CALCULATE ROB DISCREPANCY
+# Positive value = actual closing ROB below calculated ROB
+# Negative value = actual closing ROB above calculated ROB
+# ------------------------------------------------------------
+
+t36_discrepancy = None
+
+if (
+    t36_expected_closing_rob is not None
+    and t36_closing_rob is not None
+):
+
+    t36_discrepancy = (
+        t36_expected_closing_rob
+        - t36_closing_rob
+    )
+
+
+# ------------------------------------------------------------
+# CALCULATE DISCREPANCY PERCENTAGE
+# ------------------------------------------------------------
+
+t36_discrepancy_pct = None
+
+t36_available_fuel = None
+
+if t36_opening_rob is not None:
+
+    t36_available_fuel = (
+        t36_opening_rob
+        + t36_bunker_for_calc
+    )
+
+    if (
+        t36_available_fuel > 0
+        and t36_discrepancy is not None
+    ):
+
+        t36_discrepancy_pct = (
+            abs(t36_discrepancy)
+            / t36_available_fuel
+        ) * 100.0
+
+
+# ------------------------------------------------------------
+# ESTIMATED FINANCIAL EXPOSURE
+# ------------------------------------------------------------
+
+t36_financial_exposure = None
+
+if (
+    t36_discrepancy is not None
+    and t36_fuel_price is not None
+):
+
+    t36_financial_exposure = (
+        abs(t36_discrepancy)
+        * t36_fuel_price
+    )
+
+
+# ------------------------------------------------------------
+# RECONCILIATION CLASSIFICATION
+# ------------------------------------------------------------
+
+if t36_discrepancy_pct is None:
+
+    t36_classification = "DATA LIMITED"
+    t36_risk_level = "UNCONFIRMED"
+
+    t36_interpretation = (
+        "Available ROB, bunker and consumption information is "
+        "insufficient for a complete fuel reconciliation."
+    )
+
+elif t36_discrepancy_pct >= 5.0:
+
+    t36_classification = "HIGH FUEL BALANCE DISCREPANCY"
+    t36_risk_level = "HIGH"
+
+    t36_interpretation = (
+        "A material difference exists between calculated and reported "
+        "fuel inventory. Source records and measurements require "
+        "priority verification."
+    )
+
+elif t36_discrepancy_pct >= 2.0:
+
+    t36_classification = "MODERATE FUEL BALANCE DISCREPANCY"
+    t36_risk_level = "MEDIUM"
+
+    t36_interpretation = (
+        "A moderate ROB reconciliation difference is indicated. "
+        "Verify soundings, consumption records and bunker quantities."
+    )
+
+elif t36_discrepancy_pct >= 0.5:
+
+    t36_classification = "MINOR FUEL BALANCE DISCREPANCY"
+    t36_risk_level = "WATCH"
+
+    t36_interpretation = (
+        "A limited fuel-balance difference is present. "
+        "Continue reconciliation and verify measurement accuracy."
+    )
+
+else:
+
+    t36_classification = "NO MATERIAL DISCREPANCY INDICATED"
+    t36_risk_level = "NORMAL"
+
+    t36_interpretation = (
+        "Available records do not currently indicate a material "
+        "difference between calculated and reported fuel inventory."
+    )
+
+
+# ------------------------------------------------------------
+# KPI SUMMARY
+# ------------------------------------------------------------
+
+st.subheader("📊 Fuel Reconciliation Indicators")
+
+t36_col1, t36_col2, t36_col3, t36_col4 = st.columns(4)
+
+with t36_col1:
+
+    if t36_opening_rob is not None:
+        st.metric(
+            "Opening ROB",
+            f"{t36_opening_rob:,.2f}"
+        )
+    else:
+        st.metric("Opening ROB", "N/A")
+
+
+with t36_col2:
+
+    if t36_bunker_received is not None:
+        st.metric(
+            "Bunker Received",
+            f"{t36_bunker_received:,.2f}"
+        )
+    else:
+        st.metric("Bunker Received", "N/A")
+
+
+with t36_col3:
+
+    if t36_reported_consumption is not None:
+        st.metric(
+            "Reported Consumption",
+            f"{t36_reported_consumption:,.2f}"
+        )
+    else:
+        st.metric(
+            "Reported Consumption",
+            "N/A"
+        )
+
+
+with t36_col4:
+
+    if t36_closing_rob is not None:
+        st.metric(
+            "Closing ROB",
+            f"{t36_closing_rob:,.2f}"
+        )
+    else:
+        st.metric("Closing ROB", "N/A")
+
+
+# ------------------------------------------------------------
+# BALANCE SUMMARY
+# ------------------------------------------------------------
+
+st.subheader("⚖️ Fuel Balance & ROB Reconciliation")
+
+t36_balance_rows = [
+    {
+        "Indicator": "Opening ROB",
+        "Value": (
+            f"{t36_opening_rob:,.2f}"
+            if t36_opening_rob is not None
+            else "Not available"
+        ),
+    },
+    {
+        "Indicator": "Bunker Received",
+        "Value": (
+            f"{t36_bunker_received:,.2f}"
+            if t36_bunker_received is not None
+            else "Not available"
+        ),
+    },
+    {
+        "Indicator": "Reported Consumption",
+        "Value": (
+            f"{t36_reported_consumption:,.2f}"
+            if t36_reported_consumption is not None
+            else "Not available"
+        ),
+    },
+    {
+        "Indicator": "Expected Closing ROB",
+        "Value": (
+            f"{t36_expected_closing_rob:,.2f}"
+            if t36_expected_closing_rob is not None
+            else "Not available"
+        ),
+    },
+    {
+        "Indicator": "Reported Closing ROB",
+        "Value": (
+            f"{t36_closing_rob:,.2f}"
+            if t36_closing_rob is not None
+            else "Not available"
+        ),
+    },
+    {
+        "Indicator": "ROB Discrepancy",
+        "Value": (
+            f"{t36_discrepancy:+,.2f}"
+            if t36_discrepancy is not None
+            else "Not available"
+        ),
+    },
+    {
+        "Indicator": "Absolute Discrepancy %",
+        "Value": (
+            f"{t36_discrepancy_pct:.2f}%"
+            if t36_discrepancy_pct is not None
+            else "Not available"
+        ),
+    },
+]
+
+st.dataframe(
+    t36_balance_rows,
+    use_container_width=True,
+    hide_index=True,
+)
+
+
+# ------------------------------------------------------------
+# RECONCILIATION ASSESSMENT
+# ------------------------------------------------------------
+
+st.subheader("🔎 Reconciliation Assessment")
+
+st.write(
+    f"**Classification:** {t36_classification}"
+)
+
+st.write(
+    f"**Risk Level:** {t36_risk_level}"
+)
+
+st.write(t36_interpretation)
+
+
+# ------------------------------------------------------------
+# FINANCIAL CONTEXT
+# ------------------------------------------------------------
+
+st.subheader("💰 Financial Exposure Context")
+
+if t36_financial_exposure is not None:
+
+    st.metric(
+        "Indicative Discrepancy Value",
+        f"${t36_financial_exposure:,.2f}"
+    )
+
+    st.caption(
+        "This value is an indicative calculation based on the "
+        "available discrepancy and fuel-price information. "
+        "It is not a verified financial loss."
+    )
+
+else:
+
+    st.info(
+        "A financial exposure value cannot currently be calculated "
+        "because verified fuel-price and/or reconciliation data "
+        "are unavailable."
+    )
+
+
+# ------------------------------------------------------------
+# VERIFICATION AREAS
+# ------------------------------------------------------------
+
+st.subheader("🧭 Verification Areas")
+
+t36_verification_areas = [
+    "Verify opening and closing tank soundings.",
+    "Confirm ROB figures against vessel fuel records.",
+    "Verify bunker delivery quantities against bunker delivery documentation.",
+    "Review consumption records for the reconciliation period.",
+    "Check tank transfers and internal fuel movements.",
+    "Review measurement corrections, temperature and density where applicable.",
+    "Check whether sludge, drains or documented fuel transfers affect the balance.",
+    "Confirm that the reconciliation period and timestamps are consistent.",
+    "Review meter calibration and tank-table information where applicable.",
+]
+
+for t36_item in t36_verification_areas:
+    st.write(f"• {t36_item}")
+
+
+# ------------------------------------------------------------
+# MANAGEMENT ACTIONS
+# ------------------------------------------------------------
+
+st.subheader("📋 Management Actions")
+
+if t36_risk_level == "HIGH":
+
+    t36_actions = [
+        "Prioritize verification of the ROB reconciliation discrepancy.",
+        "Cross-check tank soundings, bunker documents and consumption records.",
+        "Review internal fuel transfers and measurement corrections.",
+        "Escalate for technical and operational review if the discrepancy remains after verification.",
+        "Do not classify the difference as fuel loss until source records and measurements are validated.",
+    ]
+
+elif t36_risk_level == "MEDIUM":
+
+    t36_actions = [
+        "Review the reconciliation records and supporting documents.",
+        "Repeat ROB calculations using verified measurements.",
+        "Check bunker quantities and reported consumption.",
+        "Trend the discrepancy across subsequent reporting periods.",
+    ]
+
+elif t36_risk_level == "WATCH":
+
+    t36_actions = [
+        "Continue routine ROB reconciliation.",
+        "Verify measurement consistency at the next reporting period.",
+        "Monitor whether the discrepancy increases or persists.",
+    ]
+
+elif t36_risk_level == "NORMAL":
+
+    t36_actions = [
+        "Continue routine fuel reconciliation.",
+        "Maintain traceable bunker and ROB records.",
+        "Continue periodic verification of measurements and consumption data.",
+    ]
+
+else:
+
+    t36_actions = [
+        "Obtain opening ROB and closing ROB values.",
+        "Obtain verified fuel-consumption records.",
+        "Add bunker-received quantities where applicable.",
+        "Repeat reconciliation when sufficient source data are available.",
+    ]
+
+
+for t36_number, t36_action in enumerate(
+    t36_actions,
+    start=1
+):
+    st.write(
+        f"{t36_number}. {t36_action}"
+    )
+
+
+# ------------------------------------------------------------
+# UPSTREAM SAVING CONTEXT
+# ------------------------------------------------------------
+
+st.subheader("💵 Upstream Efficiency Opportunity")
+
+if t36_potential_saving > 0:
+
+    st.metric(
+        "Upstream Potential Saving",
+        f"${t36_potential_saving:,.2f}"
+    )
+
+    st.caption(
+        "Potential saving is an upstream decision-support estimate "
+        "and must not be treated as realized financial saving "
+        "without verification."
+    )
+
+else:
+
+    st.info(
+        "No verified upstream potential-saving value is currently "
+        "available for this assessment."
+    )
+
+
+# ------------------------------------------------------------
+# DATA QUALITY & VALIDATION
+# ------------------------------------------------------------
+
+st.subheader("🛡️ Data Quality & Validation")
+
+if t36_complete_balance_data:
+
+    st.success(
+        "🟢 Opening ROB, reported consumption and closing ROB "
+        "are available for fuel-balance reconciliation."
+    )
+
+elif t36_any_fuel_data:
+
+    st.warning(
+        "🟠 Only part of the required ROB / bunker reconciliation "
+        "information is currently available. Interpret the assessment "
+        "with the available-data limitations."
+    )
+
+else:
+
+    st.warning(
+        "🟠 ROB, bunker and fuel-consumption information is currently "
+        "insufficient for a supported fuel-balance reconciliation."
+    )
+
+
+st.info(
+    "Fuel Loss / ROB & Bunker Reconciliation Intelligence is a "
+    "decision-support screening module based on available fuel records "
+    "and configured thresholds. A calculated discrepancy does not by "
+    "itself establish fuel loss, theft, leakage, machinery malfunction, "
+    "measurement error, crew performance, commercial responsibility "
+    "or causation. Verify actual tank soundings, ROB, bunker delivery "
+    "documentation, fuel transfers, consumption records, meter readings, "
+    "tank tables, density/temperature corrections and applicable "
+    "company procedures before technical, operational, safety, "
+    "procurement, financial or commercial action."
+)
+
+
+# ------------------------------------------------------------
+# STORE TAHAP 36 RESULTS
+# ------------------------------------------------------------
+
+t36_result = {
+    "module": (
+        "Fuel Loss / ROB & Bunker "
+        "Reconciliation Intelligence"
+    ),
+    "classification": t36_classification,
+    "risk_level": t36_risk_level,
+    "opening_rob": t36_opening_rob,
+    "bunker_received": t36_bunker_received,
+    "reported_consumption": t36_reported_consumption,
+    "expected_closing_rob": t36_expected_closing_rob,
+    "closing_rob": t36_closing_rob,
+    "discrepancy": t36_discrepancy,
+    "discrepancy_pct": t36_discrepancy_pct,
+    "fuel_price": t36_fuel_price,
+    "financial_exposure": t36_financial_exposure,
+    "potential_saving": t36_potential_saving,
+    "upstream_available": t36_upstream_available,
+    "data_available": t36_data_available,
+    "interpretation": t36_interpretation,
+    "management_actions": t36_actions,
+}
+
+st.session_state["t36_result"] = t36_result
+
+st.session_state[
+    "t36_result_upstream_available"
+] = t36_data_available
+
+st.session_state[
+    "t36_reconciliation_classification"
+] = t36_classification
+
+st.session_state[
+    "t36_reconciliation_risk"
+] = t36_risk_level
+
+st.session_state[
+    "t36_rob_discrepancy"
+] = t36_discrepancy
+
+st.session_state[
+    "t36_rob_discrepancy_pct"
+] = t36_discrepancy_pct
+
+
+# ------------------------------------------------------------
+# TAHAP 36 STATUS
+# ------------------------------------------------------------
+
+st.success(
+    "✅ TAHAP 36 ACTIVE — Fuel Loss / ROB & Bunker "
+    "Reconciliation Intelligence is operational."
+)
+
+st.info(
+    "TAHAP 36 results are stored in the application session "
+    "and prepared for the next intelligence modules."
+)
+
+
+# ============================================================
+# END TAHAP 36
+# ============================================================
+
 
 
