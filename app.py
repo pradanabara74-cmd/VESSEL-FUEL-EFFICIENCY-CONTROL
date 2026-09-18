@@ -9432,4 +9432,649 @@ st.info(
 # END TAHAP 17
 # ================================================================
 
+# ================================================================
+# TAHAP 18 - FUEL EFFICIENCY TREND & PERFORMANCE DEGRADATION
+# INTELLIGENCE
+# ================================================================
+
+st.divider()
+st.header("📉 Fuel Efficiency Trend & Performance Degradation Intelligence")
+
+st.caption(
+    "Fuel-efficiency trend monitoring, performance degradation detection, "
+    "baseline comparison, management alerts and priority actions."
+)
+
+# ------------------------------------------------
+# SAFE FLOAT
+# ------------------------------------------------
+
+def t18_safe_float(value, default=0.0):
+    try:
+        if value is None:
+            return float(default)
+        return float(value)
+    except (TypeError, ValueError):
+        return float(default)
+
+
+# ------------------------------------------------
+# VESSEL CONTEXT
+# ------------------------------------------------
+
+t18_selected_vessel = st.session_state.get(
+    "selected_fleet_vessel",
+    st.session_state.get(
+        "sidebar_vessel_name",
+        globals().get("vessel_name", "ASL MANTRUS")
+    )
+)
+
+st.subheader("🚢 Performance Monitoring Vessel")
+st.write(f"**Vessel:** {t18_selected_vessel}")
+
+
+# ------------------------------------------------
+# PREVIOUS INTELLIGENCE DATA
+# ------------------------------------------------
+
+t18_previous_loss = t18_safe_float(
+    st.session_state.get(
+        "t17_result_unaccounted_fuel",
+        st.session_state.get(
+            "t17_result_fuel_loss",
+            0.0
+        )
+    )
+)
+
+t18_previous_loss_percent = t18_safe_float(
+    st.session_state.get(
+        "t17_result_loss_percent",
+        0.0
+    )
+)
+
+t18_previous_consumption = t18_safe_float(
+    st.session_state.get(
+        "t16_result_recorded_consumption",
+        st.session_state.get(
+            "t14_result_daily_consumption",
+            0.0
+        )
+    )
+)
+
+t18_previous_efficiency = t18_safe_float(
+    st.session_state.get(
+        "t10_result_efficiency_score",
+        0.0
+    )
+)
+
+
+# ------------------------------------------------
+# PERFORMANCE INPUT DATA
+# ------------------------------------------------
+
+st.subheader("📝 Fuel Efficiency Performance Data")
+
+t18_c1, t18_c2, t18_c3 = st.columns(3)
+
+with t18_c1:
+
+    t18_baseline_consumption = st.number_input(
+        "Baseline Fuel Consumption / Day",
+        min_value=0.0,
+        value=4800.0,
+        step=100.0,
+        key="t18_baseline_consumption"
+    )
+
+    t18_current_consumption = st.number_input(
+        "Current Fuel Consumption / Day",
+        min_value=0.0,
+        value=float(max(t18_previous_consumption, 0.0)),
+        step=100.0,
+        key="t18_current_consumption"
+    )
+
+
+with t18_c2:
+
+    t18_baseline_speed = st.number_input(
+        "Baseline Vessel Speed (knots)",
+        min_value=0.0,
+        value=10.0,
+        step=0.1,
+        key="t18_baseline_speed"
+    )
+
+    t18_current_speed = st.number_input(
+        "Current Vessel Speed (knots)",
+        min_value=0.0,
+        value=10.0,
+        step=0.1,
+        key="t18_current_speed"
+    )
+
+
+with t18_c3:
+
+    t18_baseline_rpm = st.number_input(
+        "Baseline Engine RPM",
+        min_value=0.0,
+        value=1100.0,
+        step=10.0,
+        key="t18_baseline_rpm"
+    )
+
+    t18_current_rpm = st.number_input(
+        "Current Engine RPM",
+        min_value=0.0,
+        value=1100.0,
+        step=10.0,
+        key="t18_current_rpm"
+    )
+
+
+# ------------------------------------------------
+# OPERATING CONDITION
+# ------------------------------------------------
+
+st.subheader("⚙️ Operating Condition")
+
+t18_c4, t18_c5, t18_c6 = st.columns(3)
+
+with t18_c4:
+
+    t18_engine_load = st.number_input(
+        "Engine Load (%)",
+        min_value=0.0,
+        max_value=100.0,
+        value=70.0,
+        step=1.0,
+        key="t18_engine_load"
+    )
+
+
+with t18_c5:
+
+    t18_hull_condition = st.selectbox(
+        "Hull / Propeller Condition",
+        [
+            "Normal / Clean",
+            "Minor Fouling",
+            "Moderate Fouling",
+            "Heavy Fouling"
+        ],
+        key="t18_hull_condition"
+    )
+
+
+with t18_c6:
+
+    t18_weather_condition = st.selectbox(
+        "Weather / Sea Condition",
+        [
+            "Calm / Normal",
+            "Moderate",
+            "Rough",
+            "Severe"
+        ],
+        key="t18_weather_condition"
+    )
+
+
+# ------------------------------------------------
+# CALCULATIONS
+# ------------------------------------------------
+
+if t18_baseline_consumption > 0:
+
+    t18_consumption_variance = (
+        t18_current_consumption -
+        t18_baseline_consumption
+    )
+
+    t18_consumption_variance_percent = (
+        t18_consumption_variance /
+        t18_baseline_consumption
+    ) * 100.0
+
+else:
+
+    t18_consumption_variance = 0.0
+    t18_consumption_variance_percent = 0.0
+
+
+if t18_baseline_speed > 0:
+
+    t18_speed_variance_percent = (
+        (
+            t18_current_speed -
+            t18_baseline_speed
+        ) /
+        t18_baseline_speed
+    ) * 100.0
+
+else:
+
+    t18_speed_variance_percent = 0.0
+
+
+if t18_baseline_rpm > 0:
+
+    t18_rpm_variance_percent = (
+        (
+            t18_current_rpm -
+            t18_baseline_rpm
+        ) /
+        t18_baseline_rpm
+    ) * 100.0
+
+else:
+
+    t18_rpm_variance_percent = 0.0
+
+
+# ------------------------------------------------
+# DEGRADATION SCORE
+# ------------------------------------------------
+
+t18_degradation_score = max(
+    0.0,
+    t18_consumption_variance_percent
+)
+
+if t18_current_speed < t18_baseline_speed:
+    t18_degradation_score += abs(
+        t18_speed_variance_percent
+    ) * 0.50
+
+if t18_current_rpm > t18_baseline_rpm:
+    t18_degradation_score += abs(
+        t18_rpm_variance_percent
+    ) * 0.25
+
+if t18_hull_condition == "Minor Fouling":
+    t18_degradation_score += 2.0
+
+elif t18_hull_condition == "Moderate Fouling":
+    t18_degradation_score += 5.0
+
+elif t18_hull_condition == "Heavy Fouling":
+    t18_degradation_score += 10.0
+
+
+if t18_weather_condition == "Moderate":
+    t18_degradation_score += 1.0
+
+elif t18_weather_condition == "Rough":
+    t18_degradation_score += 3.0
+
+elif t18_weather_condition == "Severe":
+    t18_degradation_score += 5.0
+
+
+t18_degradation_score = round(
+    max(0.0, t18_degradation_score),
+    2
+)
+
+
+# ------------------------------------------------
+# PERFORMANCE STATUS
+# ------------------------------------------------
+
+if t18_degradation_score < 3.0:
+
+    t18_status = "NORMAL"
+    t18_status_icon = "🟢"
+
+elif t18_degradation_score < 8.0:
+
+    t18_status = "WATCH"
+    t18_status_icon = "🟡"
+
+elif t18_degradation_score < 15.0:
+
+    t18_status = "DEGRADED"
+    t18_status_icon = "🟠"
+
+else:
+
+    t18_status = "CRITICAL DEGRADATION"
+    t18_status_icon = "🔴"
+
+
+# ------------------------------------------------
+# EFFICIENCY INDEX
+# ------------------------------------------------
+
+t18_efficiency_index = max(
+    0.0,
+    min(
+        100.0,
+        100.0 - t18_degradation_score
+    )
+)
+
+
+# ------------------------------------------------
+# RESULTS
+# ------------------------------------------------
+
+st.subheader("📊 Performance Intelligence")
+
+t18_m1, t18_m2, t18_m3, t18_m4 = st.columns(4)
+
+with t18_m1:
+    st.metric(
+        "Fuel Variance / Day",
+        f"{t18_consumption_variance:,.2f}"
+    )
+
+with t18_m2:
+    st.metric(
+        "Fuel Variance",
+        f"{t18_consumption_variance_percent:,.2f}%"
+    )
+
+with t18_m3:
+    st.metric(
+        "Efficiency Index",
+        f"{t18_efficiency_index:,.1f}%"
+    )
+
+with t18_m4:
+    st.metric(
+        "Degradation Score",
+        f"{t18_degradation_score:,.2f}"
+    )
+
+
+# ------------------------------------------------
+# PERFORMANCE STATUS DISPLAY
+# ------------------------------------------------
+
+st.subheader("🚦 Performance Status")
+
+if t18_status == "NORMAL":
+
+    st.success(
+        f"{t18_status_icon} NORMAL — No significant "
+        "fuel-efficiency degradation detected."
+    )
+
+elif t18_status == "WATCH":
+
+    st.warning(
+        f"{t18_status_icon} WATCH — Early indication of "
+        "fuel-efficiency degradation detected."
+    )
+
+elif t18_status == "DEGRADED":
+
+    st.warning(
+        f"{t18_status_icon} DEGRADED — Fuel performance "
+        "requires technical and operational review."
+    )
+
+else:
+
+    st.error(
+        f"{t18_status_icon} CRITICAL DEGRADATION — Significant "
+        "performance deterioration requires investigation."
+    )
+
+
+# ------------------------------------------------
+# INTELLIGENCE FINDINGS
+# ------------------------------------------------
+
+st.subheader("🧠 Intelligence Findings")
+
+t18_intelligence = []
+
+if t18_current_consumption <= 0:
+
+    t18_intelligence.append(
+        "Current fuel consumption is unavailable or zero."
+    )
+
+elif t18_consumption_variance_percent > 10:
+
+    t18_intelligence.append(
+        "Current fuel consumption is materially above "
+        "the entered baseline."
+    )
+
+elif t18_consumption_variance_percent > 3:
+
+    t18_intelligence.append(
+        "Fuel consumption is above the entered baseline."
+    )
+
+else:
+
+    t18_intelligence.append(
+        "Fuel consumption does not show significant "
+        "deterioration against the entered baseline."
+    )
+
+
+if t18_current_speed < t18_baseline_speed:
+
+    t18_intelligence.append(
+        "Current vessel speed is below the entered "
+        "baseline speed."
+    )
+
+
+if t18_current_rpm > t18_baseline_rpm:
+
+    t18_intelligence.append(
+        "Current engine RPM is above the entered "
+        "baseline RPM."
+    )
+
+
+if t18_hull_condition != "Normal / Clean":
+
+    t18_intelligence.append(
+        "Reported hull/propeller condition may be "
+        "contributing to increased fuel consumption."
+    )
+
+
+if t18_weather_condition in ["Rough", "Severe"]:
+
+    t18_intelligence.append(
+        "Adverse weather/sea condition may materially "
+        "affect the current fuel-performance comparison."
+    )
+
+
+for item in t18_intelligence:
+    st.write(f"• {item}")
+
+
+# ------------------------------------------------
+# PRIORITY ACTIONS
+# ------------------------------------------------
+
+st.subheader("📋 Priority Actions")
+
+t18_priority_actions = []
+
+if t18_current_consumption <= 0:
+
+    t18_priority_actions.append(
+        "Verify actual daily fuel consumption and "
+        "machinery operating records."
+    )
+
+if t18_degradation_score >= 3:
+
+    t18_priority_actions.append(
+        "Compare current RPM, engine load and vessel speed "
+        "with verified historical operating data."
+    )
+
+if t18_hull_condition != "Normal / Clean":
+
+    t18_priority_actions.append(
+        "Review hull and propeller inspection/cleaning "
+        "history and actual condition."
+    )
+
+if t18_weather_condition in ["Rough", "Severe"]:
+
+    t18_priority_actions.append(
+        "Normalize the performance review for weather, "
+        "current and sea-state effects before concluding "
+        "that machinery or hull degradation exists."
+    )
+
+if t18_degradation_score >= 8:
+
+    t18_priority_actions.append(
+        "Review engine performance, fuel system condition, "
+        "propulsion efficiency and maintenance records."
+    )
+
+if t18_degradation_score >= 15:
+
+    t18_priority_actions.append(
+        "Escalate the degradation indication for detailed "
+        "technical investigation and management review."
+    )
+
+if not t18_priority_actions:
+
+    t18_priority_actions.append(
+        "Continue routine fuel-efficiency monitoring and "
+        "trend comparison."
+    )
+
+
+for index, action in enumerate(
+    t18_priority_actions,
+    start=1
+):
+    st.write(f"{index}. {action}")
+
+
+# ------------------------------------------------
+# DATA QUALITY & VALIDATION
+# ------------------------------------------------
+
+st.subheader("🛡️ Data Quality & Validation")
+
+t18_validation_messages = []
+
+if t18_current_consumption <= 0:
+
+    t18_validation_messages.append(
+        "Current fuel consumption is zero or unavailable."
+    )
+
+if t18_baseline_consumption <= 0:
+
+    t18_validation_messages.append(
+        "Baseline fuel consumption is zero or unavailable."
+    )
+
+if t18_current_speed <= 0:
+
+    t18_validation_messages.append(
+        "Current vessel speed is zero or unavailable."
+    )
+
+if t18_baseline_speed <= 0:
+
+    t18_validation_messages.append(
+        "Baseline vessel speed is zero or unavailable."
+    )
+
+
+if t18_validation_messages:
+
+    for message in t18_validation_messages:
+        st.warning(f"🟠 {message}")
+
+else:
+
+    st.success(
+        "🟢 Fuel-efficiency trend inputs passed "
+        "the basic validation checks."
+    )
+
+
+st.info(
+    "Fuel-efficiency trend and degradation results are "
+    "decision-support indicators, not proof of machinery, hull "
+    "or propeller deterioration. Fuel performance can be affected "
+    "by vessel loading, draft/trim, RPM/load, weather/current, "
+    "sea state, hull and propeller condition, fuel properties, "
+    "machinery condition and measurement quality. Verify actual "
+    "fuel measurements, engine performance records, voyage "
+    "conditions and applicable company/OEM requirements before "
+    "technical, operational or commercial action."
+)
+
+
+# ------------------------------------------------
+# STORE RESULTS FOR NEXT INTELLIGENCE MODULES
+# ------------------------------------------------
+
+st.session_state["t18_result_vessel"] = (
+    t18_selected_vessel
+)
+
+st.session_state["t18_result_consumption_variance"] = (
+    t18_consumption_variance
+)
+
+st.session_state["t18_result_consumption_variance_percent"] = (
+    t18_consumption_variance_percent
+)
+
+st.session_state["t18_result_efficiency_index"] = (
+    t18_efficiency_index
+)
+
+st.session_state["t18_result_degradation_score"] = (
+    t18_degradation_score
+)
+
+st.session_state["t18_result_status"] = (
+    t18_status
+)
+
+st.session_state["t18_result_priority_actions"] = (
+    t18_priority_actions
+)
+
+st.session_state["t18_result_intelligence"] = (
+    t18_intelligence
+)
+
+
+st.success(
+    "✅ TAHAP 18 ACTIVE — Fuel Efficiency Trend & Performance "
+    "Degradation Intelligence is operational."
+)
+
+st.info(
+    "TAHAP 18 results are stored in the application session "
+    "and prepared for the next intelligence modules."
+)
+
+
+# ================================================================
+# END TAHAP 18
+# ================================================================
+
 
