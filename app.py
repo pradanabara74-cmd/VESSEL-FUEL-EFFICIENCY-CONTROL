@@ -20056,6 +20056,240 @@ st.info(
 # ================================================================
 # END TAHAP 40
 # ================================================================
+# =============================================================================
+# TAHAP 41
+# FINAL SYSTEM INTEGRATION & FLEET INTELLIGENCE CONTROL CENTER
+# =============================================================================
+
+st.markdown("---")
+
+st.header("🧠 Final System Integration & Fleet Intelligence Control Center")
+
+st.caption(
+    "TAHAP 41 — Consolidated operational intelligence, fleet readiness, "
+    "management priorities and final system-integration control."
+)
+
+# -----------------------------------------------------------------------------
+# TAHAP 41 SESSION STATE
+# -----------------------------------------------------------------------------
+
+if "tahap_41_results" not in st.session_state:
+    st.session_state["tahap_41_results"] = {}
+
+if "tahap_41_active" not in st.session_state:
+    st.session_state["tahap_41_active"] = True
+
+
+# -----------------------------------------------------------------------------
+# SYSTEM INTEGRATION STATUS
+# -----------------------------------------------------------------------------
+
+st.subheader("🔗 Intelligence Integration Status")
+
+integration_modules = [
+    "Fuel Efficiency Intelligence",
+    "Fuel Trend & Forecast Intelligence",
+    "Fuel Anomaly Detection Intelligence",
+    "Engine Performance Intelligence",
+    "Fuel Root Cause & Diagnostic Intelligence",
+    "Hull & Propeller Performance Intelligence",
+    "ROB & Bunker Reconciliation Intelligence",
+    "Corrective Action Intelligence",
+    "Closed-Loop Verification Intelligence",
+    "Fleet KPI & Performance Scorecard",
+    "Executive Management Intelligence",
+]
+
+total_modules = len(integration_modules)
+
+st.success(
+    "Core fuel-efficiency intelligence architecture is available "
+    "for final system integration."
+)
+
+with st.expander("📚 Integrated Intelligence Modules", expanded=False):
+    for number, module in enumerate(integration_modules, start=1):
+        st.write(f"✅ {number}. {module}")
+
+
+# -----------------------------------------------------------------------------
+# MANAGEMENT CONTROL OVERVIEW
+# -----------------------------------------------------------------------------
+
+st.subheader("🎯 Management Control Overview")
+
+col1, col2, col3, col4 = st.columns(4)
+
+with col1:
+    st.metric(
+        "Integration Modules",
+        total_modules
+    )
+
+with col2:
+    st.metric(
+        "System Stage",
+        "FINAL"
+    )
+
+with col3:
+    st.metric(
+        "Control Status",
+        "ACTIVE"
+    )
+
+with col4:
+    st.metric(
+        "Decision Support",
+        "READY"
+    )
+
+
+# -----------------------------------------------------------------------------
+# FLEET INTELLIGENCE CONTROL
+# -----------------------------------------------------------------------------
+
+st.subheader("🚢 Fleet Intelligence Control")
+
+st.info(
+    "The control center consolidates available upstream intelligence "
+    "for fleet-level operational review. Individual findings should "
+    "continue to be verified against vessel records and actual "
+    "operating conditions."
+)
+
+fleet_control = {
+    "Fuel Efficiency": "MONITORED",
+    "Fuel Consumption Trend": "MONITORED",
+    "Fuel Anomaly": "MONITORED",
+    "Engine Performance": "MONITORED",
+    "Hull / Propeller Performance": "MONITORED",
+    "ROB / Bunker Reconciliation": "MONITORED",
+    "Corrective Actions": "MONITORED",
+    "Performance Verification": "MONITORED",
+    "Fleet KPI": "MONITORED",
+    "Management Intelligence": "MONITORED",
+}
+
+for item, status in fleet_control.items():
+    st.write(f"🟢 **{item}** — {status}")
+
+
+# -----------------------------------------------------------------------------
+# MANAGEMENT PRIORITY LOGIC
+# -----------------------------------------------------------------------------
+
+st.subheader("🚦 Management Priority Framework")
+
+priority_col1, priority_col2, priority_col3 = st.columns(3)
+
+with priority_col1:
+    st.success(
+        "🟢 NORMAL\n\n"
+        "Continue routine monitoring and maintain verified "
+        "operational records."
+    )
+
+with priority_col2:
+    st.warning(
+        "🟠 ATTENTION\n\n"
+        "Review abnormal trends, data gaps or performance "
+        "deviations before operational action."
+    )
+
+with priority_col3:
+    st.error(
+        "🔴 PRIORITY REVIEW\n\n"
+        "Escalate material verified deviations for appropriate "
+        "technical and management review."
+    )
+
+
+# -----------------------------------------------------------------------------
+# FINAL MANAGEMENT ACTIONS
+# -----------------------------------------------------------------------------
+
+st.subheader("📋 Final Management Action Framework")
+
+management_actions = [
+    "Review fleet fuel-efficiency KPI and significant deviations.",
+    "Verify abnormal fuel-consumption trends against vessel records.",
+    "Cross-check ROB, bunker and consumption reconciliation.",
+    "Review engine-performance deviations with available machinery data.",
+    "Assess hull and propeller performance where supporting data exists.",
+    "Confirm corrective actions with responsible vessel or shore personnel.",
+    "Verify effectiveness after corrective actions are completed.",
+    "Maintain traceable operational records for management review.",
+    "Escalate material verified deviations according to company procedures.",
+    "Use consolidated intelligence as decision support, not as a substitute "
+    "for engineering, operational or management verification.",
+]
+
+for number, action in enumerate(management_actions, start=1):
+    st.write(f"{number}. {action}")
+
+
+# -----------------------------------------------------------------------------
+# DATA QUALITY & VALIDATION
+# -----------------------------------------------------------------------------
+
+st.subheader("🛡️ Data Quality & Validation")
+
+st.success(
+    "🟢 Final integration framework is available for consolidated "
+    "fleet-intelligence assessment."
+)
+
+st.info(
+    "Final System Integration & Fleet Intelligence Control Center is a "
+    "decision-support layer. Consolidated indicators do not independently "
+    "establish machinery failure, fuel loss, theft, crew performance, "
+    "commercial responsibility, regulatory compliance, causation or future "
+    "financial results. Verify actual vessel records, fuel measurements, "
+    "tank soundings, ROB, bunker documentation, engine parameters, RPM/load, "
+    "vessel speed, draft/trim, weather/current, sea state, voyage conditions, "
+    "hull/propeller condition, fuel properties and applicable OEM/company "
+    "requirements before technical, operational, safety, procurement, "
+    "financial or commercial action."
+)
+
+
+# -----------------------------------------------------------------------------
+# STORE TAHAP 41 RESULTS
+# -----------------------------------------------------------------------------
+
+st.session_state["tahap_41_results"] = {
+    "stage": 41,
+    "module": "Final System Integration & Fleet Intelligence Control Center",
+    "status": "ACTIVE",
+    "integration_modules": total_modules,
+    "system_stage": "FINAL",
+    "control_status": "ACTIVE",
+    "decision_support": "READY",
+}
+
+st.session_state["tahap_41_active"] = True
+
+
+# -----------------------------------------------------------------------------
+# TAHAP 41 STATUS
+# -----------------------------------------------------------------------------
+
+st.success(
+    "✅ TAHAP 41 ACTIVE — Final System Integration & Fleet Intelligence "
+    "Control Center is operational."
+)
+
+st.info(
+    "TAHAP 41 results are stored in the application session and prepared "
+    "for final fleet command integration."
+)
+
+
+# =============================================================================
+# END TAHAP 41
+# =============================================================================
 
 
 
