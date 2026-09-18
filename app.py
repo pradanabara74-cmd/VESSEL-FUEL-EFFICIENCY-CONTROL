@@ -3310,3 +3310,674 @@ st.info(
 # ================================================================
 # END TAHAP 6
 # ================================================================
+
+# ================================================================
+# TAHAP 7 - FUEL COST & FINANCIAL IMPACT INTELLIGENCE
+# ================================================================
+
+st.divider()
+st.header("💰 Fuel Cost & Financial Impact Intelligence")
+st.caption(
+    "Fuel-cost monitoring, baseline comparison, excess-cost detection, "
+    "financial exposure and potential fuel-saving intelligence."
+)
+
+# ------------------------------------------------
+# VESSEL CONTEXT
+# ------------------------------------------------
+
+t7_selected_vessel = st.session_state.get(
+    "selected_fleet_vessel",
+    st.session_state.get(
+        "sidebar_vessel_name",
+        globals().get("vessel_name", "ASL MANTRUS")
+    )
+)
+
+st.subheader("🚢 Financial Analysis Vessel")
+st.info(f"Fuel-cost analysis for: **{t7_selected_vessel}**")
+
+
+# ------------------------------------------------
+# IMPORT RESULTS FROM TAHAP 6
+# ------------------------------------------------
+
+t7_actual_daily_fuel = float(
+    st.session_state.get(
+        "t6_result_actual_daily_fuel",
+        0.0
+    )
+)
+
+t7_baseline_daily_fuel = float(
+    st.session_state.get(
+        "t6_result_baseline_daily_fuel",
+        0.0
+    )
+)
+
+t7_deviation_percent = float(
+    st.session_state.get(
+        "t6_result_deviation_percent",
+        0.0
+    )
+)
+
+t7_t6_status = st.session_state.get(
+    "t6_result_status",
+    "DATA REQUIRED"
+)
+
+
+# ------------------------------------------------
+# FINANCIAL INPUTS
+# ------------------------------------------------
+
+st.subheader("📝 Financial Planning Inputs")
+
+t7_c1, t7_c2, t7_c3 = st.columns(3)
+
+with t7_c1:
+    t7_fuel_price = st.number_input(
+        "Fuel Price (USD/L)",
+        min_value=0.0,
+        value=0.85,
+        step=0.01,
+        key="t7_fuel_price"
+    )
+
+    t7_analysis_days = st.number_input(
+        "Financial Analysis Period (Days)",
+        min_value=1,
+        value=30,
+        step=1,
+        key="t7_analysis_days"
+    )
+
+
+with t7_c2:
+    t7_budget_daily_fuel = st.number_input(
+        "Budget Fuel Consumption (L/day)",
+        min_value=0.0,
+        value=float(t7_baseline_daily_fuel),
+        step=100.0,
+        key="t7_budget_daily_fuel"
+    )
+
+    t7_budget_fuel_price = st.number_input(
+        "Budget Fuel Price (USD/L)",
+        min_value=0.0,
+        value=0.80,
+        step=0.01,
+        key="t7_budget_fuel_price"
+    )
+
+
+with t7_c3:
+    t7_saving_target_percent = st.number_input(
+        "Fuel Saving Target (%)",
+        min_value=0.0,
+        max_value=100.0,
+        value=5.0,
+        step=0.5,
+        key="t7_saving_target_percent"
+    )
+
+    t7_currency_note = st.text_input(
+        "Financial Reference",
+        value="USD",
+        key="t7_currency_note"
+    )
+
+
+# ------------------------------------------------
+# NORMALIZE VALUES
+# ------------------------------------------------
+
+t7_fuel_price = float(t7_fuel_price)
+t7_analysis_days = int(t7_analysis_days)
+t7_budget_daily_fuel = float(t7_budget_daily_fuel)
+t7_budget_fuel_price = float(t7_budget_fuel_price)
+t7_saving_target_percent = float(t7_saving_target_percent)
+
+
+# ------------------------------------------------
+# COST CALCULATIONS
+# ------------------------------------------------
+
+t7_actual_daily_cost = (
+    t7_actual_daily_fuel * t7_fuel_price
+)
+
+t7_actual_period_cost = (
+    t7_actual_daily_cost * t7_analysis_days
+)
+
+t7_baseline_daily_cost = (
+    t7_baseline_daily_fuel * t7_fuel_price
+)
+
+t7_baseline_period_cost = (
+    t7_baseline_daily_cost * t7_analysis_days
+)
+
+t7_budget_daily_cost = (
+    t7_budget_daily_fuel * t7_budget_fuel_price
+)
+
+t7_budget_period_cost = (
+    t7_budget_daily_cost * t7_analysis_days
+)
+
+t7_cost_variance_daily = (
+    t7_actual_daily_cost - t7_baseline_daily_cost
+)
+
+t7_cost_variance_period = (
+    t7_actual_period_cost - t7_baseline_period_cost
+)
+
+if t7_baseline_daily_cost > 0:
+    t7_cost_variance_percent = (
+        t7_cost_variance_daily /
+        t7_baseline_daily_cost
+    ) * 100.0
+else:
+    t7_cost_variance_percent = 0.0
+
+
+# ------------------------------------------------
+# EXCESS FUEL / COST
+# ------------------------------------------------
+
+t7_excess_daily_fuel = max(
+    t7_actual_daily_fuel - t7_baseline_daily_fuel,
+    0.0
+)
+
+t7_excess_period_fuel = (
+    t7_excess_daily_fuel * t7_analysis_days
+)
+
+t7_excess_daily_cost = (
+    t7_excess_daily_fuel * t7_fuel_price
+)
+
+t7_excess_period_cost = (
+    t7_excess_period_fuel * t7_fuel_price
+)
+
+
+# ------------------------------------------------
+# SAVING OPPORTUNITY
+# ------------------------------------------------
+
+t7_target_daily_fuel = (
+    t7_actual_daily_fuel *
+    (1.0 - t7_saving_target_percent / 100.0)
+)
+
+t7_target_daily_saving_l = max(
+    t7_actual_daily_fuel - t7_target_daily_fuel,
+    0.0
+)
+
+t7_target_period_saving_l = (
+    t7_target_daily_saving_l *
+    t7_analysis_days
+)
+
+t7_target_daily_saving_cost = (
+    t7_target_daily_saving_l *
+    t7_fuel_price
+)
+
+t7_target_period_saving_cost = (
+    t7_target_period_saving_l *
+    t7_fuel_price
+)
+
+
+# ------------------------------------------------
+# FINANCIAL STATUS
+# ------------------------------------------------
+
+if t7_actual_daily_fuel <= 0 or t7_baseline_daily_fuel <= 0:
+    t7_status = "DATA REQUIRED"
+
+elif t7_cost_variance_percent <= 0:
+    t7_status = "ON / BELOW BASELINE"
+
+elif t7_cost_variance_percent <= 5:
+    t7_status = "NORMAL"
+
+elif t7_cost_variance_percent <= 10:
+    t7_status = "MONITOR"
+
+elif t7_cost_variance_percent <= 20:
+    t7_status = "HIGH COST"
+
+else:
+    t7_status = "CRITICAL COST"
+
+
+# ------------------------------------------------
+# FINANCIAL KPI
+# ------------------------------------------------
+
+st.subheader("💵 Fuel Cost KPI")
+
+t7_k1, t7_k2, t7_k3, t7_k4 = st.columns(4)
+
+t7_k1.metric(
+    "Actual Daily Fuel Cost",
+    f"USD {t7_actual_daily_cost:,.2f}"
+)
+
+t7_k2.metric(
+    "Baseline Daily Cost",
+    f"USD {t7_baseline_daily_cost:,.2f}"
+)
+
+t7_k3.metric(
+    "Daily Cost Variance",
+    f"USD {t7_cost_variance_daily:,.2f}"
+)
+
+t7_k4.metric(
+    "Financial Status",
+    t7_status
+)
+
+
+t7_k5, t7_k6, t7_k7, t7_k8 = st.columns(4)
+
+t7_k5.metric(
+    "Actual Period Cost",
+    f"USD {t7_actual_period_cost:,.2f}"
+)
+
+t7_k6.metric(
+    "Baseline Period Cost",
+    f"USD {t7_baseline_period_cost:,.2f}"
+)
+
+t7_k7.metric(
+    "Period Cost Variance",
+    f"USD {t7_cost_variance_period:,.2f}"
+)
+
+t7_k8.metric(
+    "Cost Deviation",
+    f"{t7_cost_variance_percent:+.1f}%"
+)
+
+
+# ------------------------------------------------
+# BUDGET PERFORMANCE
+# ------------------------------------------------
+
+st.subheader("📊 Budget Performance")
+
+t7_b1, t7_b2, t7_b3 = st.columns(3)
+
+t7_budget_variance = (
+    t7_actual_period_cost -
+    t7_budget_period_cost
+)
+
+t7_b1.metric(
+    "Budget Period Cost",
+    f"USD {t7_budget_period_cost:,.2f}"
+)
+
+t7_b2.metric(
+    "Actual Period Cost",
+    f"USD {t7_actual_period_cost:,.2f}"
+)
+
+t7_b3.metric(
+    "Actual vs Budget",
+    f"USD {t7_budget_variance:,.2f}"
+)
+
+
+# ------------------------------------------------
+# EXCESS FUEL FINANCIAL EXPOSURE
+# ------------------------------------------------
+
+st.subheader("⚠️ Excess Fuel Financial Exposure")
+
+t7_e1, t7_e2, t7_e3, t7_e4 = st.columns(4)
+
+t7_e1.metric(
+    "Excess Fuel / Day",
+    f"{t7_excess_daily_fuel:,.0f} L"
+)
+
+t7_e2.metric(
+    "Excess Fuel / Period",
+    f"{t7_excess_period_fuel:,.0f} L"
+)
+
+t7_e3.metric(
+    "Excess Cost / Day",
+    f"USD {t7_excess_daily_cost:,.2f}"
+)
+
+t7_e4.metric(
+    "Excess Cost / Period",
+    f"USD {t7_excess_period_cost:,.2f}"
+)
+
+
+# ------------------------------------------------
+# SAVING OPPORTUNITY
+# ------------------------------------------------
+
+st.subheader("💡 Potential Fuel Saving")
+
+t7_s1, t7_s2, t7_s3, t7_s4 = st.columns(4)
+
+t7_s1.metric(
+    "Saving Target",
+    f"{t7_saving_target_percent:.1f}%"
+)
+
+t7_s2.metric(
+    "Target Consumption",
+    f"{t7_target_daily_fuel:,.0f} L/day"
+)
+
+t7_s3.metric(
+    "Potential Fuel Saving",
+    f"{t7_target_period_saving_l:,.0f} L"
+)
+
+t7_s4.metric(
+    "Potential Cost Saving",
+    f"USD {t7_target_period_saving_cost:,.2f}"
+)
+
+
+# ------------------------------------------------
+# FINANCIAL INTELLIGENCE
+# ------------------------------------------------
+
+st.subheader("🧠 Financial Intelligence")
+
+t7_intelligence = []
+
+if t7_status == "DATA REQUIRED":
+
+    t7_intelligence.append(
+        "TAHAP 6 actual and baseline fuel data are required "
+        "before financial performance can be assessed."
+    )
+
+elif t7_status == "ON / BELOW BASELINE":
+
+    t7_intelligence.append(
+        "Actual fuel cost is at or below the selected baseline."
+    )
+
+elif t7_status == "NORMAL":
+
+    t7_intelligence.append(
+        "Fuel cost is slightly above baseline but remains "
+        "within the normal monitoring range."
+    )
+
+elif t7_status == "MONITOR":
+
+    t7_intelligence.append(
+        "Fuel-cost deviation requires closer operational monitoring."
+    )
+
+elif t7_status == "HIGH COST":
+
+    t7_intelligence.append(
+        "Fuel-cost performance shows a significant adverse deviation."
+    )
+
+elif t7_status == "CRITICAL COST":
+
+    t7_intelligence.append(
+        "Fuel-cost exposure shows a major adverse deviation "
+        "requiring prompt operational and commercial review."
+    )
+
+
+if t7_excess_period_cost > 0:
+    t7_intelligence.append(
+        f"Estimated excess fuel expenditure over "
+        f"{t7_analysis_days} days is "
+        f"USD {t7_excess_period_cost:,.2f}."
+    )
+
+
+if t7_budget_variance > 0:
+    t7_intelligence.append(
+        f"Projected fuel expenditure is "
+        f"USD {t7_budget_variance:,.2f} above the selected budget."
+    )
+
+elif t7_budget_variance < 0:
+    t7_intelligence.append(
+        f"Projected fuel expenditure is "
+        f"USD {abs(t7_budget_variance):,.2f} below the selected budget."
+    )
+
+
+if t7_target_period_saving_cost > 0:
+    t7_intelligence.append(
+        f"A {t7_saving_target_percent:.1f}% consumption reduction "
+        f"would represent approximately "
+        f"USD {t7_target_period_saving_cost:,.2f} "
+        f"over the selected period, subject to operational feasibility."
+    )
+
+
+for t7_note in t7_intelligence:
+    st.write(f"• {t7_note}")
+
+
+# ------------------------------------------------
+# PRIORITY ACTIONS
+# ------------------------------------------------
+
+st.subheader("📋 Priority Actions")
+
+t7_priority_actions = []
+
+if t7_status == "DATA REQUIRED":
+
+    t7_priority_actions.append(
+        "Verify actual and baseline fuel-consumption data from TAHAP 6."
+    )
+
+elif t7_status == "ON / BELOW BASELINE":
+
+    t7_priority_actions.append(
+        "Maintain the current operating profile and continue "
+        "fuel-cost monitoring."
+    )
+
+elif t7_status == "NORMAL":
+
+    t7_priority_actions.append(
+        "Continue monitoring fuel consumption and cost "
+        "against the approved baseline and budget."
+    )
+
+elif t7_status == "MONITOR":
+
+    t7_priority_actions.extend([
+        "Review the source of fuel-consumption deviation.",
+        "Compare actual fuel price with budget assumptions.",
+        "Review voyage, speed, RPM/load and operating conditions.",
+        "Track whether the adverse cost variance persists."
+    ])
+
+elif t7_status == "HIGH COST":
+
+    t7_priority_actions.extend([
+        "Investigate the operational cause of excess fuel consumption.",
+        "Review engine efficiency and vessel operating profile.",
+        "Review bunker price and procurement assumptions.",
+        "Quantify avoidable excess-fuel expenditure.",
+        "Escalate persistent adverse variance for management review."
+    ])
+
+elif t7_status == "CRITICAL COST":
+
+    t7_priority_actions.extend([
+        "Initiate prompt operational and commercial investigation.",
+        "Verify fuel-consumption measurements and financial inputs.",
+        "Review engine, vessel, voyage and environmental conditions.",
+        "Assess immediate opportunities to reduce avoidable fuel use.",
+        "Review bunker procurement and fuel-price exposure.",
+        "Escalate significant financial exposure to responsible management."
+    ])
+
+
+for t7_index, t7_action in enumerate(
+    t7_priority_actions,
+    start=1
+):
+    st.write(f"{t7_index}. {t7_action}")
+
+
+# ------------------------------------------------
+# DATA QUALITY & VALIDATION
+# ------------------------------------------------
+
+st.subheader("🛡️ Data Quality & Validation")
+
+t7_validation = []
+
+if t7_actual_daily_fuel <= 0:
+    t7_validation.append(
+        "Actual daily fuel consumption from TAHAP 6 "
+        "is zero or unavailable."
+    )
+
+if t7_baseline_daily_fuel <= 0:
+    t7_validation.append(
+        "Baseline daily fuel consumption from TAHAP 6 "
+        "is zero or unavailable."
+    )
+
+if t7_fuel_price <= 0:
+    t7_validation.append(
+        "Actual fuel price must be greater than zero "
+        "for reliable cost calculations."
+    )
+
+if t7_budget_fuel_price <= 0:
+    t7_validation.append(
+        "Budget fuel price must be greater than zero "
+        "for budget comparison."
+    )
+
+if t7_analysis_days <= 0:
+    t7_validation.append(
+        "Financial analysis period must be greater than zero."
+    )
+
+
+if not t7_validation:
+
+    st.success(
+        "🟢 Fuel financial inputs passed the basic validation checks."
+    )
+
+else:
+
+    for t7_warning in t7_validation:
+        st.warning(f"🟠 {t7_warning}")
+
+
+# ------------------------------------------------
+# FINANCIAL CAUTION
+# ------------------------------------------------
+
+st.info(
+    "Fuel-cost and saving figures are planning estimates. "
+    "Before commercial approval, budgeting, bunker procurement or "
+    "management action, verify actual bunker invoices, contracted prices, "
+    "fuel density, measured consumption, tank soundings, currency basis, "
+    "taxes, port charges, voyage requirements and applicable company procedures."
+)
+
+
+# ------------------------------------------------
+# SAVE TAHAP 7 RESULTS
+# ------------------------------------------------
+
+st.session_state["t7_result_vessel"] = t7_selected_vessel
+st.session_state["t7_result_status"] = t7_status
+
+st.session_state["t7_result_actual_daily_cost"] = (
+    t7_actual_daily_cost
+)
+
+st.session_state["t7_result_baseline_daily_cost"] = (
+    t7_baseline_daily_cost
+)
+
+st.session_state["t7_result_actual_period_cost"] = (
+    t7_actual_period_cost
+)
+
+st.session_state["t7_result_baseline_period_cost"] = (
+    t7_baseline_period_cost
+)
+
+st.session_state["t7_result_cost_variance_daily"] = (
+    t7_cost_variance_daily
+)
+
+st.session_state["t7_result_cost_variance_period"] = (
+    t7_cost_variance_period
+)
+
+st.session_state["t7_result_cost_variance_percent"] = (
+    t7_cost_variance_percent
+)
+
+st.session_state["t7_result_excess_period_cost"] = (
+    t7_excess_period_cost
+)
+
+st.session_state["t7_result_budget_variance"] = (
+    t7_budget_variance
+)
+
+st.session_state["t7_result_potential_saving_cost"] = (
+    t7_target_period_saving_cost
+)
+
+st.session_state["t7_result_priority_actions"] = (
+    t7_priority_actions
+)
+
+st.session_state["t7_result_intelligence"] = (
+    t7_intelligence
+)
+
+
+st.success(
+    "✅ TAHAP 7 ACTIVE — Fuel Cost & Financial Impact "
+    "Intelligence is operational."
+)
+
+st.info(
+    "TAHAP 7 results are stored in the application session "
+    "and prepared for the next intelligence modules."
+)
+
+
+# ================================================================
+# END TAHAP 7
+# ================================================================
