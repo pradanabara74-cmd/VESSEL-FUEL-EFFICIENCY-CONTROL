@@ -2759,19 +2759,22 @@ st.info(
 # SAVE TAHAP 4 RESULTS FOR NEXT MODULES
 # ------------------------------------------------------------
 
-st.session_state["t4_bunker_status"] = t4_bunker_status
-st.session_state["t4_rob_l"] = float(t4_rob_l)
-st.session_state["t4_rob_percent"] = t4_rob_percent
-st.session_state["t4_daily_consumption_l"] = float(t4_daily_consumption_l)
-st.session_state["t4_reserve_l"] = t4_reserve_l
-st.session_state["t4_usable_fuel_l"] = t4_usable_fuel_l
-st.session_state["t4_endurance_days_total"] = t4_endurance_days_total
-st.session_state["t4_endurance_days_usable"] = t4_endurance_days_usable
-st.session_state["t4_days_to_reserve"] = t4_days_to_reserve
-st.session_state["t4_projected_rob_l"] = t4_projected_rob_l
-st.session_state["t4_projected_rob_percent"] = t4_projected_rob_percent
-st.session_state["t4_planned_bunker_cost"] = t4_planned_bunker_cost
-st.session_state["t4_priority_actions"] = t4_priority_actions
+# Save TAHAP 4 calculated results using separate output keys.
+# Do not overwrite keys already owned by Streamlit input widgets.
+
+st.session_state["t4_result_bunker_status"] = t4_bunker_status
+st.session_state["t4_result_rob_l"] = float(t4_rob_l)
+st.session_state["t4_result_rob_percent"] = t4_rob_percent
+st.session_state["t4_result_daily_consumption_l"] = float(t4_daily_consumption_l)
+st.session_state["t4_result_reserve_l"] = t4_reserve_l
+st.session_state["t4_result_usable_fuel_l"] = t4_usable_fuel_l
+st.session_state["t4_result_endurance_days_total"] = t4_endurance_days_total
+st.session_state["t4_result_endurance_days_usable"] = t4_endurance_days_usable
+st.session_state["t4_result_days_to_reserve"] = t4_days_to_reserve
+st.session_state["t4_result_projected_rob_l"] = t4_projected_rob_l
+st.session_state["t4_result_projected_rob_percent"] = t4_projected_rob_percent
+st.session_state["t4_result_planned_bunker_cost"] = t4_planned_bunker_cost
+st.session_state["t4_result_priority_actions"] = t4_priority_actions
 
 st.success(
     "✅ TAHAP 4 ACTIVE — Bunker & Fuel Inventory Intelligence is operational."
