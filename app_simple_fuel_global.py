@@ -13,7 +13,7 @@ KNOWN_VESSELS = [
     "NUSANTARA ABADI 1", "CAPITOL T2002", "CAPITOL T2001", "TB1000-06",
     "TB1000-07", "WHALE 3",
 ]
-RPM_POINTS = [600, 700, 800, 900, 1000, 1100, 1200]
+RPM_POINTS = [600, 700, 800, 900, 1000, 1100, 1200, 1300]
 MODES = ["Free Sailing", "Towing", "Standby", "Maneuvering", "Port / Idle", "Anchor"]
 COLUMNS = [
     "Date", "Vessel", "Operating Mode", "RPM", "Main Engines Running",
@@ -44,7 +44,7 @@ with st.sidebar:
         if not vessel:
             st.warning("Masukkan nama kapal untuk memulai Daily Report.")
     mode = st.selectbox("Operating Mode", MODES)
-    st.info("RPM 600–1200 dianalisis dari data aktual kapal yang tersimpan. Sistem tidak mengarang konsumsi bila baseline belum tersedia.")
+    st.info("RPM 600–1300+ dianalisis dari data aktual kapal yang tersimpan. Sistem tidak mengarang konsumsi bila baseline belum tersedia.")
 
 # ---------- INPUT ----------
 st.header("1. 📝 Daily Report KKM")
@@ -200,6 +200,117 @@ if not st.session_state.fuel_reports.empty:
     st.dataframe(st.session_state.fuel_reports.sort_values("Date", ascending=False), use_container_width=True, hide_index=True)
 else:
     st.info("Belum ada historical Daily Report. Masukkan laporan pertama atau upload CSV.")
+# ---------- TERAS HYDRA REAL FUEL INTELLIGENCE ----------
+if vessel == "TERAS HYDRA":
+    st.header("6. ⚡ TERAS HYDRA — Real Fuel Intelligence")
+
+    st.caption(
+        "Analisis konsumsi BBM berdasarkan Daily Progress Report (DPR) "
+        "TERAS HYDRA dan historical Daily Report yang tersimpan."
+    )
+
+    # Reference operating point confirmed from TERAS HYDRA DPR
+    HYDRA_REFERENCE_RPM = 1300
+
+    hydra_hist = st.session_state.fuel_reports.copy()
+
+    if not hydra_hist.empty:
+        hydra_hist = hydra_hist[
+            hydra_hist["Vessel"].astype(str).str.upper() == "TERAS HYDRA"
+        ].copy()
+
+    c1, c2, c3 = st.columns(3)
+
+    c1.metric("Reference RPM", f"{HYDRA_REFERENCE_RPM} RPM")
+    c2.metric("Selected RPM", f"{rpm} RPM")
+    c3.metric("Main Engines", f"{engines} ME")
+
+    if hydra_hist.empty:
+        st.info(
+            "Belum ada cukup historical fuel data TERAS HYDRA. "
+            "Masukkan Daily Report atau import CSV untuk membangun baseline real."
+        )
+    else:
+        hydra_hist["Actual Consumption MT"] = pd.to_numeric(
+            hydra_hist["Actual Consumption MT"], errors="coerce"
+        )
+
+        hydra_hist["RPM"] = pd.to_numeric(
+            hydra_hist["RPM"], errors="coerce"
+        )
+
+        hydra_hist["Main Engines Running"] = pd.to_numeric(
+            hydra_hist["Main Engines Running"], errors="coerce"
+        )
+
+        reference = hydra_hist[
+            (hydra_hist["RPM"] == rpm)
+            & (hydra_hist["Main Engines Running"] == engines)
+        ]["Actual Consumption MT"].dropna()
+
+        if len(reference) > 0:
+            real_baseline = reference.mean()
+            actual_now = float(actual)
+
+            deviation_mt = actual_now - real_baseline
+            deviation_pct = (
+                deviation_mt / real_baseline * 100
+                if real_baseline > 0 else 0.0
+            )
+
+            a1, a2, a3, a4 = st.columns(4)
+
+            a1.metric(
+                "Actual Fuel",
+                f"{actual_now:.3f} MT/day"
+            )
+
+            a2.metric(
+                "Real DPR Baseline",
+                f"{real_baseline:.3f} MT/day"
+            )
+
+            a3.metric(
+                "Deviation",
+                f"{deviation_pct:+.1f}%"
+            )
+
+            a4.metric(
+                "Excess / Saving",
+                f"{deviation_mt:+.3f} MT/day"
+            )
+
+            if deviation_pct <= 5:
+                st.success(
+                    "🟢 EFFICIENT — Konsumsi BBM berada dalam batas "
+                    "normal terhadap historical baseline."
+                )
+            elif deviation_pct <= 10:
+                st.warning(
+                    "🟠 ATTENTION — Konsumsi BBM mulai lebih tinggi "
+                    "dari historical baseline."
+                )
+            else:
+                st.error(
+                    "🔴 HIGH FUEL CONSUMPTION — Konsumsi BBM lebih dari "
+                    "10% di atas historical baseline. Perlu investigasi."
+                )
+
+            st.markdown(
+                "**Fuel Intelligence Check:** periksa RPM/load engine, "
+                "running hours, speed, weather/current, draft/trim, "
+                "hull/propeller condition dan akurasi ROB/bunker."
+            )
+
+        else:
+            st.warning(
+                f"Belum tersedia historical baseline TERAS HYDRA untuk "
+                f"{rpm} RPM dengan {engines} mesin. "
+                "Tambahkan Daily Report pada kondisi operasi yang sama."
+            )
+
+
+
 
 st.divider()
-st.success("✅ SIMPLE KKM FUEL MONITOR READY — RPM 600–1200 | 1 ME / 2 ME | Historical Baseline | Daily Report")
+st.success("✅ SIMPLE KKM FUEL MONITOR READY — RPM 600–1300 | 1 ME / 2 ME | Historical Baseline | Daily Report")
