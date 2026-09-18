@@ -10752,4 +10752,514 @@ st.info(
 # END TAHAP 19
 # ================================================================
 
+# ================================================================
+# TAHAP 20 - FUEL CONSUMPTION PREDICTION & VOYAGE FUEL FORECAST
+# ================================================================
+
+st.divider()
+st.header("🔮 Fuel Consumption Prediction & Voyage Fuel Forecast Intelligence")
+
+st.caption(
+    "Predictive voyage fuel requirement, reserve exposure, "
+    "estimated ROB at arrival and operational decision support."
+)
+
+# ------------------------------------------------
+# SAFE NUMBER HELPER
+# ------------------------------------------------
+
+def t20_safe_float(value, default=0.0):
+    try:
+        if value is None:
+            return float(default)
+        return float(value)
+    except (TypeError, ValueError):
+        return float(default)
+
+
+# ------------------------------------------------
+# VESSEL CONTEXT
+# ------------------------------------------------
+
+t20_selected_vessel = st.session_state.get(
+    "selected_fleet_vessel",
+    st.session_state.get(
+        "sidebar_vessel_name",
+        globals().get("vessel_name", "ASL MANTRUS")
+    )
+)
+
+st.subheader("🚢 Forecast Vessel")
+st.write(f"**Vessel:** {t20_selected_vessel}")
+
+
+# ------------------------------------------------
+# PREVIOUS INTELLIGENCE DATA
+# ------------------------------------------------
+
+t20_current_rob_default = t20_safe_float(
+    st.session_state.get(
+        "t16_result_calculated_rob",
+        st.session_state.get(
+            "t16_result_current_rob",
+            st.session_state.get(
+                "t14_result_current_rob",
+                0.0
+            )
+        )
+    )
+)
+
+t20_daily_consumption_default = t20_safe_float(
+    st.session_state.get(
+        "t18_result_current_consumption",
+        st.session_state.get(
+            "t16_result_recorded_consumption",
+            st.session_state.get(
+                "t14_result_daily_consumption",
+                0.0
+            )
+        )
+    )
+)
+
+# If previous modules have no usable value,
+# provide a safe operational starting value.
+
+if t20_current_rob_default <= 0:
+    t20_current_rob_default = 100.0
+
+if t20_daily_consumption_default <= 0:
+    t20_daily_consumption_default = 5.0
+
+
+# ------------------------------------------------
+# FORECAST INPUT DATA
+# ------------------------------------------------
+
+st.subheader("📝 Voyage Forecast Input")
+
+t20_c1, t20_c2, t20_c3 = st.columns(3)
+
+with t20_c1:
+
+    t20_current_rob = st.number_input(
+        "Current ROB",
+        min_value=0.0,
+        value=float(t20_current_rob_default),
+        step=1.0,
+        key="t20_current_rob"
+    )
+
+    t20_daily_consumption = st.number_input(
+        "Expected Daily Fuel Consumption",
+        min_value=0.0,
+        value=float(t20_daily_consumption_default),
+        step=0.1,
+        key="t20_daily_consumption"
+    )
+
+
+with t20_c2:
+
+    t20_voyage_days = st.number_input(
+        "Remaining Voyage Days",
+        min_value=0.0,
+        value=5.0,
+        step=0.5,
+        key="t20_voyage_days"
+    )
+
+    t20_port_consumption = st.number_input(
+        "Estimated Port / Standby Fuel",
+        min_value=0.0,
+        value=5.0,
+        step=1.0,
+        key="t20_port_consumption"
+    )
+
+
+with t20_c3:
+
+    t20_reserve_percent = st.number_input(
+        "Safety Reserve (%)",
+        min_value=0.0,
+        max_value=100.0,
+        value=15.0,
+        step=1.0,
+        key="t20_reserve_percent"
+    )
+
+    t20_weather_factor = st.number_input(
+        "Weather / Operational Allowance (%)",
+        min_value=0.0,
+        max_value=100.0,
+        value=10.0,
+        step=1.0,
+        key="t20_weather_factor"
+    )
+
+
+# ------------------------------------------------
+# FORECAST CALCULATION
+# ------------------------------------------------
+
+t20_base_voyage_fuel = (
+    t20_daily_consumption * t20_voyage_days
+)
+
+t20_weather_allowance = (
+    t20_base_voyage_fuel *
+    (t20_weather_factor / 100.0)
+)
+
+t20_expected_consumption = (
+    t20_base_voyage_fuel +
+    t20_weather_allowance +
+    t20_port_consumption
+)
+
+t20_reserve_fuel = (
+    t20_expected_consumption *
+    (t20_reserve_percent / 100.0)
+)
+
+t20_total_required = (
+    t20_expected_consumption +
+    t20_reserve_fuel
+)
+
+t20_projected_arrival_rob = (
+    t20_current_rob -
+    t20_expected_consumption
+)
+
+t20_fuel_margin = (
+    t20_current_rob -
+    t20_total_required
+)
+
+if t20_daily_consumption > 0:
+    t20_endurance_days = (
+        t20_current_rob /
+        t20_daily_consumption
+    )
+else:
+    t20_endurance_days = 0.0
+
+
+# ------------------------------------------------
+# FORECAST STATUS
+# ------------------------------------------------
+
+if t20_daily_consumption <= 0:
+
+    t20_status = "DATA REQUIRED"
+
+elif t20_current_rob <= 0:
+
+    t20_status = "CRITICAL"
+
+elif t20_fuel_margin < 0:
+
+    t20_status = "CRITICAL"
+
+elif t20_fuel_margin < (t20_total_required * 0.10):
+
+    t20_status = "WARNING"
+
+else:
+
+    t20_status = "NORMAL"
+
+
+# ------------------------------------------------
+# KPI DISPLAY
+# ------------------------------------------------
+
+st.subheader("📊 Voyage Fuel Forecast")
+
+t20_k1, t20_k2, t20_k3, t20_k4 = st.columns(4)
+
+t20_k1.metric(
+    "Expected Consumption",
+    f"{t20_expected_consumption:,.2f}"
+)
+
+t20_k2.metric(
+    "Total Fuel Required",
+    f"{t20_total_required:,.2f}"
+)
+
+t20_k3.metric(
+    "Projected Arrival ROB",
+    f"{t20_projected_arrival_rob:,.2f}"
+)
+
+t20_k4.metric(
+    "Fuel Margin",
+    f"{t20_fuel_margin:,.2f}"
+)
+
+
+t20_k5, t20_k6, t20_k7 = st.columns(3)
+
+t20_k5.metric(
+    "Fuel Endurance",
+    f"{t20_endurance_days:,.1f} days"
+)
+
+t20_k6.metric(
+    "Safety Reserve",
+    f"{t20_reserve_fuel:,.2f}"
+)
+
+t20_k7.metric(
+    "Forecast Status",
+    t20_status
+)
+
+
+# ------------------------------------------------
+# INTELLIGENCE ASSESSMENT
+# ------------------------------------------------
+
+st.subheader("🧠 Forecast Intelligence")
+
+t20_intelligence = []
+
+if t20_daily_consumption <= 0:
+
+    t20_intelligence.append(
+        "Daily fuel-consumption data is unavailable. "
+        "A reliable voyage forecast cannot be established."
+    )
+
+elif t20_status == "CRITICAL":
+
+    t20_intelligence.append(
+        "Projected available fuel is below the calculated "
+        "voyage requirement including the selected reserve."
+    )
+
+elif t20_status == "WARNING":
+
+    t20_intelligence.append(
+        "Projected fuel margin is limited. "
+        "Fuel availability should be reviewed before voyage continuation."
+    )
+
+else:
+
+    t20_intelligence.append(
+        "Projected fuel availability exceeds the calculated "
+        "voyage requirement and selected reserve."
+    )
+
+
+if t20_weather_factor >= 20:
+
+    t20_intelligence.append(
+        "A high weather or operational allowance is being applied "
+        "to the forecast."
+    )
+
+
+if t20_projected_arrival_rob < 0:
+
+    t20_intelligence.append(
+        "Projected arrival ROB is negative under the entered assumptions."
+    )
+
+
+for item in t20_intelligence:
+    st.write(f"• {item}")
+
+
+# ------------------------------------------------
+# PRIORITY ACTIONS
+# ------------------------------------------------
+
+st.subheader("📋 Priority Actions")
+
+t20_priority_actions = []
+
+if t20_daily_consumption <= 0:
+
+    t20_priority_actions.append(
+        "Verify actual daily fuel consumption before using the forecast."
+    )
+
+if t20_current_rob <= 0:
+
+    t20_priority_actions.append(
+        "Verify actual tank soundings and current ROB."
+    )
+
+if t20_status == "CRITICAL":
+
+    t20_priority_actions.append(
+        "Review bunker availability and voyage fuel requirement "
+        "before continuing the planned voyage."
+    )
+
+    t20_priority_actions.append(
+        "Verify reserve requirements and consider an appropriate "
+        "bunker or operational plan."
+    )
+
+elif t20_status == "WARNING":
+
+    t20_priority_actions.append(
+        "Closely monitor daily consumption and ROB against the forecast."
+    )
+
+    t20_priority_actions.append(
+        "Review bunker options before the projected fuel margin "
+        "approaches the required reserve."
+    )
+
+else:
+
+    t20_priority_actions.append(
+        "Continue routine ROB and daily fuel-consumption monitoring."
+    )
+
+
+for number, action in enumerate(t20_priority_actions, start=1):
+    st.write(f"{number}. {action}")
+
+
+# ------------------------------------------------
+# DATA QUALITY & VALIDATION
+# ------------------------------------------------
+
+st.subheader("🛡️ Data Quality & Validation")
+
+t20_data_warnings = []
+
+if t20_current_rob <= 0:
+
+    t20_data_warnings.append(
+        "Current ROB is zero or unavailable."
+    )
+
+if t20_daily_consumption <= 0:
+
+    t20_data_warnings.append(
+        "Expected daily fuel consumption is zero or unavailable."
+    )
+
+if t20_voyage_days <= 0:
+
+    t20_data_warnings.append(
+        "Remaining voyage duration is zero."
+    )
+
+
+if t20_data_warnings:
+
+    for warning in t20_data_warnings:
+        st.warning(f"🟠 {warning}")
+
+else:
+
+    st.success(
+        "🟢 Voyage fuel-forecast inputs passed "
+        "the basic validation checks."
+    )
+
+
+# ------------------------------------------------
+# DECISION SUPPORT NOTICE
+# ------------------------------------------------
+
+st.info(
+    "Voyage fuel forecasts are decision-support estimates, not guaranteed "
+    "future consumption or proof that a voyage can be completed with the "
+    "calculated quantity. Actual consumption can change with RPM/load, "
+    "vessel speed, draft/trim, towing or loading condition, weather/current, "
+    "sea state, machinery condition, hull/propeller condition and voyage "
+    "changes. Verify actual tank soundings, calibration tables, fuel density, "
+    "measured consumption, voyage requirements and applicable statutory/"
+    "company reserves before operational, safety, bunker or commercial decisions."
+)
+
+
+# ------------------------------------------------
+# STORE RESULTS FOR NEXT INTELLIGENCE MODULES
+# ------------------------------------------------
+
+st.session_state["t20_result_vessel"] = (
+    t20_selected_vessel
+)
+
+st.session_state["t20_result_current_rob"] = (
+    t20_current_rob
+)
+
+st.session_state["t20_result_daily_consumption"] = (
+    t20_daily_consumption
+)
+
+st.session_state["t20_result_voyage_days"] = (
+    t20_voyage_days
+)
+
+st.session_state["t20_result_expected_consumption"] = (
+    t20_expected_consumption
+)
+
+st.session_state["t20_result_reserve_fuel"] = (
+    t20_reserve_fuel
+)
+
+st.session_state["t20_result_total_required"] = (
+    t20_total_required
+)
+
+st.session_state["t20_result_projected_arrival_rob"] = (
+    t20_projected_arrival_rob
+)
+
+st.session_state["t20_result_fuel_margin"] = (
+    t20_fuel_margin
+)
+
+st.session_state["t20_result_endurance_days"] = (
+    t20_endurance_days
+)
+
+st.session_state["t20_result_status"] = (
+    t20_status
+)
+
+st.session_state["t20_result_intelligence"] = (
+    t20_intelligence
+)
+
+st.session_state["t20_result_priority_actions"] = (
+    t20_priority_actions
+)
+
+
+# ------------------------------------------------
+# TAHAP 20 STATUS
+# ------------------------------------------------
+
+st.success(
+    "✅ TAHAP 20 ACTIVE — Fuel Consumption Prediction & "
+    "Voyage Fuel Forecast Intelligence is operational."
+)
+
+st.info(
+    "TAHAP 20 results are stored in the application session "
+    "and prepared for the next intelligence modules."
+)
+
+
+# ================================================================
+# END TAHAP 20
+# ================================================================
+
 
