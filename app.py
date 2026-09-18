@@ -14164,4 +14164,289 @@ st.info(
 # END TAHAP 27
 # ============================================================
 
+# =============================================================================
+# TAHAP 28
+# FLEET FUEL EFFICIENCY MANAGEMENT PRIORITY INTELLIGENCE
+# =============================================================================
+
+st.markdown("---")
+st.header("🎯 Fleet Fuel Efficiency Management Priority Intelligence")
+st.caption(
+    "Management-level decision support combining available fuel-efficiency, "
+    "financial, benchmark and action-tracking intelligence."
+)
+
+# -----------------------------------------------------------------------------
+# SAFE UPSTREAM DATA
+# -----------------------------------------------------------------------------
+
+t28_kpi_score = float(
+    st.session_state.get(
+        "t21_result_kpi_score",
+        st.session_state.get("t21_kpi_score", 0.0)
+    ) or 0.0
+)
+
+t28_potential_saving = float(
+    st.session_state.get(
+        "t23_result_potential_cost_saving",
+        st.session_state.get(
+            "t22_result_potential_cost_saving",
+            0.0
+        )
+    ) or 0.0
+)
+
+t28_active_actions = int(
+    st.session_state.get(
+        "t26_result_active_actions",
+        st.session_state.get("t26_active_actions", 0)
+    ) or 0
+)
+
+t28_benchmark_score = float(
+    st.session_state.get(
+        "t27_result_benchmark_score",
+        st.session_state.get("t27_benchmark_score", 0.0)
+    ) or 0.0
+)
+
+t28_upstream_available = any(
+    [
+        t28_kpi_score > 0,
+        t28_potential_saving > 0,
+        t28_active_actions > 0,
+        t28_benchmark_score > 0,
+    ]
+)
+
+# -----------------------------------------------------------------------------
+# MANAGEMENT PRIORITY LOGIC
+# -----------------------------------------------------------------------------
+
+t28_priority_points = 0
+
+if 0 < t28_kpi_score < 70:
+    t28_priority_points += 3
+elif 70 <= t28_kpi_score < 85:
+    t28_priority_points += 2
+elif 85 <= t28_kpi_score < 95:
+    t28_priority_points += 1
+
+if t28_potential_saving >= 10000:
+    t28_priority_points += 3
+elif t28_potential_saving >= 5000:
+    t28_priority_points += 2
+elif t28_potential_saving > 0:
+    t28_priority_points += 1
+
+if t28_active_actions >= 5:
+    t28_priority_points += 3
+elif t28_active_actions >= 3:
+    t28_priority_points += 2
+elif t28_active_actions >= 1:
+    t28_priority_points += 1
+
+if 0 < t28_benchmark_score < 70:
+    t28_priority_points += 3
+elif 70 <= t28_benchmark_score < 85:
+    t28_priority_points += 2
+elif 85 <= t28_benchmark_score < 95:
+    t28_priority_points += 1
+
+
+if not t28_upstream_available:
+    t28_priority = "DATA REVIEW"
+    t28_priority_note = (
+        "Upstream intelligence is incomplete. Complete and verify the "
+        "available operational data before assigning a management priority."
+    )
+
+elif t28_priority_points >= 7:
+    t28_priority = "HIGH"
+    t28_priority_note = (
+        "Multiple available indicators require management review and "
+        "verification of the underlying operational data."
+    )
+
+elif t28_priority_points >= 4:
+    t28_priority = "MEDIUM"
+    t28_priority_note = (
+        "Available indicators show opportunities requiring routine "
+        "management review and follow-up."
+    )
+
+else:
+    t28_priority = "ROUTINE"
+    t28_priority_note = (
+        "Available indicators do not currently trigger an elevated "
+        "management-review threshold."
+    )
+
+# -----------------------------------------------------------------------------
+# MANAGEMENT SUMMARY
+# -----------------------------------------------------------------------------
+
+st.subheader("📊 Management Priority Summary")
+
+t28_col1, t28_col2, t28_col3, t28_col4 = st.columns(4)
+
+with t28_col1:
+    st.metric(
+        "KPI Score",
+        f"{t28_kpi_score:.1f}" if t28_kpi_score > 0 else "N/A"
+    )
+
+with t28_col2:
+    st.metric(
+        "Potential Saving",
+        f"${t28_potential_saving:,.2f}"
+        if t28_potential_saving > 0
+        else "$0.00"
+    )
+
+with t28_col3:
+    st.metric(
+        "Active Actions",
+        t28_active_actions
+    )
+
+with t28_col4:
+    st.metric(
+        "Management Priority",
+        t28_priority
+    )
+
+# -----------------------------------------------------------------------------
+# MANAGEMENT INTERPRETATION
+# -----------------------------------------------------------------------------
+
+st.subheader("🧠 Management Interpretation")
+
+if t28_priority == "HIGH":
+    st.error(
+        "🔴 HIGH MANAGEMENT PRIORITY — Available intelligence indicates "
+        "multiple items requiring management review."
+    )
+
+elif t28_priority == "MEDIUM":
+    st.warning(
+        "🟠 MEDIUM MANAGEMENT PRIORITY — Available intelligence indicates "
+        "items requiring follow-up and verification."
+    )
+
+elif t28_priority == "ROUTINE":
+    st.success(
+        "🟢 ROUTINE MANAGEMENT PRIORITY — Continue normal monitoring and "
+        "verification."
+    )
+
+else:
+    st.warning(
+        "🟠 DATA REVIEW REQUIRED — Some upstream intelligence needed for "
+        "management prioritization is unavailable."
+    )
+
+st.info(t28_priority_note)
+
+# -----------------------------------------------------------------------------
+# MANAGEMENT ACTIONS
+# -----------------------------------------------------------------------------
+
+st.subheader("📋 Management Actions")
+
+t28_actions = []
+
+if 0 < t28_kpi_score < 85:
+    t28_actions.append(
+        "Review verified fuel-efficiency KPI performance and investigate "
+        "material deviations from the configured target."
+    )
+
+if t28_potential_saving > 0:
+    t28_actions.append(
+        "Review the identified potential saving and validate the underlying "
+        "fuel-consumption and financial assumptions."
+    )
+
+if t28_active_actions > 0:
+    t28_actions.append(
+        f"Review and follow up {t28_active_actions} active/open "
+        "fuel-efficiency action(s)."
+    )
+
+if 0 < t28_benchmark_score < 85:
+    t28_actions.append(
+        "Review benchmark performance using like-for-like vessel and "
+        "operating-condition comparisons."
+    )
+
+if not t28_actions:
+    t28_actions.append(
+        "Continue routine fuel-efficiency, fuel-consumption, ROB, engine "
+        "performance and voyage-performance monitoring."
+    )
+
+for t28_index, t28_action in enumerate(t28_actions, start=1):
+    st.write(f"{t28_index}. {t28_action}")
+
+# -----------------------------------------------------------------------------
+# DATA QUALITY & VALIDATION
+# -----------------------------------------------------------------------------
+
+st.subheader("🛡️ Data Quality & Validation")
+
+if t28_upstream_available:
+    st.success(
+        "🟢 Upstream fuel-efficiency intelligence is available for "
+        "management-priority assessment."
+    )
+else:
+    st.warning(
+        "🟠 Some upstream intelligence results are unavailable. Management "
+        "priority should be interpreted with the available-data limitations."
+    )
+
+st.info(
+    "Management-priority classifications are decision-support indicators "
+    "generated from configured thresholds and available operational data. "
+    "They do not independently establish machinery condition, crew "
+    "performance, fuel loss, commercial responsibility or the cause of an "
+    "efficiency change. Verify actual fuel measurements, tank soundings, "
+    "ROB, engine performance, RPM/load, vessel speed, draft/trim, "
+    "weather/current, voyage conditions, hull/propeller condition, fuel "
+    "prices and applicable OEM/company requirements before management action."
+)
+
+# -----------------------------------------------------------------------------
+# STORE TAHAP 28 RESULTS
+# -----------------------------------------------------------------------------
+
+st.session_state["t28_result_priority"] = t28_priority
+st.session_state["t28_result_priority_points"] = t28_priority_points
+st.session_state["t28_result_kpi_score"] = t28_kpi_score
+st.session_state["t28_result_potential_saving"] = t28_potential_saving
+st.session_state["t28_result_active_actions"] = t28_active_actions
+st.session_state["t28_result_benchmark_score"] = t28_benchmark_score
+st.session_state["t28_result_actions"] = t28_actions
+st.session_state["t28_result_upstream_available"] = t28_upstream_available
+
+# -----------------------------------------------------------------------------
+# TAHAP 28 STATUS
+# -----------------------------------------------------------------------------
+
+st.success(
+    "✅ TAHAP 28 ACTIVE — Fleet Fuel Efficiency Management Priority "
+    "Intelligence is operational."
+)
+
+st.info(
+    "TAHAP 28 results are stored in the application session "
+    "and prepared for the next intelligence modules."
+)
+
+# =============================================================================
+# END TAHAP 28
+# =============================================================================
+
 
