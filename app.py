@@ -14952,4 +14952,341 @@ st.info(
 # END TAHAP 29
 # =============================================================================
 
+# ============================================================
+# TAHAP 30
+# FLEET FUEL EFFICIENCY EXECUTIVE DECISION &
+# MANAGEMENT SUMMARY INTELLIGENCE
+# ============================================================
+
+st.markdown("---")
+st.header("🧠 Fleet Fuel Efficiency Executive Decision Intelligence")
+
+st.caption(
+    "Executive-level consolidation of fuel-efficiency performance, "
+    "financial opportunity, management priority, risk and recommended actions."
+)
+
+# ------------------------------------------------------------
+# SAFE HELPER
+# ------------------------------------------------------------
+
+def t30_safe_float(value, default=0.0):
+    try:
+        if value is None:
+            return default
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+# ------------------------------------------------------------
+# READ UPSTREAM INTELLIGENCE
+# ------------------------------------------------------------
+
+t30_kpi_score = t30_safe_float(
+    st.session_state.get("t21_result_kpi_score", 0.0)
+)
+
+t30_potential_saving = t30_safe_float(
+    st.session_state.get(
+        "t23_result_potential_cost_saving",
+        st.session_state.get(
+            "t22_result_potential_cost_saving",
+            0.0
+        )
+    )
+)
+
+t30_priority = str(
+    st.session_state.get(
+        "t28_result_priority",
+        "Not Available"
+    )
+)
+
+t30_risk = str(
+    st.session_state.get(
+        "t29_result_risk",
+        "Not Available"
+    )
+)
+
+t30_opportunity = str(
+    st.session_state.get(
+        "t29_result_opportunity",
+        "Not Available"
+    )
+)
+
+t30_upstream_available = any(
+    [
+        t30_kpi_score > 0,
+        t30_potential_saving > 0,
+        t30_priority != "Not Available",
+        t30_risk != "Not Available",
+        t30_opportunity != "Not Available",
+    ]
+)
+
+
+# ------------------------------------------------------------
+# EXECUTIVE KPI OVERVIEW
+# ------------------------------------------------------------
+
+st.subheader("📊 Executive Performance Overview")
+
+t30_col1, t30_col2, t30_col3 = st.columns(3)
+
+with t30_col1:
+    st.metric(
+        "Fuel Efficiency KPI",
+        f"{t30_kpi_score:.1f}"
+        if t30_kpi_score > 0
+        else "N/A"
+    )
+
+with t30_col2:
+    st.metric(
+        "Potential Saving",
+        f"${t30_potential_saving:,.2f}"
+    )
+
+with t30_col3:
+    st.metric(
+        "Management Priority",
+        t30_priority
+    )
+
+
+# ------------------------------------------------------------
+# RISK & OPPORTUNITY SUMMARY
+# ------------------------------------------------------------
+
+st.subheader("⚠️ Risk & Opportunity Summary")
+
+t30_risk_col, t30_opp_col = st.columns(2)
+
+with t30_risk_col:
+    st.markdown("#### Risk Classification")
+    st.write(t30_risk)
+
+with t30_opp_col:
+    st.markdown("#### Opportunity Classification")
+    st.write(t30_opportunity)
+
+
+# ------------------------------------------------------------
+# EXECUTIVE DECISION CLASSIFICATION
+# ------------------------------------------------------------
+
+st.subheader("🎯 Executive Decision Classification")
+
+t30_priority_upper = t30_priority.upper()
+t30_risk_upper = t30_risk.upper()
+
+if (
+    "CRITICAL" in t30_priority_upper
+    or "CRITICAL" in t30_risk_upper
+):
+    t30_decision_level = "IMMEDIATE MANAGEMENT REVIEW"
+
+elif (
+    "HIGH" in t30_priority_upper
+    or "HIGH" in t30_risk_upper
+):
+    t30_decision_level = "HIGH MANAGEMENT ATTENTION"
+
+elif (
+    "MEDIUM" in t30_priority_upper
+    or "MEDIUM" in t30_risk_upper
+):
+    t30_decision_level = "MANAGEMENT MONITORING"
+
+elif t30_upstream_available:
+    t30_decision_level = "ROUTINE PERFORMANCE MONITORING"
+
+else:
+    t30_decision_level = "INSUFFICIENT DATA"
+
+
+if t30_decision_level == "IMMEDIATE MANAGEMENT REVIEW":
+    st.error(
+        "🔴 Executive Decision Level: "
+        "IMMEDIATE MANAGEMENT REVIEW"
+    )
+
+elif t30_decision_level == "HIGH MANAGEMENT ATTENTION":
+    st.warning(
+        "🟠 Executive Decision Level: "
+        "HIGH MANAGEMENT ATTENTION"
+    )
+
+elif t30_decision_level == "MANAGEMENT MONITORING":
+    st.warning(
+        "🟡 Executive Decision Level: "
+        "MANAGEMENT MONITORING"
+    )
+
+elif t30_decision_level == "ROUTINE PERFORMANCE MONITORING":
+    st.success(
+        "🟢 Executive Decision Level: "
+        "ROUTINE PERFORMANCE MONITORING"
+    )
+
+else:
+    st.info(
+        "⚪ Executive Decision Level: "
+        "INSUFFICIENT DATA"
+    )
+
+
+# ------------------------------------------------------------
+# MANAGEMENT ACTIONS
+# ------------------------------------------------------------
+
+st.subheader("📋 Executive Management Actions")
+
+t30_actions = []
+
+if t30_decision_level == "IMMEDIATE MANAGEMENT REVIEW":
+    t30_actions.extend(
+        [
+            "Verify fuel-consumption and ROB source records.",
+            "Review engine load, RPM and operational condition.",
+            "Review vessel speed, draft, trim and voyage condition.",
+            "Validate the identified financial exposure or saving opportunity.",
+            "Escalate verified abnormal performance for management review.",
+        ]
+    )
+
+elif t30_decision_level == "HIGH MANAGEMENT ATTENTION":
+    t30_actions.extend(
+        [
+            "Review the identified fuel-efficiency deviation.",
+            "Validate operational and financial source data.",
+            "Review applicable optimization recommendations.",
+            "Track corrective or efficiency-improvement actions.",
+        ]
+    )
+
+elif t30_decision_level == "MANAGEMENT MONITORING":
+    t30_actions.extend(
+        [
+            "Continue fuel-efficiency performance monitoring.",
+            "Review KPI trends and identified opportunities.",
+            "Track active efficiency-improvement actions.",
+        ]
+    )
+
+elif t30_decision_level == "ROUTINE PERFORMANCE MONITORING":
+    t30_actions.extend(
+        [
+            "Continue routine fuel-efficiency monitoring.",
+            "Maintain verified operational and bunker records.",
+            "Review performance trends during management reporting.",
+        ]
+    )
+
+else:
+    t30_actions.extend(
+        [
+            "Complete missing upstream operational data.",
+            "Verify fuel-consumption, ROB and engine-performance records.",
+            "Re-run the upstream intelligence modules when data is available.",
+        ]
+    )
+
+
+for t30_i, t30_action in enumerate(t30_actions, start=1):
+    st.write(f"{t30_i}. {t30_action}")
+
+
+# ------------------------------------------------------------
+# DATA QUALITY & VALIDATION
+# ------------------------------------------------------------
+
+st.subheader("🛡️ Data Quality & Validation")
+
+if t30_upstream_available:
+    st.success(
+        "🟢 Upstream fuel-efficiency intelligence is available "
+        "for executive decision-support assessment."
+    )
+else:
+    st.warning(
+        "🟠 Upstream intelligence is incomplete. Executive conclusions "
+        "should be interpreted with the available-data limitations."
+    )
+
+
+st.info(
+    "Executive fuel-efficiency classifications and management summaries "
+    "are decision-support indicators generated from configured thresholds "
+    "and available operational data. They do not independently establish "
+    "machinery condition, crew performance, fuel loss, commercial "
+    "responsibility, causation or future financial results. Verify actual "
+    "fuel measurements, tank soundings, ROB, bunker records, engine "
+    "performance, RPM/load, vessel speed, draft/trim, weather/current, "
+    "voyage conditions, hull/propeller condition, fuel prices and "
+    "applicable OEM/company requirements before technical, operational, "
+    "safety, procurement or commercial action."
+)
+
+
+# ------------------------------------------------------------
+# STORE TAHAP 30 RESULTS
+# ------------------------------------------------------------
+
+st.session_state["t30_result_decision_level"] = (
+    t30_decision_level
+)
+
+st.session_state["t30_result_kpi_score"] = (
+    t30_kpi_score
+)
+
+st.session_state["t30_result_potential_saving"] = (
+    t30_potential_saving
+)
+
+st.session_state["t30_result_priority"] = (
+    t30_priority
+)
+
+st.session_state["t30_result_risk"] = (
+    t30_risk
+)
+
+st.session_state["t30_result_opportunity"] = (
+    t30_opportunity
+)
+
+st.session_state["t30_result_actions"] = (
+    t30_actions
+)
+
+st.session_state["t30_result_upstream_available"] = (
+    t30_upstream_available
+)
+
+
+# ------------------------------------------------------------
+# TAHAP 30 STATUS
+# ------------------------------------------------------------
+
+st.success(
+    "✅ TAHAP 30 ACTIVE — Fleet Fuel Efficiency Executive Decision & "
+    "Management Summary Intelligence is operational."
+)
+
+st.info(
+    "TAHAP 30 results are stored in the application session "
+    "and prepared for the next intelligence modules."
+)
+
+
+# ============================================================
+# END TAHAP 30
+# ============================================================
+
 
