@@ -15689,4 +15689,450 @@ st.info(
 # END TAHAP 31
 # ============================================================
 
+# ============================================================
+# TAHAP 32
+# FUEL ANOMALY DETECTION INTELLIGENCE
+# ============================================================
+
+st.markdown("---")
+st.header("🔎 Fuel Anomaly Detection Intelligence")
+
+st.caption(
+    "Decision-support screening for potential abnormal fuel-efficiency "
+    "conditions using available upstream intelligence."
+)
+
+
+# ------------------------------------------------------------
+# SAFE HELPERS
+# ------------------------------------------------------------
+
+def t32_safe_float(value, default=0.0):
+    try:
+        if value is None:
+            return default
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+# ------------------------------------------------------------
+# READ UPSTREAM INTELLIGENCE
+# ------------------------------------------------------------
+
+t32_kpi_score = t32_safe_float(
+    st.session_state.get(
+        "t31_result_kpi_score",
+        st.session_state.get("t30_result_kpi_score", 0.0)
+    )
+)
+
+t32_potential_saving = t32_safe_float(
+    st.session_state.get(
+        "t31_result_potential_saving",
+        st.session_state.get("t30_result_potential_saving", 0.0)
+    )
+)
+
+t32_trend_status = str(
+    st.session_state.get(
+        "t31_result_trend_status",
+        "INSUFFICIENT DATA"
+    )
+)
+
+t32_warning_level = str(
+    st.session_state.get(
+        "t31_result_warning_level",
+        "DATA REQUIRED"
+    )
+)
+
+t32_upstream_available = bool(
+    st.session_state.get(
+        "t31_result_upstream_available",
+        False
+    )
+)
+
+
+# ------------------------------------------------------------
+# OPTIONAL SFOC INFORMATION
+# ------------------------------------------------------------
+
+t32_sfoc_variance = t32_safe_float(
+    st.session_state.get(
+        "t21_result_sfoc_variance_percent",
+        0.0
+    )
+)
+
+t32_sfoc_available = (
+    "t21_result_sfoc_variance_percent"
+    in st.session_state
+)
+
+
+# ------------------------------------------------------------
+# ANOMALY POINT SYSTEM
+# ------------------------------------------------------------
+
+t32_anomaly_points = 0
+t32_anomaly_signals = []
+
+t32_trend_upper = t32_trend_status.upper()
+t32_warning_upper = t32_warning_level.upper()
+
+
+# Trend signal
+if "ADVERSE" in t32_trend_upper:
+    t32_anomaly_points += 3
+    t32_anomaly_signals.append(
+        "Adverse upstream fuel-efficiency trend detected."
+    )
+
+elif "WATCH" in t32_trend_upper:
+    t32_anomaly_points += 2
+    t32_anomaly_signals.append(
+        "Fuel-efficiency trend requires closer monitoring."
+    )
+
+
+# Early warning signal
+if "HIGH" in t32_warning_upper:
+    t32_anomaly_points += 3
+    t32_anomaly_signals.append(
+        "High upstream early-warning classification."
+    )
+
+elif "MEDIUM" in t32_warning_upper:
+    t32_anomaly_points += 2
+    t32_anomaly_signals.append(
+        "Medium upstream early-warning classification."
+    )
+
+
+# KPI signal
+if t32_kpi_score > 0:
+
+    if t32_kpi_score < 60:
+        t32_anomaly_points += 3
+        t32_anomaly_signals.append(
+            "Fuel-efficiency KPI is below the configured "
+            "screening reference."
+        )
+
+    elif t32_kpi_score < 80:
+        t32_anomaly_points += 1
+        t32_anomaly_signals.append(
+            "Fuel-efficiency KPI warrants monitoring."
+        )
+
+
+# SFOC signal
+if t32_sfoc_available:
+
+    if t32_sfoc_variance >= 15:
+        t32_anomaly_points += 3
+        t32_anomaly_signals.append(
+            "Calculated SFOC variance is materially above "
+            "the configured reference."
+        )
+
+    elif t32_sfoc_variance >= 8:
+        t32_anomaly_points += 2
+        t32_anomaly_signals.append(
+            "Calculated SFOC variance is above "
+            "the configured monitoring reference."
+        )
+
+    elif t32_sfoc_variance >= 5:
+        t32_anomaly_points += 1
+        t32_anomaly_signals.append(
+            "Calculated SFOC variance warrants observation."
+        )
+
+
+# ------------------------------------------------------------
+# ANOMALY CLASSIFICATION
+# ------------------------------------------------------------
+
+if not t32_upstream_available:
+    t32_anomaly_level = "DATA REQUIRED"
+
+elif t32_anomaly_points >= 7:
+    t32_anomaly_level = "HIGH"
+
+elif t32_anomaly_points >= 4:
+    t32_anomaly_level = "MEDIUM"
+
+elif t32_anomaly_points >= 1:
+    t32_anomaly_level = "LOW"
+
+else:
+    t32_anomaly_level = "NORMAL"
+
+
+# ------------------------------------------------------------
+# EXECUTIVE OVERVIEW
+# ------------------------------------------------------------
+
+st.subheader("📊 Anomaly Intelligence Overview")
+
+t32_col1, t32_col2, t32_col3 = st.columns(3)
+
+with t32_col1:
+    st.metric(
+        "Fuel Efficiency KPI",
+        f"{t32_kpi_score:.1f}"
+        if t32_kpi_score > 0
+        else "N/A"
+    )
+
+with t32_col2:
+    st.metric(
+        "Anomaly Score",
+        str(t32_anomaly_points)
+        if t32_upstream_available
+        else "N/A"
+    )
+
+with t32_col3:
+    st.metric(
+        "Anomaly Level",
+        t32_anomaly_level
+    )
+
+
+# ------------------------------------------------------------
+# ANOMALY STATUS
+# ------------------------------------------------------------
+
+st.subheader("🚨 Fuel Anomaly Status")
+
+if t32_anomaly_level == "HIGH":
+
+    st.error(
+        "🔴 HIGH ANOMALY INDICATION — Available intelligence "
+        "contains multiple abnormal fuel-efficiency signals. "
+        "Prompt source-data verification and management review "
+        "are recommended."
+    )
+
+elif t32_anomaly_level == "MEDIUM":
+
+    st.warning(
+        "🟠 MEDIUM ANOMALY INDICATION — Available indicators "
+        "show conditions requiring closer investigation."
+    )
+
+elif t32_anomaly_level == "LOW":
+
+    st.warning(
+        "🟡 LOW ANOMALY INDICATION — A limited deviation has "
+        "been identified and should be monitored."
+    )
+
+elif t32_anomaly_level == "NORMAL":
+
+    st.success(
+        "🟢 NORMAL — Available indicators do not currently "
+        "trigger the configured anomaly screening thresholds."
+    )
+
+else:
+
+    st.info(
+        "⚪ DATA REQUIRED — Sufficient upstream information "
+        "is not available for anomaly screening."
+    )
+
+
+# ------------------------------------------------------------
+# DETECTED SIGNALS
+# ------------------------------------------------------------
+
+st.subheader("🔍 Detected Anomaly Signals")
+
+if t32_anomaly_signals:
+
+    for t32_i, t32_signal in enumerate(
+        t32_anomaly_signals,
+        start=1
+    ):
+        st.write(f"{t32_i}. {t32_signal}")
+
+else:
+
+    if t32_upstream_available:
+        st.success(
+            "No anomaly signals were triggered by the "
+            "configured screening logic."
+        )
+    else:
+        st.info(
+            "Anomaly signals cannot yet be evaluated because "
+            "upstream information is incomplete."
+        )
+
+
+# ------------------------------------------------------------
+# INVESTIGATION CHECKLIST
+# ------------------------------------------------------------
+
+st.subheader("🧭 Investigation Checklist")
+
+if t32_anomaly_level in ["HIGH", "MEDIUM"]:
+
+    t32_actions = [
+        "Verify actual fuel consumption against source records.",
+        "Verify ROB and recent bunker records.",
+        "Review main-engine RPM and load.",
+        "Review vessel speed and operating profile.",
+        "Review draft and trim condition.",
+        "Review weather, current and sea state.",
+        "Review voyage condition and operational restrictions.",
+        "Check hull and propeller condition where applicable.",
+        "Compare fuel properties with applicable specifications.",
+        "Review recent maintenance or machinery-performance changes.",
+    ]
+
+elif t32_anomaly_level == "LOW":
+
+    t32_actions = [
+        "Continue closer fuel-consumption monitoring.",
+        "Verify ROB and fuel-consumption records.",
+        "Review engine load and vessel operating conditions.",
+        "Check whether the deviation persists over subsequent records.",
+    ]
+
+elif t32_anomaly_level == "NORMAL":
+
+    t32_actions = [
+        "Continue routine fuel-efficiency monitoring.",
+        "Maintain verified fuel and ROB records.",
+        "Continue trend monitoring for new deviations.",
+    ]
+
+else:
+
+    t32_actions = [
+        "Complete missing upstream operational information.",
+        "Verify fuel-consumption and ROB records.",
+        "Re-run anomaly screening when sufficient data is available.",
+    ]
+
+
+for t32_i, t32_action in enumerate(
+    t32_actions,
+    start=1
+):
+    st.write(f"{t32_i}. {t32_action}")
+
+
+# ------------------------------------------------------------
+# FINANCIAL CONTEXT
+# ------------------------------------------------------------
+
+st.subheader("💰 Financial Context")
+
+st.metric(
+    "Potential Saving Reference",
+    f"${t32_potential_saving:,.2f}"
+)
+
+st.caption(
+    "Potential saving is inherited from upstream intelligence "
+    "and does not prove that an anomaly caused a financial loss."
+)
+
+
+# ------------------------------------------------------------
+# DATA QUALITY & VALIDATION
+# ------------------------------------------------------------
+
+st.subheader("🛡️ Data Quality & Validation")
+
+if t32_upstream_available:
+
+    st.success(
+        "🟢 Upstream fuel-efficiency intelligence is available "
+        "for anomaly screening."
+    )
+
+else:
+
+    st.warning(
+        "🟠 Upstream intelligence is incomplete. Anomaly "
+        "classification should be interpreted with the "
+        "available-data limitations."
+    )
+
+
+st.info(
+    "Fuel anomaly classifications are decision-support screening "
+    "indicators generated from configured thresholds and available "
+    "operational information. An anomaly indication does not by itself "
+    "establish excessive fuel consumption, fuel loss, machinery failure, "
+    "crew performance, commercial responsibility or causation. Verify "
+    "actual fuel measurements, tank soundings, ROB, bunker records, "
+    "engine performance, RPM/load, vessel speed, draft/trim, "
+    "weather/current, sea state, voyage conditions, hull/propeller "
+    "condition, fuel properties and applicable OEM/company requirements "
+    "before technical, operational, safety or commercial action."
+)
+
+
+# ------------------------------------------------------------
+# STORE TAHAP 32 RESULTS
+# ------------------------------------------------------------
+
+st.session_state["t32_result_anomaly_points"] = (
+    t32_anomaly_points
+)
+
+st.session_state["t32_result_anomaly_level"] = (
+    t32_anomaly_level
+)
+
+st.session_state["t32_result_anomaly_signals"] = (
+    t32_anomaly_signals
+)
+
+st.session_state["t32_result_actions"] = (
+    t32_actions
+)
+
+st.session_state["t32_result_kpi_score"] = (
+    t32_kpi_score
+)
+
+st.session_state["t32_result_potential_saving"] = (
+    t32_potential_saving
+)
+
+st.session_state["t32_result_upstream_available"] = (
+    t32_upstream_available
+)
+
+
+# ------------------------------------------------------------
+# TAHAP 32 STATUS
+# ------------------------------------------------------------
+
+st.success(
+    "✅ TAHAP 32 ACTIVE — Fuel Anomaly Detection "
+    "Intelligence is operational."
+)
+
+st.info(
+    "TAHAP 32 results are stored in the application session "
+    "and prepared for the next intelligence modules."
+)
+
+
+# ============================================================
+# END TAHAP 32
+# ============================================================
+
 
