@@ -8383,3 +8383,504 @@ st.info(
 # ================================================================
 # END TAHAP 15
 # ================================================================
+
+# ================================================================
+# TAHAP 16 - FUEL INVENTORY, ROB & BUNKER RECONCILIATION INTELLIGENCE
+# ================================================================
+
+st.divider()
+st.header("⛽ Fuel Inventory, ROB & Bunker Reconciliation Intelligence")
+
+st.caption(
+    "Fuel inventory control, ROB reconciliation, bunker movement, "
+    "consumption variance, inventory exposure and management actions."
+)
+
+# ------------------------------------------------
+# SAFE NUMBER CONVERTER
+# ------------------------------------------------
+
+def t16_safe_float(value, default=0.0):
+    try:
+        if value is None:
+            return float(default)
+        return float(value)
+    except (TypeError, ValueError):
+        return float(default)
+
+
+# ------------------------------------------------
+# VESSEL CONTEXT
+# ------------------------------------------------
+
+t16_selected_vessel = st.session_state.get(
+    "selected_fleet_vessel",
+    st.session_state.get(
+        "sidebar_vessel_name",
+        globals().get("vessel_name", "ASL MANTRUS")
+    )
+)
+
+st.subheader("🚢 Fuel Inventory Vessel")
+
+st.info(f"Selected Vessel: **{t16_selected_vessel}**")
+
+
+# ------------------------------------------------
+# PREVIOUS INTELLIGENCE DATA
+# ------------------------------------------------
+
+t16_previous_daily_consumption = t16_safe_float(
+    st.session_state.get(
+        "t14_result_daily_consumption",
+        0.0
+    )
+)
+
+t16_previous_rob = t16_safe_float(
+    st.session_state.get(
+        "t14_result_current_rob",
+        0.0
+    )
+)
+
+t16_planned_bunker = t16_safe_float(
+    st.session_state.get(
+        "t15_result_planned_quantity",
+        0.0
+    )
+)
+
+
+# ------------------------------------------------
+# INVENTORY INPUT DATA
+# ------------------------------------------------
+
+st.subheader("🛢️ Fuel Inventory & ROB Data")
+
+t16_c1, t16_c2, t16_c3 = st.columns(3)
+
+with t16_c1:
+
+    t16_opening_rob = st.number_input(
+        "Opening ROB",
+        min_value=0.0,
+        value=float(max(t16_previous_rob, 0.0)),
+        step=100.0,
+        key="t16_opening_rob"
+    )
+
+    t16_bunker_received = st.number_input(
+        "Bunker Received",
+        min_value=0.0,
+        value=float(max(t16_planned_bunker, 0.0)),
+        step=100.0,
+        key="t16_bunker_received"
+    )
+
+
+with t16_c2:
+
+    t16_measured_closing_rob = st.number_input(
+        "Measured Closing ROB",
+        min_value=0.0,
+        value=float(max(t16_previous_rob, 0.0)),
+        step=100.0,
+        key="t16_measured_closing_rob"
+    )
+
+    t16_transfer_in = st.number_input(
+        "Fuel Transfer / Adjustment In",
+        min_value=0.0,
+        value=0.0,
+        step=100.0,
+        key="t16_transfer_in"
+    )
+
+
+with t16_c3:
+
+    t16_daily_consumption = st.number_input(
+        "Recorded Fuel Consumption",
+        min_value=0.0,
+        value=float(max(t16_previous_daily_consumption, 0.0)),
+        step=100.0,
+        key="t16_daily_consumption"
+    )
+
+    t16_transfer_out = st.number_input(
+        "Fuel Transfer / Adjustment Out",
+        min_value=0.0,
+        value=0.0,
+        step=100.0,
+        key="t16_transfer_out"
+    )
+
+
+# ------------------------------------------------
+# RECONCILIATION CALCULATION
+# ------------------------------------------------
+
+t16_available_fuel = (
+    t16_opening_rob
+    + t16_bunker_received
+    + t16_transfer_in
+)
+
+t16_expected_closing_rob = max(
+    t16_available_fuel
+    - t16_daily_consumption
+    - t16_transfer_out,
+    0.0
+)
+
+t16_rob_variance = (
+    t16_measured_closing_rob
+    - t16_expected_closing_rob
+)
+
+if t16_expected_closing_rob > 0:
+    t16_variance_percent = (
+        t16_rob_variance
+        / t16_expected_closing_rob
+    ) * 100
+else:
+    t16_variance_percent = 0.0
+
+
+# ------------------------------------------------
+# CONSUMPTION / ENDURANCE
+# ------------------------------------------------
+
+if t16_daily_consumption > 0:
+    t16_endurance_days = (
+        t16_measured_closing_rob
+        / t16_daily_consumption
+    )
+else:
+    t16_endurance_days = 0.0
+
+
+# ------------------------------------------------
+# INVENTORY STATUS
+# ------------------------------------------------
+
+t16_abs_variance_percent = abs(t16_variance_percent)
+
+if t16_abs_variance_percent <= 2:
+    t16_reconciliation_status = "NORMAL"
+elif t16_abs_variance_percent <= 5:
+    t16_reconciliation_status = "REVIEW"
+else:
+    t16_reconciliation_status = "INVESTIGATE"
+
+
+# ------------------------------------------------
+# MANAGEMENT RISK
+# ------------------------------------------------
+
+if t16_daily_consumption <= 0:
+    t16_risk_level = "DATA CHECK"
+
+elif t16_measured_closing_rob <= 0:
+    t16_risk_level = "CRITICAL"
+
+elif t16_endurance_days < 2:
+    t16_risk_level = "CRITICAL"
+
+elif t16_endurance_days < 5:
+    t16_risk_level = "HIGH"
+
+elif t16_abs_variance_percent > 5:
+    t16_risk_level = "HIGH"
+
+elif t16_abs_variance_percent > 2:
+    t16_risk_level = "MEDIUM"
+
+else:
+    t16_risk_level = "LOW"
+
+
+# ------------------------------------------------
+# KPI DASHBOARD
+# ------------------------------------------------
+
+st.subheader("📊 Fuel Inventory Reconciliation")
+
+t16_k1, t16_k2, t16_k3, t16_k4 = st.columns(4)
+
+t16_k1.metric(
+    "Opening ROB",
+    f"{t16_opening_rob:,.1f}"
+)
+
+t16_k2.metric(
+    "Fuel Available",
+    f"{t16_available_fuel:,.1f}"
+)
+
+t16_k3.metric(
+    "Expected Closing ROB",
+    f"{t16_expected_closing_rob:,.1f}"
+)
+
+t16_k4.metric(
+    "Measured Closing ROB",
+    f"{t16_measured_closing_rob:,.1f}"
+)
+
+
+t16_k5, t16_k6, t16_k7, t16_k8 = st.columns(4)
+
+t16_k5.metric(
+    "ROB Variance",
+    f"{t16_rob_variance:,.1f}"
+)
+
+t16_k6.metric(
+    "Variance",
+    f"{t16_variance_percent:,.2f}%"
+)
+
+t16_k7.metric(
+    "Fuel Endurance",
+    f"{t16_endurance_days:,.1f} days"
+)
+
+t16_k8.metric(
+    "Risk Level",
+    t16_risk_level
+)
+
+
+# ------------------------------------------------
+# RECONCILIATION SUMMARY
+# ------------------------------------------------
+
+st.subheader("🧮 Fuel Reconciliation Summary")
+
+t16_summary = {
+    "Vessel": t16_selected_vessel,
+    "Opening ROB": round(t16_opening_rob, 2),
+    "Bunker Received": round(t16_bunker_received, 2),
+    "Transfer In": round(t16_transfer_in, 2),
+    "Recorded Consumption": round(t16_daily_consumption, 2),
+    "Transfer Out": round(t16_transfer_out, 2),
+    "Expected Closing ROB": round(t16_expected_closing_rob, 2),
+    "Measured Closing ROB": round(t16_measured_closing_rob, 2),
+    "ROB Variance": round(t16_rob_variance, 2),
+    "Variance %": round(t16_variance_percent, 2),
+    "Endurance Days": round(t16_endurance_days, 2),
+    "Status": t16_reconciliation_status,
+    "Risk": t16_risk_level
+}
+
+st.dataframe(
+    [t16_summary],
+    use_container_width=True,
+    hide_index=True
+)
+
+
+# ------------------------------------------------
+# INTELLIGENCE ASSESSMENT
+# ------------------------------------------------
+
+st.subheader("🧠 Fuel Inventory Intelligence")
+
+if t16_reconciliation_status == "NORMAL":
+
+    st.success(
+        "Fuel inventory reconciliation is within the configured "
+        "basic variance tolerance."
+    )
+
+elif t16_reconciliation_status == "REVIEW":
+
+    st.warning(
+        "Fuel inventory variance requires review against tank "
+        "soundings, transfers, bunker figures and consumption records."
+    )
+
+else:
+
+    st.error(
+        "Material fuel inventory variance detected. "
+        "Reconciliation and supporting records should be investigated."
+    )
+
+
+# ------------------------------------------------
+# PRIORITY ACTIONS
+# ------------------------------------------------
+
+st.subheader("📋 Priority Actions")
+
+t16_priority_actions = []
+
+if t16_opening_rob <= 0:
+    t16_priority_actions.append(
+        "Verify opening ROB against actual tank sounding records."
+    )
+
+if t16_daily_consumption <= 0:
+    t16_priority_actions.append(
+        "Verify actual fuel consumption and machinery operating records."
+    )
+
+if t16_measured_closing_rob <= 0:
+    t16_priority_actions.append(
+        "Obtain and verify current measured ROB."
+    )
+
+if t16_abs_variance_percent > 2:
+    t16_priority_actions.append(
+        "Reconcile tank soundings, bunker receipts, transfers and consumption records."
+    )
+
+if t16_abs_variance_percent > 5:
+    t16_priority_actions.append(
+        "Investigate material ROB variance before relying on inventory figures."
+    )
+
+if 0 < t16_endurance_days < 5:
+    t16_priority_actions.append(
+        "Review voyage fuel requirement, reserve requirement and bunker availability."
+    )
+
+if not t16_priority_actions:
+    t16_priority_actions.append(
+        "Continue routine ROB monitoring and fuel inventory reconciliation."
+    )
+
+for t16_index, t16_action in enumerate(
+    t16_priority_actions,
+    start=1
+):
+    st.write(f"{t16_index}. {t16_action}")
+
+
+# ------------------------------------------------
+# DATA QUALITY & VALIDATION
+# ------------------------------------------------
+
+st.subheader("🛡️ Data Quality & Validation")
+
+t16_data_warnings = []
+
+if t16_opening_rob <= 0:
+    t16_data_warnings.append(
+        "Opening ROB is zero or unavailable."
+    )
+
+if t16_daily_consumption <= 0:
+    t16_data_warnings.append(
+        "Recorded fuel consumption is zero or unavailable."
+    )
+
+if t16_measured_closing_rob <= 0:
+    t16_data_warnings.append(
+        "Measured closing ROB is zero or unavailable."
+    )
+
+if t16_data_warnings:
+
+    for t16_warning in t16_data_warnings:
+        st.warning(f"🟠 {t16_warning}")
+
+else:
+
+    st.success(
+        "🟢 Fuel inventory and ROB reconciliation inputs "
+        "passed the basic validation checks."
+    )
+
+
+# ------------------------------------------------
+# DECISION SUPPORT NOTICE
+# ------------------------------------------------
+
+st.info(
+    "Fuel inventory and ROB reconciliation figures are decision-support "
+    "estimates. Before operational, commercial, bunker or voyage decisions, "
+    "verify actual tank soundings, calibration tables, fuel density, bunker "
+    "delivery documentation, transfers, machinery consumption, voyage fuel "
+    "requirements, statutory/company reserves and applicable company procedures."
+)
+
+
+# ------------------------------------------------
+# SAVE TAHAP 16 RESULTS
+# ------------------------------------------------
+
+st.session_state["t16_result_vessel"] = t16_selected_vessel
+
+st.session_state["t16_result_opening_rob"] = (
+    t16_opening_rob
+)
+
+st.session_state["t16_result_bunker_received"] = (
+    t16_bunker_received
+)
+
+st.session_state["t16_result_available_fuel"] = (
+    t16_available_fuel
+)
+
+st.session_state["t16_result_daily_consumption"] = (
+    t16_daily_consumption
+)
+
+st.session_state["t16_result_expected_closing_rob"] = (
+    t16_expected_closing_rob
+)
+
+st.session_state["t16_result_measured_closing_rob"] = (
+    t16_measured_closing_rob
+)
+
+st.session_state["t16_result_rob_variance"] = (
+    t16_rob_variance
+)
+
+st.session_state["t16_result_variance_percent"] = (
+    t16_variance_percent
+)
+
+st.session_state["t16_result_endurance_days"] = (
+    t16_endurance_days
+)
+
+st.session_state["t16_result_status"] = (
+    t16_reconciliation_status
+)
+
+st.session_state["t16_result_risk_level"] = (
+    t16_risk_level
+)
+
+st.session_state["t16_result_priority_actions"] = (
+    t16_priority_actions
+)
+
+st.session_state["t16_result_intelligence"] = (
+    t16_summary
+)
+
+
+st.success(
+    "✅ TAHAP 16 ACTIVE — Fuel Inventory, ROB & Bunker Reconciliation "
+    "Intelligence is operational."
+)
+
+st.info(
+    "TAHAP 16 results are stored in the application session "
+    "and prepared for the next intelligence modules."
+)
+
+
+# ================================================================
+# END TAHAP 16
+# ================================================================
+
+
