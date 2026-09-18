@@ -11262,4 +11262,624 @@ st.info(
 # END TAHAP 20
 # ================================================================
 
+# ================================================================
+# TAHAP 21 - FUEL EFFICIENCY KPI & MANAGEMENT PERFORMANCE
+# ================================================================
+
+st.divider()
+st.header("📊 Fuel Efficiency KPI & Management Performance Intelligence")
+
+st.caption(
+    "Management-level fuel efficiency KPI, performance assessment, "
+    "operational exposure and priority decision support."
+)
+
+
+# ------------------------------------------------
+# SAFE NUMBER HELPER
+# ------------------------------------------------
+
+def t21_safe_float(value, default=0.0):
+    try:
+        if value is None:
+            return float(default)
+        return float(value)
+    except (TypeError, ValueError):
+        return float(default)
+
+
+# ------------------------------------------------
+# VESSEL CONTEXT
+# ------------------------------------------------
+
+t21_selected_vessel = st.session_state.get(
+    "selected_fleet_vessel",
+    st.session_state.get(
+        "sidebar_vessel_name",
+        globals().get("vessel_name", "ASL MANTRUS")
+    )
+)
+
+st.subheader("🚢 Management KPI Vessel")
+st.write(f"**Vessel:** {t21_selected_vessel}")
+
+
+# ------------------------------------------------
+# COLLECT RESULTS FROM PREVIOUS INTELLIGENCE MODULES
+# ------------------------------------------------
+
+t21_actual_consumption = t21_safe_float(
+    st.session_state.get(
+        "t18_result_current_consumption",
+        st.session_state.get(
+            "t20_result_daily_consumption",
+            0.0
+        )
+    )
+)
+
+t21_forecast_consumption = t21_safe_float(
+    st.session_state.get(
+        "t20_result_expected_consumption",
+        0.0
+    )
+)
+
+t21_fuel_margin = t21_safe_float(
+    st.session_state.get(
+        "t20_result_fuel_margin",
+        0.0
+    )
+)
+
+t21_arrival_rob = t21_safe_float(
+    st.session_state.get(
+        "t20_result_projected_arrival_rob",
+        0.0
+    )
+)
+
+t21_endurance_days = t21_safe_float(
+    st.session_state.get(
+        "t20_result_endurance_days",
+        0.0
+    )
+)
+
+t21_sfoс = t21_safe_float(
+    st.session_state.get(
+        "t19_result_sfoc",
+        st.session_state.get(
+            "t19_result_calculated_sfoc",
+            0.0
+        )
+    )
+)
+
+t21_fuel_loss = t21_safe_float(
+    st.session_state.get(
+        "t17_result_unaccounted_fuel",
+        st.session_state.get(
+            "t17_result_fuel_loss",
+            0.0
+        )
+    )
+)
+
+
+# ------------------------------------------------
+# KPI REFERENCE INPUT
+# ------------------------------------------------
+
+st.subheader("🎯 KPI Reference & Target")
+
+t21_c1, t21_c2, t21_c3 = st.columns(3)
+
+with t21_c1:
+
+    t21_target_daily_consumption = st.number_input(
+        "Target Daily Fuel Consumption",
+        min_value=0.0,
+        value=float(
+            t21_actual_consumption
+            if t21_actual_consumption > 0
+            else 5.0
+        ),
+        step=0.1,
+        key="t21_target_daily_consumption"
+    )
+
+
+with t21_c2:
+
+    t21_target_sfoc = st.number_input(
+        "Reference / Target SFOC",
+        min_value=0.0,
+        value=float(
+            t21_sfoс
+            if t21_sfoс > 0
+            else 190.0
+        ),
+        step=1.0,
+        key="t21_target_sfoc"
+    )
+
+
+with t21_c3:
+
+    t21_minimum_endurance = st.number_input(
+        "Minimum Fuel Endurance (Days)",
+        min_value=0.0,
+        value=3.0,
+        step=0.5,
+        key="t21_minimum_endurance"
+    )
+
+
+# ------------------------------------------------
+# KPI CALCULATIONS
+# ------------------------------------------------
+
+if t21_target_daily_consumption > 0:
+
+    t21_consumption_variance_percent = (
+        (
+            t21_actual_consumption -
+            t21_target_daily_consumption
+        )
+        /
+        t21_target_daily_consumption
+    ) * 100.0
+
+else:
+
+    t21_consumption_variance_percent = 0.0
+
+
+if t21_target_sfoc > 0 and t21_sfoс > 0:
+
+    t21_sfoc_variance_percent = (
+        (
+            t21_sfoс -
+            t21_target_sfoc
+        )
+        /
+        t21_target_sfoc
+    ) * 100.0
+
+else:
+
+    t21_sfoc_variance_percent = 0.0
+
+
+# ------------------------------------------------
+# KPI SCORE
+# ------------------------------------------------
+
+t21_kpi_score = 100.0
+
+
+if t21_actual_consumption <= 0:
+    t21_kpi_score -= 20.0
+
+elif t21_consumption_variance_percent > 15:
+    t21_kpi_score -= 25.0
+
+elif t21_consumption_variance_percent > 10:
+    t21_kpi_score -= 15.0
+
+elif t21_consumption_variance_percent > 5:
+    t21_kpi_score -= 8.0
+
+
+if t21_sfoс > 0:
+
+    if t21_sfoc_variance_percent > 15:
+        t21_kpi_score -= 20.0
+
+    elif t21_sfoc_variance_percent > 10:
+        t21_kpi_score -= 12.0
+
+    elif t21_sfoc_variance_percent > 5:
+        t21_kpi_score -= 6.0
+
+
+if t21_fuel_margin < 0:
+    t21_kpi_score -= 25.0
+
+
+if (
+    t21_endurance_days > 0
+    and
+    t21_endurance_days < t21_minimum_endurance
+):
+    t21_kpi_score -= 15.0
+
+
+if t21_fuel_loss > 0:
+    t21_kpi_score -= 10.0
+
+
+t21_kpi_score = max(
+    0.0,
+    min(100.0, t21_kpi_score)
+)
+
+
+# ------------------------------------------------
+# MANAGEMENT PERFORMANCE STATUS
+# ------------------------------------------------
+
+if t21_kpi_score >= 90:
+
+    t21_management_status = "EXCELLENT"
+
+elif t21_kpi_score >= 75:
+
+    t21_management_status = "GOOD"
+
+elif t21_kpi_score >= 60:
+
+    t21_management_status = "ATTENTION"
+
+else:
+
+    t21_management_status = "CRITICAL"
+
+
+# ------------------------------------------------
+# KPI DISPLAY
+# ------------------------------------------------
+
+st.subheader("📈 Management Performance Dashboard")
+
+t21_k1, t21_k2, t21_k3, t21_k4 = st.columns(4)
+
+t21_k1.metric(
+    "Fuel Efficiency KPI",
+    f"{t21_kpi_score:.1f}/100"
+)
+
+t21_k2.metric(
+    "Management Status",
+    t21_management_status
+)
+
+t21_k3.metric(
+    "Daily Consumption",
+    f"{t21_actual_consumption:,.2f}"
+)
+
+t21_k4.metric(
+    "Consumption Variance",
+    f"{t21_consumption_variance_percent:+.1f}%"
+)
+
+
+t21_k5, t21_k6, t21_k7, t21_k8 = st.columns(4)
+
+t21_k5.metric(
+    "SFOC",
+    f"{t21_sfoс:,.2f}"
+    if t21_sfoс > 0
+    else "N/A"
+)
+
+t21_k6.metric(
+    "SFOC Variance",
+    f"{t21_sfoc_variance_percent:+.1f}%"
+    if t21_sfoс > 0
+    else "N/A"
+)
+
+t21_k7.metric(
+    "Fuel Margin",
+    f"{t21_fuel_margin:,.2f}"
+)
+
+t21_k8.metric(
+    "Fuel Endurance",
+    f"{t21_endurance_days:,.1f} days"
+)
+
+
+# ------------------------------------------------
+# MANAGEMENT INTELLIGENCE
+# ------------------------------------------------
+
+st.subheader("🧠 Management Intelligence")
+
+t21_intelligence = []
+
+
+if t21_actual_consumption <= 0:
+
+    t21_intelligence.append(
+        "Actual fuel-consumption information is unavailable "
+        "for complete KPI assessment."
+    )
+
+else:
+
+    if t21_consumption_variance_percent > 10:
+
+        t21_intelligence.append(
+            "Actual daily fuel consumption is materially above "
+            "the entered management target."
+        )
+
+    elif t21_consumption_variance_percent > 5:
+
+        t21_intelligence.append(
+            "Daily fuel consumption is moderately above "
+            "the entered management target."
+        )
+
+    elif t21_consumption_variance_percent < -5:
+
+        t21_intelligence.append(
+            "Daily fuel consumption is below the entered target. "
+            "Verify that operating conditions are comparable before "
+            "treating the difference as an efficiency improvement."
+        )
+
+    else:
+
+        t21_intelligence.append(
+            "Daily fuel consumption is close to the entered "
+            "management target."
+        )
+
+
+if t21_sfoс > 0:
+
+    if t21_sfoc_variance_percent > 10:
+
+        t21_intelligence.append(
+            "Calculated SFOC is significantly above the entered "
+            "reference value."
+        )
+
+    elif t21_sfoc_variance_percent > 5:
+
+        t21_intelligence.append(
+            "Calculated SFOC is moderately above the entered "
+            "reference value."
+        )
+
+    else:
+
+        t21_intelligence.append(
+            "Calculated SFOC is within the selected management "
+            "comparison range."
+        )
+
+
+if t21_fuel_margin < 0:
+
+    t21_intelligence.append(
+        "Voyage fuel forecast indicates a negative fuel margin "
+        "against the selected voyage requirement and reserve."
+    )
+
+
+if (
+    t21_endurance_days > 0
+    and
+    t21_endurance_days < t21_minimum_endurance
+):
+
+    t21_intelligence.append(
+        "Calculated fuel endurance is below the entered "
+        "management threshold."
+    )
+
+
+if t21_fuel_loss > 0:
+
+    t21_intelligence.append(
+        "Previous reconciliation intelligence contains an "
+        "unaccounted-fuel indication requiring verification."
+    )
+
+
+for item in t21_intelligence:
+    st.write(f"• {item}")
+
+
+# ------------------------------------------------
+# PRIORITY ACTIONS
+# ------------------------------------------------
+
+st.subheader("📋 Priority Actions")
+
+t21_priority_actions = []
+
+
+if t21_actual_consumption <= 0:
+
+    t21_priority_actions.append(
+        "Verify actual daily fuel consumption and operating records."
+    )
+
+
+if t21_consumption_variance_percent > 5:
+
+    t21_priority_actions.append(
+        "Review RPM/load, vessel speed, draft/trim, weather/current "
+        "and machinery operating profile against the selected baseline."
+    )
+
+
+if t21_sfoс > 0 and t21_sfoc_variance_percent > 5:
+
+    t21_priority_actions.append(
+        "Verify engine load, power, RPM and fuel measurement before "
+        "investigating SFOC deviation."
+    )
+
+
+if t21_fuel_margin < 0:
+
+    t21_priority_actions.append(
+        "Review voyage fuel requirement, reserve requirement and "
+        "bunker plan."
+    )
+
+
+if (
+    t21_endurance_days > 0
+    and
+    t21_endurance_days < t21_minimum_endurance
+):
+
+    t21_priority_actions.append(
+        "Review remaining voyage duration against available "
+        "fuel endurance."
+    )
+
+
+if not t21_priority_actions:
+
+    t21_priority_actions.append(
+        "Continue routine fuel-efficiency KPI, SFOC, ROB and "
+        "voyage-performance monitoring."
+    )
+
+
+for number, action in enumerate(
+    t21_priority_actions,
+    start=1
+):
+    st.write(f"{number}. {action}")
+
+
+# ------------------------------------------------
+# DATA QUALITY & VALIDATION
+# ------------------------------------------------
+
+st.subheader("🛡️ Data Quality & Validation")
+
+t21_data_warnings = []
+
+
+if t21_actual_consumption <= 0:
+
+    t21_data_warnings.append(
+        "Actual daily fuel consumption is zero or unavailable."
+    )
+
+
+if t21_target_daily_consumption <= 0:
+
+    t21_data_warnings.append(
+        "Target daily fuel consumption is zero or unavailable."
+    )
+
+
+if t21_sfoс <= 0:
+
+    t21_data_warnings.append(
+        "Calculated SFOC is unavailable; SFOC KPI is excluded "
+        "from the assessment."
+    )
+
+
+if t21_data_warnings:
+
+    for warning in t21_data_warnings:
+        st.warning(f"🟠 {warning}")
+
+else:
+
+    st.success(
+        "🟢 Fuel-efficiency KPI inputs passed "
+        "the basic validation checks."
+    )
+
+
+# ------------------------------------------------
+# DECISION SUPPORT NOTICE
+# ------------------------------------------------
+
+st.info(
+    "Fuel-efficiency KPI and management-performance results are "
+    "decision-support indicators. KPI scores depend on the entered "
+    "targets and available operational data and should not by themselves "
+    "be used to diagnose machinery condition, determine crew performance "
+    "or establish commercial responsibility. Verify actual fuel "
+    "measurements, engine performance, RPM/load, vessel speed, draft/trim, "
+    "weather/current, voyage condition, hull/propeller condition and "
+    "applicable OEM/company reference data before management action."
+)
+
+
+# ------------------------------------------------
+# STORE RESULTS
+# ------------------------------------------------
+
+st.session_state["t21_result_vessel"] = (
+    t21_selected_vessel
+)
+
+st.session_state["t21_result_kpi_score"] = (
+    t21_kpi_score
+)
+
+st.session_state["t21_result_management_status"] = (
+    t21_management_status
+)
+
+st.session_state["t21_result_actual_consumption"] = (
+    t21_actual_consumption
+)
+
+st.session_state["t21_result_consumption_variance_percent"] = (
+    t21_consumption_variance_percent
+)
+
+st.session_state["t21_result_sfoc"] = (
+    t21_sfoс
+)
+
+st.session_state["t21_result_sfoc_variance_percent"] = (
+    t21_sfoc_variance_percent
+)
+
+st.session_state["t21_result_fuel_margin"] = (
+    t21_fuel_margin
+)
+
+st.session_state["t21_result_endurance_days"] = (
+    t21_endurance_days
+)
+
+st.session_state["t21_result_intelligence"] = (
+    t21_intelligence
+)
+
+st.session_state["t21_result_priority_actions"] = (
+    t21_priority_actions
+)
+
+
+# ------------------------------------------------
+# TAHAP 21 STATUS
+# ------------------------------------------------
+
+st.success(
+    "✅ TAHAP 21 ACTIVE — Fuel Efficiency KPI & "
+    "Management Performance Intelligence is operational."
+)
+
+st.info(
+    "TAHAP 21 results are stored in the application session "
+    "and prepared for the next intelligence modules."
+)
+
+
+# ================================================================
+# END TAHAP 21
+# ================================================================
+
 
