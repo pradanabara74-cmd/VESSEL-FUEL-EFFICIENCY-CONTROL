@@ -20290,6 +20290,286 @@ st.info(
 # =============================================================================
 # END TAHAP 41
 # =============================================================================
+# =============================================================================
+# TAHAP 42
+# FLEET RISK & PRIORITY MANAGEMENT INTELLIGENCE
+# =============================================================================
+
+st.markdown("---")
+
+st.header("🚨 Fleet Risk & Priority Management Intelligence")
+
+st.caption(
+    "TAHAP 42 — Consolidated fleet risk screening, management priority, "
+    "escalation readiness and operational decision-support intelligence."
+)
+
+# -----------------------------------------------------------------------------
+# SESSION STATE
+# -----------------------------------------------------------------------------
+
+if "tahap_42_results" not in st.session_state:
+    st.session_state["tahap_42_results"] = {}
+
+if "tahap_42_active" not in st.session_state:
+    st.session_state["tahap_42_active"] = True
+
+
+# -----------------------------------------------------------------------------
+# UPSTREAM INTEGRATION CHECK
+# -----------------------------------------------------------------------------
+
+st.subheader("🔗 Upstream Intelligence Integration")
+
+tahap_41_available = bool(
+    st.session_state.get("tahap_41_active", False)
+    or st.session_state.get("tahap_41_results")
+)
+
+if tahap_41_available:
+    st.success(
+        "🟢 TAHAP 41 Final System Integration intelligence is available "
+        "for fleet risk and priority assessment."
+    )
+else:
+    st.warning(
+        "🟠 TAHAP 41 session information is currently unavailable. "
+        "TAHAP 42 will operate in limited decision-support mode."
+    )
+
+
+# -----------------------------------------------------------------------------
+# FLEET RISK CONTROL MATRIX
+# -----------------------------------------------------------------------------
+
+st.subheader("🚦 Fleet Risk Control Matrix")
+
+risk_items = [
+    {
+        "area": "Fuel Efficiency",
+        "status": "MONITOR",
+        "priority": "NORMAL",
+    },
+    {
+        "area": "Fuel Consumption Trend",
+        "status": "MONITOR",
+        "priority": "NORMAL",
+    },
+    {
+        "area": "Fuel Anomaly",
+        "status": "VERIFY",
+        "priority": "ATTENTION",
+    },
+    {
+        "area": "Engine Performance",
+        "status": "VERIFY",
+        "priority": "ATTENTION",
+    },
+    {
+        "area": "Hull / Propeller Performance",
+        "status": "MONITOR",
+        "priority": "NORMAL",
+    },
+    {
+        "area": "ROB / Bunker Reconciliation",
+        "status": "VERIFY",
+        "priority": "ATTENTION",
+    },
+    {
+        "area": "Corrective Actions",
+        "status": "TRACK",
+        "priority": "ATTENTION",
+    },
+    {
+        "area": "Closed-Loop Verification",
+        "status": "TRACK",
+        "priority": "NORMAL",
+    },
+]
+
+normal_count = sum(
+    1 for item in risk_items
+    if item["priority"] == "NORMAL"
+)
+
+attention_count = sum(
+    1 for item in risk_items
+    if item["priority"] == "ATTENTION"
+)
+
+priority_count = sum(
+    1 for item in risk_items
+    if item["priority"] == "PRIORITY"
+)
+
+
+# -----------------------------------------------------------------------------
+# MANAGEMENT SUMMARY
+# -----------------------------------------------------------------------------
+
+st.subheader("📊 Management Priority Summary")
+
+col1, col2, col3, col4 = st.columns(4)
+
+with col1:
+    st.metric(
+        "Control Areas",
+        len(risk_items)
+    )
+
+with col2:
+    st.metric(
+        "Normal",
+        normal_count
+    )
+
+with col3:
+    st.metric(
+        "Attention",
+        attention_count
+    )
+
+with col4:
+    st.metric(
+        "Priority Review",
+        priority_count
+    )
+
+
+# -----------------------------------------------------------------------------
+# RISK REGISTER
+# -----------------------------------------------------------------------------
+
+st.subheader("📋 Fleet Risk & Priority Register")
+
+for item in risk_items:
+
+    if item["priority"] == "NORMAL":
+        icon = "🟢"
+
+    elif item["priority"] == "ATTENTION":
+        icon = "🟠"
+
+    else:
+        icon = "🔴"
+
+    st.write(
+        f"{icon} **{item['area']}** — "
+        f"{item['status']} | "
+        f"Priority: {item['priority']}"
+    )
+
+
+# -----------------------------------------------------------------------------
+# MANAGEMENT ESCALATION FRAMEWORK
+# -----------------------------------------------------------------------------
+
+st.subheader("📡 Management Escalation Framework")
+
+st.success(
+    "🟢 NORMAL — Continue routine monitoring and maintain "
+    "verified operational records."
+)
+
+st.warning(
+    "🟠 ATTENTION — Verify supporting vessel data, investigate "
+    "material deviations and assign follow-up where appropriate."
+)
+
+st.error(
+    "🔴 PRIORITY REVIEW — Escalate verified material deviations "
+    "for appropriate technical, operational or management review."
+)
+
+
+# -----------------------------------------------------------------------------
+# PRIORITY MANAGEMENT ACTIONS
+# -----------------------------------------------------------------------------
+
+st.subheader("🎯 Priority Management Actions")
+
+priority_actions = [
+    "Review significant fuel-efficiency deviations.",
+    "Verify abnormal fuel-consumption trends.",
+    "Reconcile ROB, bunker and consumption records.",
+    "Review engine-performance indicators against actual machinery data.",
+    "Check hull and propeller performance where supporting data exists.",
+    "Track outstanding corrective actions.",
+    "Confirm effectiveness of completed corrective actions.",
+    "Escalate material verified deviations according to company procedures.",
+]
+
+for number, action in enumerate(priority_actions, start=1):
+    st.write(f"{number}. {action}")
+
+
+# -----------------------------------------------------------------------------
+# DATA QUALITY & VALIDATION
+# -----------------------------------------------------------------------------
+
+st.subheader("🛡️ Data Quality & Validation")
+
+if tahap_41_available:
+    st.success(
+        "🟢 Upstream final-integration intelligence is available "
+        "for TAHAP 42 assessment."
+    )
+else:
+    st.warning(
+        "🟠 Upstream session information is incomplete. "
+        "Interpret TAHAP 42 results with available-data limitations."
+    )
+
+st.info(
+    "Fleet Risk & Priority Management Intelligence is a decision-support "
+    "screening module. Risk and priority classifications do not independently "
+    "establish machinery failure, fuel loss, theft, crew performance, "
+    "commercial responsibility, regulatory compliance, causation or future "
+    "financial results. Verify actual vessel records, fuel measurements, "
+    "tank soundings, ROB, bunker documentation, engine parameters, RPM/load, "
+    "vessel speed, draft/trim, weather/current, sea state, voyage conditions, "
+    "hull/propeller condition, fuel properties and applicable OEM/company "
+    "requirements before technical, operational, safety, procurement, "
+    "financial or commercial action."
+)
+
+
+# -----------------------------------------------------------------------------
+# STORE TAHAP 42 RESULTS
+# -----------------------------------------------------------------------------
+
+st.session_state["tahap_42_results"] = {
+    "stage": 42,
+    "module": "Fleet Risk & Priority Management Intelligence",
+    "status": "ACTIVE",
+    "upstream_tahap_41": tahap_41_available,
+    "control_areas": len(risk_items),
+    "normal": normal_count,
+    "attention": attention_count,
+    "priority_review": priority_count,
+}
+
+st.session_state["tahap_42_active"] = True
+
+
+# -----------------------------------------------------------------------------
+# TAHAP 42 STATUS
+# -----------------------------------------------------------------------------
+
+st.success(
+    "✅ TAHAP 42 ACTIVE — Fleet Risk & Priority Management "
+    "Intelligence is operational."
+)
+
+st.info(
+    "TAHAP 42 results are stored in the application session "
+    "and prepared for the next intelligence module."
+)
+
+
+# =============================================================================
+# END TAHAP 42
+# =============================================================================
 
 
 
