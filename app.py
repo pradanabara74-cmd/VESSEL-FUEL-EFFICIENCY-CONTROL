@@ -2762,3 +2762,551 @@ st.info("TAHAP 5 results are stored in the application session and ready for the
 # ============================================================
 # END TAHAP 5
 # ============================================================
+
+# ================================================================
+# TAHAP 6 - FUEL EFFICIENCY PERFORMANCE & DEVIATION INTELLIGENCE
+# ================================================================
+
+st.divider()
+st.header("📊 Fuel Efficiency Performance & Deviation Intelligence")
+st.caption(
+    "Actual-versus-baseline fuel performance, excess-fuel detection, "
+    "cost impact, deviation intelligence and operational actions."
+)
+
+# ------------------------------------------------
+# VESSEL CONTEXT
+# ------------------------------------------------
+
+t6_selected_vessel = st.session_state.get(
+    "selected_fleet_vessel",
+    st.session_state.get(
+        "sidebar_vessel_name",
+        globals().get("vessel_name", "ASL MANTRUS")
+    )
+)
+
+st.subheader("🚢 Performance Analysis Vessel")
+st.info(f"Fuel-efficiency analysis for: **{t6_selected_vessel}**")
+
+
+# ------------------------------------------------
+# INPUT DATA
+# ------------------------------------------------
+
+st.subheader("📝 Fuel Performance Data")
+
+t6_c1, t6_c2, t6_c3 = st.columns(3)
+
+with t6_c1:
+    t6_actual_daily_fuel = st.number_input(
+        "Actual Daily Fuel Consumption (L/day)",
+        min_value=0.0,
+        value=5000.0,
+        step=100.0,
+        key="t6_actual_daily_fuel"
+    )
+
+    t6_baseline_daily_fuel = st.number_input(
+        "Baseline / Target Fuel Consumption (L/day)",
+        min_value=0.0,
+        value=4800.0,
+        step=100.0,
+        key="t6_baseline_daily_fuel"
+    )
+
+
+with t6_c2:
+    t6_operating_hours = st.number_input(
+        "Operating Hours / Day",
+        min_value=0.0,
+        max_value=24.0,
+        value=24.0,
+        step=0.5,
+        key="t6_operating_hours"
+    )
+
+    t6_fuel_price = st.number_input(
+        "Fuel Price (USD/L)",
+        min_value=0.0,
+        value=0.85,
+        step=0.01,
+        key="t6_fuel_price"
+    )
+
+
+with t6_c3:
+    t6_analysis_days = st.number_input(
+        "Analysis Period (Days)",
+        min_value=1,
+        value=30,
+        step=1,
+        key="t6_analysis_days"
+    )
+
+    t6_tolerance_percent = st.number_input(
+        "Allowed Deviation (%)",
+        min_value=0.0,
+        value=5.0,
+        step=0.5,
+        key="t6_tolerance_percent"
+    )
+
+
+# ------------------------------------------------
+# CALCULATIONS
+# ------------------------------------------------
+
+t6_actual_daily_fuel = float(t6_actual_daily_fuel)
+t6_baseline_daily_fuel = float(t6_baseline_daily_fuel)
+t6_operating_hours = float(t6_operating_hours)
+t6_fuel_price = float(t6_fuel_price)
+t6_analysis_days = int(t6_analysis_days)
+t6_tolerance_percent = float(t6_tolerance_percent)
+
+t6_fuel_deviation_l = (
+    t6_actual_daily_fuel - t6_baseline_daily_fuel
+)
+
+if t6_baseline_daily_fuel > 0:
+    t6_deviation_percent = (
+        t6_fuel_deviation_l / t6_baseline_daily_fuel
+    ) * 100.0
+else:
+    t6_deviation_percent = 0.0
+
+t6_actual_period_fuel = (
+    t6_actual_daily_fuel * t6_analysis_days
+)
+
+t6_baseline_period_fuel = (
+    t6_baseline_daily_fuel * t6_analysis_days
+)
+
+t6_excess_daily_fuel = max(
+    t6_actual_daily_fuel - t6_baseline_daily_fuel,
+    0.0
+)
+
+t6_excess_period_fuel = (
+    t6_excess_daily_fuel * t6_analysis_days
+)
+
+t6_excess_daily_cost = (
+    t6_excess_daily_fuel * t6_fuel_price
+)
+
+t6_excess_period_cost = (
+    t6_excess_period_fuel * t6_fuel_price
+)
+
+if t6_operating_hours > 0:
+    t6_actual_hourly_fuel = (
+        t6_actual_daily_fuel / t6_operating_hours
+    )
+
+    t6_baseline_hourly_fuel = (
+        t6_baseline_daily_fuel / t6_operating_hours
+    )
+else:
+    t6_actual_hourly_fuel = 0.0
+    t6_baseline_hourly_fuel = 0.0
+
+
+# ------------------------------------------------
+# PERFORMANCE STATUS
+# ------------------------------------------------
+
+if t6_baseline_daily_fuel <= 0:
+    t6_status = "DATA REQUIRED"
+
+elif t6_deviation_percent <= 0:
+    t6_status = "EFFICIENT"
+
+elif t6_deviation_percent <= t6_tolerance_percent:
+    t6_status = "NORMAL"
+
+elif t6_deviation_percent <= 10:
+    t6_status = "MONITOR"
+
+elif t6_deviation_percent <= 20:
+    t6_status = "HIGH"
+
+else:
+    t6_status = "CRITICAL"
+
+
+# ------------------------------------------------
+# KPI DASHBOARD
+# ------------------------------------------------
+
+st.subheader("📊 Fuel Efficiency KPI")
+
+t6_k1, t6_k2, t6_k3, t6_k4 = st.columns(4)
+
+t6_k1.metric(
+    "Actual Consumption",
+    f"{t6_actual_daily_fuel:,.0f} L/day"
+)
+
+t6_k2.metric(
+    "Baseline",
+    f"{t6_baseline_daily_fuel:,.0f} L/day"
+)
+
+t6_k3.metric(
+    "Fuel Deviation",
+    f"{t6_deviation_percent:+.1f}%"
+)
+
+t6_k4.metric(
+    "Performance Status",
+    t6_status
+)
+
+
+t6_k5, t6_k6, t6_k7, t6_k8 = st.columns(4)
+
+t6_k5.metric(
+    "Excess Fuel",
+    f"{t6_excess_daily_fuel:,.0f} L/day"
+)
+
+t6_k6.metric(
+    "Excess Fuel / Period",
+    f"{t6_excess_period_fuel:,.0f} L"
+)
+
+t6_k7.metric(
+    "Daily Cost Impact",
+    f"USD {t6_excess_daily_cost:,.2f}"
+)
+
+t6_k8.metric(
+    "Period Cost Impact",
+    f"USD {t6_excess_period_cost:,.2f}"
+)
+
+
+# ------------------------------------------------
+# PERIOD PERFORMANCE
+# ------------------------------------------------
+
+st.subheader("📈 Analysis Period Performance")
+
+t6_p1, t6_p2, t6_p3, t6_p4 = st.columns(4)
+
+t6_p1.metric(
+    "Analysis Period",
+    f"{t6_analysis_days} days"
+)
+
+t6_p2.metric(
+    "Actual Period Fuel",
+    f"{t6_actual_period_fuel:,.0f} L"
+)
+
+t6_p3.metric(
+    "Baseline Period Fuel",
+    f"{t6_baseline_period_fuel:,.0f} L"
+)
+
+t6_p4.metric(
+    "Operating Hours",
+    f"{t6_operating_hours:.1f} h/day"
+)
+
+
+# ------------------------------------------------
+# HOURLY PERFORMANCE
+# ------------------------------------------------
+
+st.subheader("⏱️ Hourly Fuel Performance")
+
+t6_h1, t6_h2, t6_h3 = st.columns(3)
+
+t6_h1.metric(
+    "Actual Hourly Fuel",
+    f"{t6_actual_hourly_fuel:,.1f} L/h"
+)
+
+t6_h2.metric(
+    "Baseline Hourly Fuel",
+    f"{t6_baseline_hourly_fuel:,.1f} L/h"
+)
+
+t6_h3.metric(
+    "Allowed Deviation",
+    f"{t6_tolerance_percent:.1f}%"
+)
+
+
+# ------------------------------------------------
+# PERFORMANCE INTELLIGENCE
+# ------------------------------------------------
+
+st.subheader("🧠 Fuel Performance Intelligence")
+
+t6_intelligence = []
+
+if t6_status == "DATA REQUIRED":
+    t6_intelligence.append(
+        "A valid baseline fuel-consumption value is required "
+        "before fuel-efficiency deviation can be assessed."
+    )
+
+elif t6_status == "EFFICIENT":
+    t6_intelligence.append(
+        "Actual fuel consumption is at or below the selected baseline."
+    )
+
+elif t6_status == "NORMAL":
+    t6_intelligence.append(
+        "Actual fuel consumption is above baseline but remains "
+        "within the selected operational tolerance."
+    )
+
+elif t6_status == "MONITOR":
+    t6_intelligence.append(
+        "Fuel consumption is moderately above baseline and should "
+        "be monitored for persistent deterioration."
+    )
+
+elif t6_status == "HIGH":
+    t6_intelligence.append(
+        "Fuel consumption shows a significant adverse deviation "
+        "from the selected baseline."
+    )
+
+elif t6_status == "CRITICAL":
+    t6_intelligence.append(
+        "Fuel consumption shows a major adverse deviation from "
+        "the selected baseline and requires prompt investigation."
+    )
+
+if t6_excess_period_fuel > 0:
+    t6_intelligence.append(
+        f"Estimated excess consumption over {t6_analysis_days} days "
+        f"is {t6_excess_period_fuel:,.0f} L."
+    )
+
+if t6_excess_period_cost > 0:
+    t6_intelligence.append(
+        f"Estimated excess-fuel cost impact for the selected period "
+        f"is USD {t6_excess_period_cost:,.2f}."
+    )
+
+for t6_note in t6_intelligence:
+    st.write(f"• {t6_note}")
+
+
+# ------------------------------------------------
+# POTENTIAL CAUSES
+# ------------------------------------------------
+
+st.subheader("🔎 Potential Causes / Investigation Areas")
+
+t6_causes = []
+
+if t6_deviation_percent > t6_tolerance_percent:
+
+    t6_causes.extend([
+        "Main-engine RPM/load may be outside the economical operating range.",
+        "Hull or propeller fouling may be increasing hydrodynamic resistance.",
+        "Weather, wind, waves or current may be increasing propulsion demand.",
+        "Vessel draft, trim or loading condition may be affecting efficiency.",
+        "Auxiliary machinery demand may be higher than the established baseline.",
+        "Fuel measurement, tank sounding or calibration data may require verification.",
+        "Engine condition, combustion quality or maintenance condition may require review."
+    ])
+
+else:
+    t6_causes.append(
+        "No significant adverse fuel-consumption deviation is indicated "
+        "by the selected baseline and tolerance."
+    )
+
+for t6_cause in t6_causes:
+    st.write(f"• {t6_cause}")
+
+
+# ------------------------------------------------
+# PRIORITY ACTIONS
+# ------------------------------------------------
+
+st.subheader("📋 Priority Actions")
+
+t6_priority_actions = []
+
+if t6_status == "DATA REQUIRED":
+
+    t6_priority_actions.append(
+        "Enter and verify the vessel's approved baseline or target fuel consumption."
+    )
+
+elif t6_status == "EFFICIENT":
+
+    t6_priority_actions.append(
+        "Maintain the current operating profile and continue routine fuel monitoring."
+    )
+
+elif t6_status == "NORMAL":
+
+    t6_priority_actions.append(
+        "Continue monitoring actual consumption against the approved baseline."
+    )
+
+elif t6_status == "MONITOR":
+
+    t6_priority_actions.extend([
+        "Review RPM, engine load, vessel speed and operating mode.",
+        "Compare weather/current and voyage conditions with the baseline condition.",
+        "Confirm daily tank soundings and fuel-consumption records."
+    ])
+
+elif t6_status == "HIGH":
+
+    t6_priority_actions.extend([
+        "Investigate the source of the adverse fuel-consumption deviation.",
+        "Review engine performance, RPM/load and machinery operating condition.",
+        "Review hull, propeller, draft, trim, weather and voyage conditions.",
+        "Verify fuel measurements and baseline assumptions.",
+        "Escalate persistent deviation for superintendent review."
+    ])
+
+elif t6_status == "CRITICAL":
+
+    t6_priority_actions.extend([
+        "Initiate prompt technical and operational investigation.",
+        "Verify fuel measurements, tank soundings and calculation inputs.",
+        "Review main-engine performance and machinery condition.",
+        "Review hull/propeller condition and vessel operating profile.",
+        "Assess the operational and financial impact of continued excess consumption.",
+        "Escalate significant persistent deviation to responsible management."
+    ])
+
+for t6_index, t6_action in enumerate(
+    t6_priority_actions,
+    start=1
+):
+    st.write(f"{t6_index}. {t6_action}")
+
+
+# ------------------------------------------------
+# DATA QUALITY & VALIDATION
+# ------------------------------------------------
+
+st.subheader("🛡️ Data Quality & Validation")
+
+t6_validation = []
+
+if t6_actual_daily_fuel <= 0:
+    t6_validation.append(
+        "Actual daily fuel consumption is zero or unavailable."
+    )
+
+if t6_baseline_daily_fuel <= 0:
+    t6_validation.append(
+        "Baseline fuel consumption must be greater than zero."
+    )
+
+if t6_operating_hours <= 0:
+    t6_validation.append(
+        "Operating hours must be greater than zero."
+    )
+
+if t6_operating_hours > 24:
+    t6_validation.append(
+        "Operating hours cannot exceed 24 hours per day."
+    )
+
+if t6_fuel_price <= 0:
+    t6_validation.append(
+        "Fuel price is zero or unavailable; cost-impact calculations "
+        "should not be used for commercial decisions."
+    )
+
+if not t6_validation:
+    st.success(
+        "🟢 Fuel performance inputs passed the basic validation checks."
+    )
+else:
+    for t6_warning in t6_validation:
+        st.warning(f"🟠 {t6_warning}")
+
+
+# ------------------------------------------------
+# OPERATIONAL CAUTION
+# ------------------------------------------------
+
+st.info(
+    "Fuel-efficiency results are operational decision-support estimates. "
+    "Before technical, commercial or management action, verify actual fuel "
+    "measurements, tank soundings, calibration tables, fuel density, engine "
+    "performance, RPM/load, vessel speed, draft/trim, hull and propeller "
+    "condition, weather/current, operating mode and the approved vessel baseline."
+)
+
+
+# ------------------------------------------------
+# SAVE TAHAP 6 RESULTS FOR NEXT MODULES
+# ------------------------------------------------
+
+st.session_state["t6_result_vessel"] = t6_selected_vessel
+st.session_state["t6_result_status"] = t6_status
+
+st.session_state["t6_result_actual_daily_fuel"] = (
+    t6_actual_daily_fuel
+)
+
+st.session_state["t6_result_baseline_daily_fuel"] = (
+    t6_baseline_daily_fuel
+)
+
+st.session_state["t6_result_deviation_l"] = (
+    t6_fuel_deviation_l
+)
+
+st.session_state["t6_result_deviation_percent"] = (
+    t6_deviation_percent
+)
+
+st.session_state["t6_result_excess_daily_fuel"] = (
+    t6_excess_daily_fuel
+)
+
+st.session_state["t6_result_excess_period_fuel"] = (
+    t6_excess_period_fuel
+)
+
+st.session_state["t6_result_excess_daily_cost"] = (
+    t6_excess_daily_cost
+)
+
+st.session_state["t6_result_excess_period_cost"] = (
+    t6_excess_period_cost
+)
+
+st.session_state["t6_result_priority_actions"] = (
+    t6_priority_actions
+)
+
+st.session_state["t6_result_intelligence"] = (
+    t6_intelligence
+)
+
+
+st.success(
+    "✅ TAHAP 6 ACTIVE — Fuel Efficiency Performance & "
+    "Deviation Intelligence is operational."
+)
+
+st.info(
+    "TAHAP 6 results are stored in the application session "
+    "and prepared for the next intelligence modules."
+)
+
+
+# ================================================================
+# END TAHAP 6
+# ================================================================
