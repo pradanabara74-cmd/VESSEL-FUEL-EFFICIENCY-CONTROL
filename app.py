@@ -4563,3 +4563,536 @@ st.info(
 # ================================================================
 # END TAHAP 8
 # ================================================================
+
+# ================================================================
+# TAHAP 9 - FUEL OPTIMIZATION & OPERATING STRATEGY INTELLIGENCE
+# ================================================================
+
+st.divider()
+st.header("⚙️ Fuel Optimization & Operating Strategy Intelligence")
+st.caption(
+    "Integrated operating-strategy recommendations using fuel inventory, "
+    "voyage planning, performance deviation, financial impact and risk results."
+)
+
+# ------------------------------------------------
+# VESSEL CONTEXT
+# ------------------------------------------------
+
+t9_selected_vessel = st.session_state.get(
+    "selected_fleet_vessel",
+    st.session_state.get(
+        "sidebar_vessel_name",
+        globals().get("vessel_name", "ASL MANTRUS")
+    )
+)
+
+st.subheader("🚢 Optimization Vessel")
+st.info(f"Fuel optimization analysis for: **{t9_selected_vessel}**")
+
+
+# ------------------------------------------------
+# COLLECT RESULTS FROM PREVIOUS MODULES
+# ------------------------------------------------
+
+t9_rob_l = float(
+    st.session_state.get(
+        "t4_result_rob_l",
+        0.0
+    ) or 0.0
+)
+
+t9_rob_percent = float(
+    st.session_state.get(
+        "t4_result_rob_percent",
+        0.0
+    ) or 0.0
+)
+
+t9_daily_consumption_l = float(
+    st.session_state.get(
+        "t4_result_daily_consumption_l",
+        0.0
+    ) or 0.0
+)
+
+t9_days_to_reserve = float(
+    st.session_state.get(
+        "t8_result_days_to_reserve",
+        st.session_state.get(
+            "t4_result_days_to_reserve",
+            0.0
+        )
+    ) or 0.0
+)
+
+t9_sailing_days = float(
+    st.session_state.get(
+        "t5_result_sailing_days",
+        0.0
+    ) or 0.0
+)
+
+t9_total_required_l = float(
+    st.session_state.get(
+        "t5_result_total_required_l",
+        0.0
+    ) or 0.0
+)
+
+t9_arrival_rob_l = float(
+    st.session_state.get(
+        "t5_result_arrival_rob_l",
+        0.0
+    ) or 0.0
+)
+
+t9_surplus_deficit_l = float(
+    st.session_state.get(
+        "t8_result_surplus_deficit_l",
+        st.session_state.get(
+            "t5_result_surplus_deficit_l",
+            0.0
+        )
+    ) or 0.0
+)
+
+t9_excess_period_fuel = float(
+    st.session_state.get(
+        "t8_result_excess_period_fuel",
+        st.session_state.get(
+            "t6_result_excess_period_fuel",
+            0.0
+        )
+    ) or 0.0
+)
+
+t9_cost_impact = float(
+    st.session_state.get(
+        "t8_result_cost_impact",
+        0.0
+    ) or 0.0
+)
+
+t9_projected_cost = float(
+    st.session_state.get(
+        "t8_result_projected_cost",
+        0.0
+    ) or 0.0
+)
+
+t9_saving_opportunity = float(
+    st.session_state.get(
+        "t8_result_saving_opportunity",
+        0.0
+    ) or 0.0
+)
+
+
+# ------------------------------------------------
+# OPTIMIZATION INPUTS
+# ------------------------------------------------
+
+st.subheader("🎯 Optimization Targets")
+
+t9_c1, t9_c2, t9_c3 = st.columns(3)
+
+with t9_c1:
+    t9_reduction_target_pct = st.number_input(
+        "Fuel Reduction Target (%)",
+        min_value=0.0,
+        max_value=30.0,
+        value=5.0,
+        step=0.5,
+        key="t9_reduction_target_pct"
+    )
+
+with t9_c2:
+    t9_speed_reduction_pct = st.number_input(
+        "Potential Speed Reduction (%)",
+        min_value=0.0,
+        max_value=30.0,
+        value=5.0,
+        step=0.5,
+        key="t9_speed_reduction_pct"
+    )
+
+with t9_c3:
+    t9_analysis_days = st.number_input(
+        "Optimization Period (days)",
+        min_value=1.0,
+        max_value=365.0,
+        value=30.0,
+        step=1.0,
+        key="t9_analysis_days"
+    )
+
+
+# ------------------------------------------------
+# OPTIMIZATION CALCULATIONS
+# ------------------------------------------------
+
+t9_reduction_fraction = t9_reduction_target_pct / 100.0
+
+t9_target_daily_consumption_l = (
+    t9_daily_consumption_l * (1.0 - t9_reduction_fraction)
+)
+
+t9_daily_fuel_saving_l = max(
+    t9_daily_consumption_l - t9_target_daily_consumption_l,
+    0.0
+)
+
+t9_period_fuel_saving_l = (
+    t9_daily_fuel_saving_l * t9_analysis_days
+)
+
+if t9_target_daily_consumption_l > 0:
+    t9_optimized_endurance_days = (
+        t9_rob_l / t9_target_daily_consumption_l
+    )
+else:
+    t9_optimized_endurance_days = 0.0
+
+if t9_daily_consumption_l > 0:
+    t9_current_endurance_days = (
+        t9_rob_l / t9_daily_consumption_l
+    )
+else:
+    t9_current_endurance_days = 0.0
+
+t9_endurance_gain_days = max(
+    t9_optimized_endurance_days - t9_current_endurance_days,
+    0.0
+)
+
+if t9_analysis_days > 0:
+    t9_average_daily_cost_impact = (
+        t9_cost_impact / t9_analysis_days
+    )
+else:
+    t9_average_daily_cost_impact = 0.0
+
+if t9_daily_consumption_l > 0:
+    t9_estimated_saving_value = (
+        t9_cost_impact
+        * (
+            t9_daily_fuel_saving_l
+            / t9_daily_consumption_l
+        )
+    )
+else:
+    t9_estimated_saving_value = 0.0
+
+t9_estimated_saving_value = max(
+    t9_estimated_saving_value,
+    t9_saving_opportunity,
+    0.0
+)
+
+
+# ------------------------------------------------
+# OPTIMIZATION STATUS
+# ------------------------------------------------
+
+if t9_rob_l <= 0:
+    t9_status = "DATA REQUIRED"
+
+elif t9_surplus_deficit_l < 0:
+    t9_status = "FUEL SECURITY PRIORITY"
+
+elif t9_rob_percent > 0 and t9_rob_percent <= 20:
+    t9_status = "RESERVE PROTECTION"
+
+elif t9_excess_period_fuel > 0:
+    t9_status = "EFFICIENCY RECOVERY"
+
+else:
+    t9_status = "OPTIMIZED MONITORING"
+
+
+# ------------------------------------------------
+# KPI DASHBOARD
+# ------------------------------------------------
+
+st.subheader("📊 Optimization Dashboard")
+
+t9_k1, t9_k2, t9_k3, t9_k4 = st.columns(4)
+
+t9_k1.metric(
+    "Current Daily Fuel",
+    f"{t9_daily_consumption_l:,.1f} L/day"
+)
+
+t9_k2.metric(
+    "Target Daily Fuel",
+    f"{t9_target_daily_consumption_l:,.1f} L/day"
+)
+
+t9_k3.metric(
+    "Potential Daily Saving",
+    f"{t9_daily_fuel_saving_l:,.1f} L/day"
+)
+
+t9_k4.metric(
+    "Optimization Status",
+    t9_status
+)
+
+t9_k5, t9_k6, t9_k7, t9_k8 = st.columns(4)
+
+t9_k5.metric(
+    "Period Fuel Saving",
+    f"{t9_period_fuel_saving_l:,.1f} L"
+)
+
+t9_k6.metric(
+    "Current Endurance",
+    f"{t9_current_endurance_days:,.1f} days"
+)
+
+t9_k7.metric(
+    "Optimized Endurance",
+    f"{t9_optimized_endurance_days:,.1f} days"
+)
+
+t9_k8.metric(
+    "Endurance Gain",
+    f"{t9_endurance_gain_days:,.1f} days"
+)
+
+
+# ------------------------------------------------
+# OPERATING STRATEGY INTELLIGENCE
+# ------------------------------------------------
+
+st.subheader("🧠 Operating Strategy Intelligence")
+
+t9_intelligence = []
+
+if t9_rob_l <= 0:
+    t9_intelligence.append(
+        "Reliable ROB data is required before fuel optimization can be approved."
+    )
+
+if t9_surplus_deficit_l < 0:
+    t9_intelligence.append(
+        "Fuel sufficiency has priority over efficiency optimization because "
+        "the integrated voyage assessment indicates a fuel deficit."
+    )
+
+if t9_excess_period_fuel > 0:
+    t9_intelligence.append(
+        "Excess consumption has been detected. Investigate RPM/load, vessel "
+        "speed, weather/current, draft/trim, hull and propeller condition."
+    )
+
+if t9_reduction_target_pct > 0:
+    t9_intelligence.append(
+        f"A {t9_reduction_target_pct:.1f}% fuel-reduction target would reduce "
+        f"estimated daily consumption by approximately "
+        f"{t9_daily_fuel_saving_l:,.1f} L/day."
+    )
+
+if t9_endurance_gain_days > 0:
+    t9_intelligence.append(
+        f"The optimization target could increase theoretical fuel endurance "
+        f"by approximately {t9_endurance_gain_days:,.1f} days."
+    )
+
+if t9_speed_reduction_pct > 0:
+    t9_intelligence.append(
+        f"A potential speed adjustment of up to "
+        f"{t9_speed_reduction_pct:.1f}% may be evaluated where voyage, "
+        f"charter, weather, maneuvering and safety requirements permit."
+    )
+
+if not t9_intelligence:
+    t9_intelligence.append(
+        "Continue monitoring fuel performance against the approved operating baseline."
+    )
+
+for t9_item in t9_intelligence:
+    st.write(f"• {t9_item}")
+
+
+# ------------------------------------------------
+# RECOMMENDED OPERATING STRATEGY
+# ------------------------------------------------
+
+st.subheader("🧭 Recommended Operating Strategy")
+
+t9_priority_actions = []
+
+if t9_rob_l <= 0:
+    t9_priority_actions.append(
+        "Verify actual ROB by tank sounding and approved calibration tables."
+    )
+
+if t9_surplus_deficit_l < 0:
+    t9_priority_actions.append(
+        "Review bunker requirement and reserve protection before voyage approval."
+    )
+
+if t9_excess_period_fuel > 0:
+    t9_priority_actions.append(
+        "Investigate the root cause of excess consumption before increasing "
+        "the optimization target."
+    )
+
+if t9_speed_reduction_pct > 0:
+    t9_priority_actions.append(
+        "Evaluate economical speed only where safe navigation, schedule, "
+        "charter and operational requirements permit."
+    )
+
+t9_priority_actions.append(
+    "Compare actual daily consumption with the approved baseline and "
+    "optimization target."
+)
+
+t9_priority_actions.append(
+    "Verify engine RPM/load, vessel speed, draft/trim, weather/current and "
+    "hull/propeller condition before implementing operational changes."
+)
+
+for t9_index, t9_action in enumerate(t9_priority_actions, start=1):
+    st.write(f"{t9_index}. {t9_action}")
+
+
+# ------------------------------------------------
+# MANAGEMENT SUMMARY
+# ------------------------------------------------
+
+st.subheader("📋 Management Optimization Summary")
+
+t9_summary = pd.DataFrame(
+    {
+        "Parameter": [
+            "Vessel",
+            "Optimization Status",
+            "Current Daily Consumption",
+            "Target Daily Consumption",
+            "Daily Fuel Saving",
+            "Period Fuel Saving",
+            "Current Endurance",
+            "Optimized Endurance",
+            "Endurance Gain",
+            "Existing Saving Opportunity",
+        ],
+        "Result": [
+            t9_selected_vessel,
+            t9_status,
+            f"{t9_daily_consumption_l:,.1f} L/day",
+            f"{t9_target_daily_consumption_l:,.1f} L/day",
+            f"{t9_daily_fuel_saving_l:,.1f} L/day",
+            f"{t9_period_fuel_saving_l:,.1f} L",
+            f"{t9_current_endurance_days:,.1f} days",
+            f"{t9_optimized_endurance_days:,.1f} days",
+            f"{t9_endurance_gain_days:,.1f} days",
+            f"{t9_saving_opportunity:,.2f}",
+        ],
+    }
+)
+
+st.dataframe(
+    t9_summary,
+    use_container_width=True,
+    hide_index=True
+)
+
+
+# ------------------------------------------------
+# DATA QUALITY & VALIDATION
+# ------------------------------------------------
+
+st.subheader("🛡️ Data Quality & Validation")
+
+t9_validation = []
+
+if t9_rob_l <= 0:
+    t9_validation.append(
+        "ROB from the previous fuel-inventory module is zero or unavailable."
+    )
+
+if t9_daily_consumption_l <= 0:
+    t9_validation.append(
+        "Daily fuel consumption is zero or unavailable."
+    )
+
+if t9_analysis_days <= 0:
+    t9_validation.append(
+        "Optimization period must be greater than zero."
+    )
+
+if not t9_validation:
+    st.success(
+        "🟢 Fuel optimization inputs passed the basic validation checks."
+    )
+else:
+    for t9_note in t9_validation:
+        st.warning(f"🟠 {t9_note}")
+
+
+st.info(
+    "Fuel-optimization results are decision-support estimates. Before changing "
+    "vessel speed, RPM/load, voyage plan or bunker strategy, verify actual "
+    "fuel measurements, machinery limitations, OEM guidance, weather/current, "
+    "navigation safety, charter requirements, statutory/company reserves and "
+    "Master/company approval."
+)
+
+
+# ------------------------------------------------
+# SAVE TAHAP 9 RESULTS
+# ------------------------------------------------
+
+st.session_state["t9_result_status"] = t9_status
+
+st.session_state["t9_result_target_daily_consumption_l"] = (
+    t9_target_daily_consumption_l
+)
+
+st.session_state["t9_result_daily_fuel_saving_l"] = (
+    t9_daily_fuel_saving_l
+)
+
+st.session_state["t9_result_period_fuel_saving_l"] = (
+    t9_period_fuel_saving_l
+)
+
+st.session_state["t9_result_optimized_endurance_days"] = (
+    t9_optimized_endurance_days
+)
+
+st.session_state["t9_result_endurance_gain_days"] = (
+    t9_endurance_gain_days
+)
+
+st.session_state["t9_result_estimated_saving_value"] = (
+    t9_estimated_saving_value
+)
+
+st.session_state["t9_result_priority_actions"] = (
+    t9_priority_actions
+)
+
+st.session_state["t9_result_intelligence"] = (
+    t9_intelligence
+)
+
+
+st.success(
+    "✅ TAHAP 9 ACTIVE — Fuel Optimization & Operating Strategy "
+    "Intelligence is operational."
+)
+
+st.info(
+    "TAHAP 9 results are stored in the application session "
+    "and prepared for the next intelligence modules."
+)
+
+
+# ================================================================
+# END TAHAP 9
+# ================================================================
