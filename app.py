@@ -20922,6 +20922,214 @@ st.info(
 # ================================================================
 # END TAHAP 44
 # ================================================================
+# ================================================================
+# TAHAP 45
+# FLEET PERFORMANCE ASSURANCE & CONTINUOUS IMPROVEMENT INTELLIGENCE
+# ================================================================
+
+st.markdown("---")
+
+st.header(
+    "📈 TAHAP 45 — Fleet Performance Assurance & "
+    "Continuous Improvement Intelligence"
+)
+
+st.caption(
+    "Fleet-wide decision-support for verification of corrective-action "
+    "effectiveness, performance assurance and continuous improvement."
+)
+
+
+# ------------------------------------------------
+# TAHAP 45 — SESSION INITIALIZATION
+# ------------------------------------------------
+
+if "tahap_45_results" not in st.session_state:
+    st.session_state["tahap_45_results"] = {}
+
+if "tahap_45_active" not in st.session_state:
+    st.session_state["tahap_45_active"] = True
+
+
+# ------------------------------------------------
+# UPSTREAM INTELLIGENCE
+# ------------------------------------------------
+
+tahap_44_available = bool(
+    st.session_state.get("tahap_44_active", False)
+    or st.session_state.get("tahap_44_results")
+)
+
+st.subheader("🔗 Upstream Intelligence")
+
+if tahap_44_available:
+    st.success(
+        "🟢 TAHAP 44 Fleet Corrective Action & Resolution Tracking "
+        "Intelligence is available for TAHAP 45 assessment."
+    )
+else:
+    st.warning(
+        "🟠 TAHAP 44 intelligence is not currently available in this "
+        "application session. TAHAP 45 will operate with available data."
+    )
+
+
+# ------------------------------------------------
+# PERFORMANCE ASSURANCE INTELLIGENCE
+# ------------------------------------------------
+
+st.subheader("📈 Performance Assurance Intelligence")
+
+st.write(
+    "TAHAP 45 consolidates available corrective-action, resolution, "
+    "operational and fuel-efficiency information to support verification "
+    "of action effectiveness and continuous fleet performance improvement."
+)
+
+st.markdown(
+    """
+**Primary intelligence objectives**
+
+1. Verify implementation of completed corrective actions.
+2. Assess whether verified operational deviations have improved.
+3. Compare relevant performance before and after corrective action.
+4. Identify recurring or unresolved operational issues.
+5. Detect actions requiring additional monitoring or review.
+6. Maintain traceability between findings, actions and verification evidence.
+7. Support fleet-level lessons learned and continuous improvement.
+8. Escalate material verified deviations according to company procedures.
+"""
+)
+
+
+# ------------------------------------------------
+# DATA QUALITY & VALIDATION
+# ------------------------------------------------
+
+st.subheader("🛡️ Data Quality & Validation")
+
+if tahap_44_available:
+    st.success(
+        "🟢 TAHAP 44 corrective-action and resolution intelligence "
+        "is available for TAHAP 45 performance-assurance assessment."
+    )
+    data_quality_45 = "AVAILABLE"
+else:
+    st.warning(
+        "🟠 Supporting corrective-action information is currently limited. "
+        "Performance-assurance results must be interpreted with "
+        "available-data limitations."
+    )
+    data_quality_45 = "LIMITED"
+
+
+# ------------------------------------------------
+# DECISION-SUPPORT NOTICE
+# ------------------------------------------------
+
+st.info(
+    "Fleet Performance Assurance & Continuous Improvement Intelligence "
+    "is a decision-support module. A calculated improvement, performance "
+    "classification, corrective-action status or trend does not independently "
+    "establish machinery condition, machinery failure, fuel loss, theft, "
+    "crew performance, commercial responsibility, regulatory compliance, "
+    "causation or financial results. Verify actual vessel records, fuel "
+    "measurements, tank soundings, ROB, bunker documentation, engine "
+    "parameters, RPM/load, vessel speed, draft/trim, weather/current, "
+    "sea state, voyage conditions, hull/propeller condition, fuel properties, "
+    "maintenance records, corrective-action evidence and applicable "
+    "OEM/company requirements before technical, operational, safety, "
+    "procurement, financial or commercial action."
+)
+
+
+# ------------------------------------------------
+# PERFORMANCE ASSURANCE FRAMEWORK
+# ------------------------------------------------
+
+st.subheader("🎯 Performance Assurance Framework")
+
+st.markdown(
+    """
+For each material corrective action or improvement initiative, verify:
+
+- **Original Finding** — the verified issue that initiated the action.
+- **Corrective Action** — the action actually implemented.
+- **Implementation Evidence** — evidence confirming completion.
+- **Baseline Performance** — relevant verified condition before action.
+- **Post-Action Performance** — relevant verified condition after action.
+- **Effectiveness Status** — pending, monitoring, effective or ineffective.
+- **Residual Risk** — remaining verified operational exposure.
+- **Recurrence Status** — whether the issue has reappeared.
+- **Further Action** — additional action required where supported.
+- **Lessons Learned** — verified information useful for fleet improvement.
+"""
+)
+
+
+# ------------------------------------------------
+# CONTINUOUS IMPROVEMENT CONTROL
+# ------------------------------------------------
+
+st.subheader("🔄 Continuous Improvement Control")
+
+st.markdown(
+    """
+TAHAP 45 supports a closed-loop management cycle:
+
+**Identify → Verify → Correct → Monitor → Validate → Improve**
+
+Performance improvements should only be treated as verified when supported
+by appropriate operational records and sufficiently comparable conditions.
+Material unresolved deviations should remain open for monitoring or
+management review.
+"""
+)
+
+
+# ------------------------------------------------
+# TAHAP 45 RESULT OBJECT
+# ------------------------------------------------
+
+tahap_45_result = {
+    "stage": 45,
+    "module": (
+        "Fleet Performance Assurance & "
+        "Continuous Improvement Intelligence"
+    ),
+    "status": "ACTIVE",
+    "upstream_tahap_44": tahap_44_available,
+    "data_quality": data_quality_45,
+    "decision_support": True,
+    "performance_assurance": True,
+    "effectiveness_verification": True,
+    "continuous_improvement": True,
+    "closed_loop_control": True,
+    "verification_required": True,
+}
+
+st.session_state["tahap_45_results"] = tahap_45_result
+st.session_state["tahap_45_active"] = True
+
+
+# ------------------------------------------------
+# TAHAP 45 STATUS
+# ------------------------------------------------
+
+st.success(
+    "✅ TAHAP 45 ACTIVE — Fleet Performance Assurance & "
+    "Continuous Improvement Intelligence is operational."
+)
+
+st.info(
+    "TAHAP 45 results are stored in the application session "
+    "and prepared for the next intelligence module."
+)
+
+
+# ================================================================
+# END TAHAP 45
+# ================================================================
 
 
 
