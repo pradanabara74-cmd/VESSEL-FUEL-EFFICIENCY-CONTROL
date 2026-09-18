@@ -17680,4 +17680,566 @@ st.info(
 # END TAHAP 34
 # ============================================================
 
+# ============================================================
+# TAHAP 35
+# HULL & PROPELLER PERFORMANCE / FOULING INTELLIGENCE
+# ============================================================
+
+st.divider()
+
+st.header("🚢 Hull & Propeller Performance / Fouling Intelligence")
+
+st.caption(
+    "TAHAP 35 — Decision-support screening for hull resistance, "
+    "propeller performance and potential fouling-related fuel-efficiency impact."
+)
+
+# ------------------------------------------------------------
+# SAFE HELPERS
+# ------------------------------------------------------------
+
+def t35_safe_float(value, default=None):
+    try:
+        if value is None:
+            return default
+
+        if isinstance(value, str):
+            value = value.strip().replace(",", "")
+
+            if value == "":
+                return default
+
+        return float(value)
+
+    except (TypeError, ValueError):
+        return default
+
+
+def t35_get_first(keys, default=None):
+    for key in keys:
+        if key in st.session_state:
+            value = st.session_state.get(key)
+
+            if value is not None:
+                return value
+
+    return default
+
+
+# ------------------------------------------------------------
+# READ AVAILABLE UPSTREAM INTELLIGENCE
+# ------------------------------------------------------------
+
+t35_t32_available = bool(
+    st.session_state.get("t32_result_upstream_available", False)
+)
+
+t35_t33_available = bool(
+    st.session_state.get("t33_result_upstream_available", False)
+)
+
+t35_t34_available = bool(
+    st.session_state.get("t34_result_upstream_available", False)
+)
+
+t35_upstream_available = any(
+    [
+        t35_t32_available,
+        t35_t33_available,
+        t35_t34_available,
+    ]
+)
+
+
+# ------------------------------------------------------------
+# READ AVAILABLE PERFORMANCE DATA
+# ------------------------------------------------------------
+
+t35_current_fuel = t35_safe_float(
+    t35_get_first(
+        [
+            "current_fuel_consumption",
+            "fuel_consumption",
+            "actual_fuel_consumption",
+            "daily_fuel_consumption",
+        ]
+    )
+)
+
+t35_baseline_fuel = t35_safe_float(
+    t35_get_first(
+        [
+            "baseline_fuel_consumption",
+            "reference_fuel_consumption",
+            "expected_fuel_consumption",
+        ]
+    )
+)
+
+t35_speed = t35_safe_float(
+    t35_get_first(
+        [
+            "vessel_speed",
+            "speed_knots",
+            "actual_speed",
+        ]
+    )
+)
+
+t35_rpm = t35_safe_float(
+    t35_get_first(
+        [
+            "engine_rpm",
+            "rpm",
+            "main_engine_rpm",
+        ]
+    )
+)
+
+t35_engine_load = t35_safe_float(
+    t35_get_first(
+        [
+            "engine_load",
+            "engine_load_pct",
+            "main_engine_load",
+        ]
+    )
+)
+
+t35_draft = t35_safe_float(
+    t35_get_first(
+        [
+            "draft",
+            "mean_draft",
+            "vessel_draft",
+        ]
+    )
+)
+
+t35_potential_saving = t35_safe_float(
+    t35_get_first(
+        [
+            "potential_saving",
+            "potential_savings",
+            "estimated_saving",
+        ],
+        0.0,
+    ),
+    0.0,
+)
+
+
+# ------------------------------------------------------------
+# DATA AVAILABILITY
+# ------------------------------------------------------------
+
+t35_has_fuel_pair = (
+    t35_current_fuel is not None
+    and t35_baseline_fuel is not None
+    and t35_baseline_fuel > 0
+)
+
+t35_has_operational_context = any(
+    [
+        t35_speed is not None,
+        t35_rpm is not None,
+        t35_engine_load is not None,
+        t35_draft is not None,
+    ]
+)
+
+t35_data_available = (
+    t35_upstream_available
+    or t35_has_fuel_pair
+    or t35_has_operational_context
+)
+
+
+# ------------------------------------------------------------
+# PERFORMANCE DEVIATION
+# ------------------------------------------------------------
+
+t35_fuel_deviation_pct = None
+
+if t35_has_fuel_pair:
+    t35_fuel_deviation_pct = (
+        (t35_current_fuel - t35_baseline_fuel)
+        / t35_baseline_fuel
+    ) * 100.0
+
+
+# ------------------------------------------------------------
+# HULL / PROPELLER SCREENING CLASSIFICATION
+# ------------------------------------------------------------
+
+if t35_fuel_deviation_pct is None:
+
+    t35_classification = "DATA LIMITED"
+
+    t35_risk_level = "UNCONFIRMED"
+
+    t35_interpretation = (
+        "Verified current and baseline fuel-consumption data are "
+        "not sufficient to quantify hull or propeller performance loss."
+    )
+
+elif t35_fuel_deviation_pct >= 15:
+
+    t35_classification = "HIGH PERFORMANCE DEVIATION"
+
+    t35_risk_level = "HIGH"
+
+    t35_interpretation = (
+        "A material fuel-consumption deviation is present. "
+        "Hull resistance, propeller condition and other operational "
+        "causes require verification."
+    )
+
+elif t35_fuel_deviation_pct >= 8:
+
+    t35_classification = "MODERATE PERFORMANCE DEVIATION"
+
+    t35_risk_level = "MEDIUM"
+
+    t35_interpretation = (
+        "Fuel consumption is above the available reference level. "
+        "Review hull, propeller and operating-condition information."
+    )
+
+elif t35_fuel_deviation_pct >= 3:
+
+    t35_classification = "MINOR PERFORMANCE DEVIATION"
+
+    t35_risk_level = "WATCH"
+
+    t35_interpretation = (
+        "A limited performance deviation is indicated. "
+        "Continue trending and verify against comparable operating conditions."
+    )
+
+else:
+
+    t35_classification = "NO MATERIAL DEVIATION INDICATED"
+
+    t35_risk_level = "NORMAL"
+
+    t35_interpretation = (
+        "Available fuel-consumption indicators do not currently show "
+        "a material deviation from the configured reference."
+    )
+
+
+# ------------------------------------------------------------
+# KPI SUMMARY
+# ------------------------------------------------------------
+
+st.subheader("📊 Hull & Propeller Performance Indicators")
+
+t35_col1, t35_col2, t35_col3, t35_col4 = st.columns(4)
+
+with t35_col1:
+    if t35_current_fuel is not None:
+        st.metric(
+            "Current Fuel",
+            f"{t35_current_fuel:,.2f}"
+        )
+    else:
+        st.metric("Current Fuel", "N/A")
+
+with t35_col2:
+    if t35_baseline_fuel is not None:
+        st.metric(
+            "Baseline Fuel",
+            f"{t35_baseline_fuel:,.2f}"
+        )
+    else:
+        st.metric("Baseline Fuel", "N/A")
+
+with t35_col3:
+    if t35_fuel_deviation_pct is not None:
+        st.metric(
+            "Fuel Deviation",
+            f"{t35_fuel_deviation_pct:+.2f}%"
+        )
+    else:
+        st.metric("Fuel Deviation", "N/A")
+
+with t35_col4:
+    st.metric(
+        "Performance Risk",
+        t35_risk_level
+    )
+
+
+# ------------------------------------------------------------
+# OPERATIONAL CONTEXT
+# ------------------------------------------------------------
+
+st.subheader("⚙️ Operational Context")
+
+t35_context_rows = [
+    {
+        "Parameter": "Vessel Speed",
+        "Value": (
+            f"{t35_speed:.2f} kn"
+            if t35_speed is not None
+            else "Not available"
+        ),
+    },
+    {
+        "Parameter": "Engine RPM",
+        "Value": (
+            f"{t35_rpm:.2f}"
+            if t35_rpm is not None
+            else "Not available"
+        ),
+    },
+    {
+        "Parameter": "Engine Load",
+        "Value": (
+            f"{t35_engine_load:.2f}%"
+            if t35_engine_load is not None
+            else "Not available"
+        ),
+    },
+    {
+        "Parameter": "Draft",
+        "Value": (
+            f"{t35_draft:.2f}"
+            if t35_draft is not None
+            else "Not available"
+        ),
+    },
+]
+
+st.dataframe(
+    t35_context_rows,
+    use_container_width=True,
+    hide_index=True,
+)
+
+
+# ------------------------------------------------------------
+# PERFORMANCE ASSESSMENT
+# ------------------------------------------------------------
+
+st.subheader("🔎 Performance Assessment")
+
+st.write(
+    f"**Classification:** {t35_classification}"
+)
+
+st.write(
+    f"**Risk Level:** {t35_risk_level}"
+)
+
+st.write(t35_interpretation)
+
+
+# ------------------------------------------------------------
+# POSSIBLE VERIFICATION AREAS
+# ------------------------------------------------------------
+
+st.subheader("🧭 Verification Areas")
+
+t35_verification_areas = [
+    "Compare fuel consumption at equivalent speed, draft, trim and engine load.",
+    "Review hull-cleaning history and time since last underwater inspection.",
+    "Review propeller-polishing and propeller-condition records.",
+    "Check for marine growth, hull roughness or suspected fouling.",
+    "Compare RPM, engine load and vessel speed against historical reference data.",
+    "Review weather, current, sea state and voyage-condition effects.",
+    "Verify draft, trim and vessel loading before attributing performance loss.",
+    "Review engine-performance indicators to separate machinery effects from hydrodynamic effects.",
+]
+
+for t35_item in t35_verification_areas:
+    st.write(f"• {t35_item}")
+
+
+# ------------------------------------------------------------
+# MANAGEMENT ACTIONS
+# ------------------------------------------------------------
+
+st.subheader("📋 Management Actions")
+
+if t35_risk_level == "HIGH":
+
+    t35_actions = [
+        "Prioritize verification of the fuel-performance deviation.",
+        "Review recent hull and propeller inspection / cleaning records.",
+        "Compare performance under equivalent operating conditions.",
+        "Coordinate technical review before assigning a root cause.",
+        "Assess whether underwater inspection is justified using verified evidence.",
+    ]
+
+elif t35_risk_level == "MEDIUM":
+
+    t35_actions = [
+        "Review hull and propeller maintenance history.",
+        "Trend fuel consumption against speed and engine load.",
+        "Verify environmental and loading-condition effects.",
+        "Schedule technical review if the deviation persists.",
+    ]
+
+elif t35_risk_level == "WATCH":
+
+    t35_actions = [
+        "Continue performance trending.",
+        "Verify the deviation against additional comparable voyages.",
+        "Review hull and propeller condition during routine technical assessment.",
+    ]
+
+elif t35_risk_level == "NORMAL":
+
+    t35_actions = [
+        "Continue routine performance monitoring.",
+        "Maintain hull and propeller inspection records.",
+        "Reassess if fuel consumption or speed-performance trends deteriorate.",
+    ]
+
+else:
+
+    t35_actions = [
+        "Obtain verified current and baseline fuel-consumption data.",
+        "Record vessel speed, RPM, engine load, draft and trim.",
+        "Review hull and propeller inspection / maintenance records.",
+        "Repeat the assessment when sufficient comparable data are available.",
+    ]
+
+for t35_number, t35_action in enumerate(t35_actions, start=1):
+    st.write(f"{t35_number}. {t35_action}")
+
+
+# ------------------------------------------------------------
+# POTENTIAL SAVING CONTEXT
+# ------------------------------------------------------------
+
+st.subheader("💰 Efficiency Opportunity Context")
+
+if t35_potential_saving > 0:
+
+    st.metric(
+        "Upstream Potential Saving",
+        f"${t35_potential_saving:,.2f}"
+    )
+
+    st.caption(
+        "Potential saving is an upstream decision-support estimate. "
+        "It is not treated as a realized financial saving until verified."
+    )
+
+else:
+
+    st.info(
+        "No verified upstream potential-saving value is currently "
+        "available for this assessment."
+    )
+
+
+# ------------------------------------------------------------
+# DATA QUALITY & VALIDATION
+# ------------------------------------------------------------
+
+st.subheader("🛡️ Data Quality & Validation")
+
+if t35_has_fuel_pair and t35_has_operational_context:
+
+    st.success(
+        "🟢 Fuel-performance and supporting operational indicators "
+        "are available for hull / propeller performance screening."
+    )
+
+elif t35_data_available:
+
+    st.warning(
+        "🟠 Only part of the required performance information is "
+        "currently available. Interpret the hull / propeller assessment "
+        "with the available-data limitations."
+    )
+
+else:
+
+    st.warning(
+        "🟠 Fuel-performance and supporting operational information "
+        "are currently insufficient to quantify hull or propeller "
+        "performance degradation."
+    )
+
+
+st.info(
+    "Hull & Propeller Performance / Fouling Intelligence is a "
+    "decision-support screening module based on configured thresholds "
+    "and available operational information. A performance deviation "
+    "does not by itself establish hull fouling, propeller fouling, "
+    "machinery failure, fuel-quality problems, crew performance, "
+    "fuel loss, commercial responsibility or causation. Verify actual "
+    "fuel measurements, tank soundings, ROB, bunker records, engine "
+    "parameters, RPM/load, vessel speed, draft/trim, weather/current, "
+    "sea state, voyage conditions, hull/propeller inspection records, "
+    "fuel properties and applicable OEM/company requirements before "
+    "technical, operational, safety, procurement or commercial action."
+)
+
+
+# ------------------------------------------------------------
+# STORE TAHAP 35 RESULTS
+# ------------------------------------------------------------
+
+t35_result = {
+    "module": "Hull & Propeller Performance / Fouling Intelligence",
+    "classification": t35_classification,
+    "risk_level": t35_risk_level,
+    "fuel_deviation_pct": t35_fuel_deviation_pct,
+    "current_fuel": t35_current_fuel,
+    "baseline_fuel": t35_baseline_fuel,
+    "vessel_speed": t35_speed,
+    "engine_rpm": t35_rpm,
+    "engine_load": t35_engine_load,
+    "draft": t35_draft,
+    "potential_saving": t35_potential_saving,
+    "upstream_available": t35_upstream_available,
+    "data_available": t35_data_available,
+    "interpretation": t35_interpretation,
+    "management_actions": t35_actions,
+}
+
+st.session_state["t35_result"] = t35_result
+
+st.session_state["t35_result_upstream_available"] = (
+    t35_data_available
+)
+
+st.session_state["t35_hull_propeller_classification"] = (
+    t35_classification
+)
+
+st.session_state["t35_hull_propeller_risk"] = (
+    t35_risk_level
+)
+
+st.session_state["t35_fuel_deviation_pct"] = (
+    t35_fuel_deviation_pct
+)
+
+
+# ------------------------------------------------------------
+# TAHAP 35 STATUS
+# ------------------------------------------------------------
+
+st.success(
+    "✅ TAHAP 35 ACTIVE — Hull & Propeller Performance / "
+    "Fouling Intelligence is operational."
+)
+
+st.info(
+    "TAHAP 35 results are stored in the application session "
+    "and prepared for the next intelligence modules."
+)
+
+
+# ============================================================
+# END TAHAP 35
+# ============================================================
+
 
