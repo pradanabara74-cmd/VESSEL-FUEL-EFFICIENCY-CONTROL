@@ -20744,6 +20744,184 @@ st.info(
 # ================================================================
 # END TAHAP 43
 # ================================================================
+# ================================================================
+# TAHAP 44
+# FLEET CORRECTIVE ACTION & RESOLUTION TRACKING INTELLIGENCE
+# ================================================================
+
+st.markdown("---")
+
+st.header("🛠️ TAHAP 44 — Fleet Corrective Action & Resolution Tracking Intelligence")
+
+st.caption(
+    "Fleet-wide decision-support for tracking corrective actions, "
+    "responsibility, target dates, verification status and closure readiness."
+)
+
+# ------------------------------------------------
+# TAHAP 44 — SESSION INITIALIZATION
+# ------------------------------------------------
+
+if "tahap_44_results" not in st.session_state:
+    st.session_state["tahap_44_results"] = {}
+
+if "tahap_44_active" not in st.session_state:
+    st.session_state["tahap_44_active"] = True
+
+
+# ------------------------------------------------
+# UPSTREAM INTELLIGENCE
+# ------------------------------------------------
+
+tahap_43_available = bool(
+    st.session_state.get("tahap_43_active", False)
+    or st.session_state.get("tahap_43_results")
+)
+
+st.subheader("🔗 Upstream Intelligence")
+
+if tahap_43_available:
+    st.success(
+        "🟢 TAHAP 43 Fleet Alert, Escalation & Management Response "
+        "Intelligence is available for TAHAP 44 assessment."
+    )
+else:
+    st.warning(
+        "🟠 TAHAP 43 intelligence is not currently available in this "
+        "application session. TAHAP 44 will operate with available data."
+    )
+
+
+# ------------------------------------------------
+# CORRECTIVE ACTION INTELLIGENCE
+# ------------------------------------------------
+
+st.subheader("🛠️ Corrective Action Intelligence")
+
+st.write(
+    "TAHAP 44 consolidates available fleet alerts, escalation indicators "
+    "and management-response information into a structured corrective-action "
+    "and resolution-tracking workflow."
+)
+
+st.markdown(
+    """
+**Primary intelligence objectives**
+
+1. Identify operational items requiring follow-up.
+2. Convert verified findings into traceable corrective actions.
+3. Assign responsible functions or operational owners.
+4. Track target completion and verification status.
+5. Identify overdue or unresolved material actions.
+6. Maintain evidence requirements before closure.
+7. Support management review of outstanding actions.
+8. Preserve traceability between alert, response, action and closure.
+"""
+)
+
+
+# ------------------------------------------------
+# DATA QUALITY & VALIDATION
+# ------------------------------------------------
+
+st.subheader("🛡️ Data Quality & Validation")
+
+if tahap_43_available:
+    st.success(
+        "🟢 Upstream alert and escalation intelligence is available "
+        "for TAHAP 44 corrective-action assessment."
+    )
+    data_quality = "AVAILABLE"
+else:
+    st.warning(
+        "🟠 Upstream supporting information is currently limited. "
+        "Corrective-action classifications must be interpreted with "
+        "available-data limitations."
+    )
+    data_quality = "LIMITED"
+
+
+# ------------------------------------------------
+# GOVERNANCE / DECISION-SUPPORT NOTICE
+# ------------------------------------------------
+
+st.info(
+    "Fleet Corrective Action & Resolution Tracking Intelligence is a "
+    "decision-support module. An alert, priority, recommendation or "
+    "corrective-action status does not independently establish machinery "
+    "failure, fuel loss, theft, crew performance, commercial responsibility, "
+    "regulatory non-compliance, causation or financial impact. Verify actual "
+    "vessel records, fuel measurements, tank soundings, ROB, bunker "
+    "documentation, engine parameters, RPM/load, vessel speed, draft/trim, "
+    "weather/current, sea state, voyage conditions, hull/propeller condition, "
+    "fuel properties, maintenance evidence and applicable OEM/company "
+    "requirements before technical, operational, safety, procurement, "
+    "financial or commercial action."
+)
+
+
+# ------------------------------------------------
+# MANAGEMENT ACTION FRAMEWORK
+# ------------------------------------------------
+
+st.subheader("📋 Management Action Framework")
+
+st.markdown(
+    """
+For each material corrective action, management should confirm:
+
+- **Issue / Finding** — what has been verified.
+- **Source Evidence** — records supporting the finding.
+- **Priority** — operational importance based on verified information.
+- **Responsible Function** — designated action owner.
+- **Target Date** — expected completion date.
+- **Corrective Action** — action actually required.
+- **Verification Evidence** — evidence demonstrating implementation.
+- **Closure Status** — open, monitoring, verified or closed.
+- **Escalation Requirement** — whether further management review is required.
+"""
+)
+
+
+# ------------------------------------------------
+# TAHAP 44 RESULT OBJECT
+# ------------------------------------------------
+
+tahap_44_result = {
+    "stage": 44,
+    "module": "Fleet Corrective Action & Resolution Tracking Intelligence",
+    "status": "ACTIVE",
+    "upstream_tahap_43": tahap_43_available,
+    "data_quality": data_quality,
+    "decision_support": True,
+    "corrective_action_tracking": True,
+    "resolution_tracking": True,
+    "verification_required": True,
+    "closure_control": True,
+}
+
+st.session_state["tahap_44_results"] = tahap_44_result
+st.session_state["tahap_44_active"] = True
+
+
+# ------------------------------------------------
+# TAHAP 44 STATUS
+# ------------------------------------------------
+
+st.success(
+    "✅ TAHAP 44 ACTIVE — Fleet Corrective Action & Resolution Tracking "
+    "Intelligence is operational."
+)
+
+st.info(
+    "TAHAP 44 results are stored in the application session "
+    "and prepared for the next intelligence module."
+)
+
+
+# ================================================================
+# END TAHAP 44
+# ================================================================
 
 
 
