@@ -3981,3 +3981,585 @@ st.info(
 # ================================================================
 # END TAHAP 7
 # ================================================================
+
+# ================================================================
+# TAHAP 8 - FUEL RISK, ALERT & MANAGEMENT DECISION INTELLIGENCE
+# ================================================================
+
+st.divider()
+st.header("🚨 Fuel Risk, Alert & Management Decision Intelligence")
+st.caption(
+    "Integrated fuel-risk assessment, management alerts, operational "
+    "decision support and priority-action intelligence using results "
+    "from the previous intelligence modules."
+)
+
+# ---------------------------------------------------------------
+# VESSEL CONTEXT
+# ---------------------------------------------------------------
+
+t8_selected_vessel = st.session_state.get(
+    "selected_fleet_vessel",
+    st.session_state.get(
+        "sidebar_vessel_name",
+        globals().get("vessel_name", "ASL MANTRUS")
+    )
+)
+
+st.subheader("🚢 Management Review Vessel")
+st.info(f"Integrated fuel-risk assessment for: **{t8_selected_vessel}**")
+
+
+# ---------------------------------------------------------------
+# COLLECT RESULTS FROM PREVIOUS MODULES
+# ---------------------------------------------------------------
+
+t8_bunker_status = st.session_state.get(
+    "t4_result_bunker_status",
+    "UNKNOWN"
+)
+
+t8_rob_l = float(
+    st.session_state.get(
+        "t4_result_rob_l",
+        0.0
+    ) or 0.0
+)
+
+t8_rob_percent = float(
+    st.session_state.get(
+        "t4_result_rob_percent",
+        0.0
+    ) or 0.0
+)
+
+t8_daily_consumption_l = float(
+    st.session_state.get(
+        "t4_result_daily_consumption_l",
+        0.0
+    ) or 0.0
+)
+
+t8_days_to_reserve = float(
+    st.session_state.get(
+        "t4_result_days_to_reserve",
+        0.0
+    ) or 0.0
+)
+
+t8_projected_rob_l = float(
+    st.session_state.get(
+        "t4_result_projected_rob_l",
+        0.0
+    ) or 0.0
+)
+
+t8_projected_rob_percent = float(
+    st.session_state.get(
+        "t4_result_projected_rob_percent",
+        0.0
+    ) or 0.0
+)
+
+t8_voyage_status = st.session_state.get(
+    "t5_result_status",
+    "UNKNOWN"
+)
+
+t8_arrival_rob_l = float(
+    st.session_state.get(
+        "t5_result_arrival_rob_l",
+        0.0
+    ) or 0.0
+)
+
+t8_surplus_deficit_l = float(
+    st.session_state.get(
+        "t5_result_surplus_deficit_l",
+        0.0
+    ) or 0.0
+)
+
+t8_performance_status = st.session_state.get(
+    "t6_result_status",
+    "UNKNOWN"
+)
+
+t8_excess_period_fuel = float(
+    st.session_state.get(
+        "t6_result_excess_period_fuel",
+        0.0
+    ) or 0.0
+)
+
+t8_excess_daily_cost = float(
+    st.session_state.get(
+        "t6_result_excess_daily_cost",
+        0.0
+    ) or 0.0
+)
+
+t8_excess_period_cost = float(
+    st.session_state.get(
+        "t6_result_excess_period_cost",
+        0.0
+    ) or 0.0
+)
+
+
+# ---------------------------------------------------------------
+# OPTIONAL TAHAP 7 FINANCIAL RESULTS
+# ---------------------------------------------------------------
+
+def t8_first_number(keys, default=0.0):
+    for key in keys:
+        value = st.session_state.get(key, None)
+
+        if value is not None:
+            try:
+                return float(value)
+            except (TypeError, ValueError):
+                pass
+
+    return float(default)
+
+
+t8_financial_variance = t8_first_number(
+    [
+        "t7_result_cost_variance",
+        "t7_result_financial_variance",
+        "t7_result_cost_impact",
+        "t7_result_excess_cost",
+    ],
+    0.0
+)
+
+t8_projected_cost = t8_first_number(
+    [
+        "t7_result_projected_cost",
+        "t7_result_total_cost",
+        "t7_result_period_cost",
+    ],
+    0.0
+)
+
+t8_saving_opportunity = t8_first_number(
+    [
+        "t7_result_saving_opportunity",
+        "t7_result_potential_saving",
+        "t7_result_savings",
+    ],
+    0.0
+)
+
+
+# ---------------------------------------------------------------
+# MANAGEMENT RISK SETTINGS
+# ---------------------------------------------------------------
+
+st.subheader("⚙️ Management Risk Thresholds")
+
+t8_c1, t8_c2, t8_c3 = st.columns(3)
+
+with t8_c1:
+    t8_min_rob_percent = st.number_input(
+        "Minimum ROB Threshold (%)",
+        min_value=0.0,
+        max_value=100.0,
+        value=20.0,
+        step=1.0,
+        key="t8_min_rob_percent"
+    )
+
+with t8_c2:
+    t8_min_endurance_days = st.number_input(
+        "Minimum Endurance Warning (days)",
+        min_value=0.0,
+        value=3.0,
+        step=0.5,
+        key="t8_min_endurance_days"
+    )
+
+with t8_c3:
+    t8_cost_alert_threshold = st.number_input(
+        "Cost Alert Threshold",
+        min_value=0.0,
+        value=1000.0,
+        step=100.0,
+        key="t8_cost_alert_threshold"
+    )
+
+
+# ---------------------------------------------------------------
+# INTEGRATED RISK SCORING
+# ---------------------------------------------------------------
+
+t8_risk_score = 0
+t8_risk_factors = []
+t8_management_alerts = []
+t8_priority_actions = []
+
+
+# Bunker / ROB risk
+if t8_rob_percent <= 0:
+    t8_risk_score += 25
+    t8_risk_factors.append(
+        "Current ROB percentage is zero or unavailable."
+    )
+
+elif t8_rob_percent < t8_min_rob_percent:
+    t8_risk_score += 25
+    t8_risk_factors.append(
+        "Current ROB is below the management minimum threshold."
+    )
+
+elif t8_rob_percent < (t8_min_rob_percent + 10):
+    t8_risk_score += 10
+    t8_risk_factors.append(
+        "Current ROB is approaching the management minimum threshold."
+    )
+
+
+# Bunker status risk
+if str(t8_bunker_status).upper() in ["EMPTY", "CRITICAL"]:
+    t8_risk_score += 25
+    t8_risk_factors.append(
+        f"Bunker inventory status is {t8_bunker_status}."
+    )
+
+elif str(t8_bunker_status).upper() in ["LOW", "MONITOR"]:
+    t8_risk_score += 10
+    t8_risk_factors.append(
+        f"Bunker inventory requires attention: {t8_bunker_status}."
+    )
+
+
+# Endurance risk
+if (
+    t8_days_to_reserve > 0
+    and t8_days_to_reserve <= t8_min_endurance_days
+):
+    t8_risk_score += 20
+    t8_risk_factors.append(
+        "Fuel reserve threshold may be reached within the "
+        "management warning period."
+    )
+
+
+# Voyage fuel sufficiency risk
+if t8_surplus_deficit_l < 0:
+    t8_risk_score += 25
+    t8_risk_factors.append(
+        "Voyage fuel planning indicates a fuel deficit."
+    )
+
+if t8_arrival_rob_l < 0:
+    t8_risk_score += 25
+    t8_risk_factors.append(
+        "Projected arrival ROB is below zero."
+    )
+
+
+# Performance deviation risk
+if t8_excess_period_fuel > 0:
+    t8_risk_score += 10
+    t8_risk_factors.append(
+        "Excess fuel consumption has been detected for the "
+        "analysis period."
+    )
+
+
+# Cost risk
+t8_combined_cost_impact = max(
+    t8_excess_period_cost,
+    t8_financial_variance,
+    0.0
+)
+
+if t8_combined_cost_impact >= t8_cost_alert_threshold:
+    t8_risk_score += 15
+    t8_risk_factors.append(
+        "Fuel-related cost impact exceeds the management alert threshold."
+    )
+
+
+# Cap score at 100
+t8_risk_score = min(t8_risk_score, 100)
+
+
+# ---------------------------------------------------------------
+# RISK CLASSIFICATION
+# ---------------------------------------------------------------
+
+if t8_risk_score >= 70:
+    t8_risk_level = "CRITICAL"
+
+elif t8_risk_score >= 45:
+    t8_risk_level = "HIGH"
+
+elif t8_risk_score >= 20:
+    t8_risk_level = "MEDIUM"
+
+else:
+    t8_risk_level = "LOW"
+
+
+# ---------------------------------------------------------------
+# MANAGEMENT ALERT GENERATION
+# ---------------------------------------------------------------
+
+if t8_risk_level == "CRITICAL":
+    t8_management_alerts.append(
+        "Immediate management review is required."
+    )
+    t8_priority_actions.append(
+        "Verify actual ROB by tank sounding and confirm available "
+        "usable fuel immediately."
+    )
+    t8_priority_actions.append(
+        "Review voyage requirement, reserve requirement and bunker "
+        "availability before continuing the planned operation."
+    )
+
+elif t8_risk_level == "HIGH":
+    t8_management_alerts.append(
+        "Fuel risk requires prompt superintendent and operational review."
+    )
+    t8_priority_actions.append(
+        "Verify fuel inventory, consumption trend and voyage requirement."
+    )
+
+elif t8_risk_level == "MEDIUM":
+    t8_management_alerts.append(
+        "Fuel condition requires increased monitoring."
+    )
+    t8_priority_actions.append(
+        "Monitor ROB, consumption, endurance and financial deviation "
+        "against approved limits."
+    )
+
+else:
+    t8_management_alerts.append(
+        "No major integrated fuel-risk condition is currently indicated."
+    )
+    t8_priority_actions.append(
+        "Continue routine fuel, performance and cost monitoring."
+    )
+
+
+if t8_surplus_deficit_l < 0:
+    t8_priority_actions.append(
+        "Review voyage fuel plan and arrange additional bunker if "
+        "required before voyage approval."
+    )
+
+if t8_excess_period_fuel > 0:
+    t8_priority_actions.append(
+        "Investigate excess consumption against RPM/load, speed, "
+        "weather/current, draft/trim, hull and propeller condition."
+    )
+
+if t8_combined_cost_impact >= t8_cost_alert_threshold:
+    t8_priority_actions.append(
+        "Review the financial impact of excess consumption and verify "
+        "fuel price, invoices and approved operating budget."
+    )
+
+
+# Remove duplicate actions while preserving order
+t8_priority_actions = list(dict.fromkeys(t8_priority_actions))
+t8_management_alerts = list(dict.fromkeys(t8_management_alerts))
+
+
+# ---------------------------------------------------------------
+# INTEGRATED MANAGEMENT DASHBOARD
+# ---------------------------------------------------------------
+
+st.subheader("📊 Integrated Fuel Risk Dashboard")
+
+t8_m1, t8_m2, t8_m3, t8_m4 = st.columns(4)
+
+t8_m1.metric(
+    "Integrated Risk Score",
+    f"{t8_risk_score}/100"
+)
+
+t8_m2.metric(
+    "Risk Level",
+    t8_risk_level
+)
+
+t8_m3.metric(
+    "Current ROB",
+    f"{t8_rob_percent:,.1f}%"
+)
+
+t8_m4.metric(
+    "Days to Reserve",
+    f"{t8_days_to_reserve:,.1f}"
+)
+
+
+t8_m5, t8_m6, t8_m7, t8_m8 = st.columns(4)
+
+t8_m5.metric(
+    "Projected ROB",
+    f"{t8_projected_rob_percent:,.1f}%"
+)
+
+t8_m6.metric(
+    "Voyage Surplus / Deficit",
+    f"{t8_surplus_deficit_l:,.1f} L"
+)
+
+t8_m7.metric(
+    "Excess Period Fuel",
+    f"{t8_excess_period_fuel:,.1f} L"
+)
+
+t8_m8.metric(
+    "Cost Impact",
+    f"{t8_combined_cost_impact:,.2f}"
+)
+
+
+# ---------------------------------------------------------------
+# RISK STATUS DISPLAY
+# ---------------------------------------------------------------
+
+st.subheader("🚦 Integrated Risk Status")
+
+if t8_risk_level == "CRITICAL":
+    st.error(
+        "🔴 CRITICAL — Immediate management and operational review required."
+    )
+
+elif t8_risk_level == "HIGH":
+    st.error(
+        "🟠 HIGH — Significant fuel risk requires prompt management review."
+    )
+
+elif t8_risk_level == "MEDIUM":
+    st.warning(
+        "🟡 MEDIUM — Increased monitoring and corrective review recommended."
+    )
+
+else:
+    st.success(
+        "🟢 LOW — No major integrated fuel-risk condition currently indicated."
+    )
+
+
+# ---------------------------------------------------------------
+# RISK FACTORS
+# ---------------------------------------------------------------
+
+st.subheader("🔎 Detected Risk Factors")
+
+if t8_risk_factors:
+    for t8_index, t8_factor in enumerate(t8_risk_factors, start=1):
+        st.write(f"{t8_index}. {t8_factor}")
+
+else:
+    st.success(
+        "No significant integrated fuel-risk factors were detected "
+        "from the available module results."
+    )
+
+
+# ---------------------------------------------------------------
+# MANAGEMENT ALERTS
+# ---------------------------------------------------------------
+
+st.subheader("🚨 Management Alerts")
+
+for t8_index, t8_alert in enumerate(t8_management_alerts, start=1):
+    st.write(f"{t8_index}. {t8_alert}")
+
+
+# ---------------------------------------------------------------
+# PRIORITY ACTIONS
+# ---------------------------------------------------------------
+
+st.subheader("📋 Priority Actions")
+
+for t8_index, t8_action in enumerate(t8_priority_actions, start=1):
+    st.write(f"{t8_index}. {t8_action}")
+
+
+# ---------------------------------------------------------------
+# DATA QUALITY & VALIDATION
+# ---------------------------------------------------------------
+
+st.subheader("🛡️ Data Quality & Validation")
+
+t8_validation = []
+
+if t8_daily_consumption_l <= 0:
+    t8_validation.append(
+        "Daily fuel consumption is zero or unavailable."
+    )
+
+if t8_rob_l < 0:
+    t8_validation.append(
+        "Current ROB cannot be negative."
+    )
+
+if t8_rob_percent < 0:
+    t8_validation.append(
+        "Current ROB percentage cannot be negative."
+    )
+
+if not t8_validation:
+    st.success(
+        "🟢 Integrated fuel-risk inputs passed the basic validation checks."
+    )
+
+else:
+    for t8_note in t8_validation:
+        st.warning(f"🟠 {t8_note}")
+
+
+st.info(
+    "Integrated fuel-risk results are operational decision-support "
+    "estimates. Before safety-critical, commercial or voyage decisions, "
+    "verify actual tank soundings, calibration tables, fuel density, "
+    "measured ROB, machinery consumption, voyage requirements, weather "
+    "and current, statutory/company reserves, bunker availability, "
+    "supplier information and applicable company procedures."
+)
+
+
+# ---------------------------------------------------------------
+# SAVE TAHAP 8 RESULTS FOR NEXT MODULES
+# ---------------------------------------------------------------
+
+st.session_state["t8_result_vessel"] = t8_selected_vessel
+st.session_state["t8_result_risk_score"] = t8_risk_score
+st.session_state["t8_result_risk_level"] = t8_risk_level
+st.session_state["t8_result_risk_factors"] = t8_risk_factors
+st.session_state["t8_result_management_alerts"] = t8_management_alerts
+st.session_state["t8_result_priority_actions"] = t8_priority_actions
+st.session_state["t8_result_rob_percent"] = t8_rob_percent
+st.session_state["t8_result_days_to_reserve"] = t8_days_to_reserve
+st.session_state["t8_result_surplus_deficit_l"] = t8_surplus_deficit_l
+st.session_state["t8_result_excess_period_fuel"] = t8_excess_period_fuel
+st.session_state["t8_result_cost_impact"] = t8_combined_cost_impact
+st.session_state["t8_result_projected_cost"] = t8_projected_cost
+st.session_state["t8_result_saving_opportunity"] = t8_saving_opportunity
+
+
+st.success(
+    "✅ TAHAP 8 ACTIVE — Fuel Risk, Alert & Management Decision "
+    "Intelligence is operational."
+)
+
+st.info(
+    "TAHAP 8 results are stored in the application session "
+    "and prepared for the next intelligence modules."
+)
+
+
+# ================================================================
+# END TAHAP 8
+# ================================================================
