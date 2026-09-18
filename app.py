@@ -11882,4 +11882,309 @@ st.info(
 # END TAHAP 21
 # ================================================================
 
+# ============================================================
+# TAHAP 22 - FUEL COST SAVING & FINANCIAL IMPACT INTELLIGENCE
+# ============================================================
+
+st.divider()
+st.header("💰 Fuel Cost Saving & Financial Impact Intelligence")
+
+st.caption(
+    "Management intelligence for estimating fuel-cost exposure, "
+    "potential efficiency savings and financial impact."
+)
+
+# ------------------------------------------------------------
+# SAFE NUMBER HELPER
+# ------------------------------------------------------------
+
+def t22_safe_float(value, default=0.0):
+    try:
+        if value is None:
+            return float(default)
+        return float(value)
+    except (TypeError, ValueError):
+        return float(default)
+
+
+# ------------------------------------------------------------
+# VESSEL CONTEXT
+# ------------------------------------------------------------
+
+t22_selected_vessel = st.session_state.get(
+    "selected_fleet_vessel",
+    st.session_state.get(
+        "sidebar_vessel_name",
+        globals().get("vessel_name", "ASL MANTRUS")
+    )
+)
+
+st.subheader("🚢 Financial Assessment Vessel")
+st.info(f"Selected Vessel: **{t22_selected_vessel}**")
+
+
+# ------------------------------------------------------------
+# PREVIOUS INTELLIGENCE RESULTS
+# ------------------------------------------------------------
+
+t22_daily_fuel = t22_safe_float(
+    st.session_state.get(
+        "t20_result_daily_consumption",
+        st.session_state.get(
+            "t18_result_current_consumption",
+            0.0
+        )
+    )
+)
+
+t22_kpi_score = t22_safe_float(
+    st.session_state.get(
+        "t21_result_kpi_score",
+        0.0
+    )
+)
+
+
+# ------------------------------------------------------------
+# FINANCIAL INPUT
+# ------------------------------------------------------------
+
+st.subheader("📥 Fuel Cost & Saving Inputs")
+
+t22_c1, t22_c2, t22_c3 = st.columns(3)
+
+with t22_c1:
+    t22_fuel_price = st.number_input(
+        "Fuel Price / Unit",
+        min_value=0.0,
+        value=650.0,
+        step=10.0,
+        key="t22_fuel_price"
+    )
+
+with t22_c2:
+    t22_operating_days = st.number_input(
+        "Assessment Period (Days)",
+        min_value=1,
+        value=30,
+        step=1,
+        key="t22_operating_days"
+    )
+
+with t22_c3:
+    t22_saving_target_percent = st.number_input(
+        "Efficiency Saving Target (%)",
+        min_value=0.0,
+        max_value=100.0,
+        value=5.0,
+        step=0.5,
+        key="t22_saving_target_percent"
+    )
+
+
+# ------------------------------------------------------------
+# CALCULATION
+# ------------------------------------------------------------
+
+t22_period_fuel = (
+    t22_daily_fuel *
+    float(t22_operating_days)
+)
+
+t22_baseline_cost = (
+    t22_period_fuel *
+    t22_fuel_price
+)
+
+t22_target_fuel_saving = (
+    t22_period_fuel *
+    t22_saving_target_percent /
+    100.0
+)
+
+t22_target_cost_saving = (
+    t22_target_fuel_saving *
+    t22_fuel_price
+)
+
+t22_target_cost = max(
+    t22_baseline_cost -
+    t22_target_cost_saving,
+    0.0
+)
+
+
+# ------------------------------------------------------------
+# MANAGEMENT METRICS
+# ------------------------------------------------------------
+
+st.subheader("📊 Financial Impact")
+
+t22_m1, t22_m2, t22_m3, t22_m4 = st.columns(4)
+
+with t22_m1:
+    st.metric(
+        "Period Fuel",
+        f"{t22_period_fuel:,.2f}"
+    )
+
+with t22_m2:
+    st.metric(
+        "Baseline Fuel Cost",
+        f"${t22_baseline_cost:,.2f}"
+    )
+
+with t22_m3:
+    st.metric(
+        "Potential Fuel Saving",
+        f"{t22_target_fuel_saving:,.2f}"
+    )
+
+with t22_m4:
+    st.metric(
+        "Potential Cost Saving",
+        f"${t22_target_cost_saving:,.2f}"
+    )
+
+st.metric(
+    "Target Fuel Cost",
+    f"${t22_target_cost:,.2f}"
+)
+
+
+# ------------------------------------------------------------
+# MANAGEMENT INTELLIGENCE
+# ------------------------------------------------------------
+
+st.subheader("🧠 Financial Intelligence")
+
+t22_priority_actions = []
+
+if t22_daily_fuel <= 0:
+    st.warning(
+        "🟠 Daily fuel-consumption data is zero or unavailable."
+    )
+    t22_priority_actions.append(
+        "Verify actual daily fuel consumption before using the financial assessment."
+    )
+
+elif t22_fuel_price <= 0:
+    st.warning(
+        "🟠 Fuel price is zero or unavailable."
+    )
+    t22_priority_actions.append(
+        "Enter and verify the applicable bunker fuel price."
+    )
+
+else:
+    st.success(
+        "🟢 Fuel consumption and fuel-price inputs are available "
+        "for the financial assessment."
+    )
+
+    if t22_saving_target_percent > 0:
+        t22_priority_actions.append(
+            "Track actual fuel consumption against the efficiency-saving target."
+        )
+
+    if t22_target_cost_saving > 0:
+        t22_priority_actions.append(
+            "Monitor whether operational efficiency measures produce the estimated cost saving."
+        )
+
+
+# ------------------------------------------------------------
+# PRIORITY ACTIONS
+# ------------------------------------------------------------
+
+st.subheader("📋 Priority Actions")
+
+if not t22_priority_actions:
+    t22_priority_actions.append(
+        "Continue routine fuel-cost, consumption and efficiency monitoring."
+    )
+
+for t22_index, t22_action in enumerate(
+    t22_priority_actions,
+    start=1
+):
+    st.write(f"{t22_index}. {t22_action}")
+
+
+# ------------------------------------------------------------
+# DATA QUALITY & VALIDATION
+# ------------------------------------------------------------
+
+st.subheader("🛡️ Data Quality & Validation")
+
+if t22_daily_fuel > 0 and t22_fuel_price > 0:
+    st.success(
+        "🟢 Financial-impact inputs passed the basic validation checks."
+    )
+else:
+    st.warning(
+        "🟠 Financial-impact calculation contains unavailable or zero source data."
+    )
+
+st.info(
+    "Fuel-cost saving and financial-impact results are decision-support estimates. "
+    "Actual financial results depend on verified fuel consumption, bunker quantity, "
+    "fuel grade, supplier price, port and delivery costs, exchange rates, voyage "
+    "conditions and applicable commercial arrangements. Verify source records before "
+    "commercial, procurement or management decisions."
+)
+
+
+# ------------------------------------------------------------
+# STORE RESULTS FOR NEXT INTELLIGENCE MODULE
+# ------------------------------------------------------------
+
+st.session_state["t22_result_period_fuel"] = (
+    t22_period_fuel
+)
+
+st.session_state["t22_result_baseline_cost"] = (
+    t22_baseline_cost
+)
+
+st.session_state["t22_result_target_fuel_saving"] = (
+    t22_target_fuel_saving
+)
+
+st.session_state["t22_result_target_cost_saving"] = (
+    t22_target_cost_saving
+)
+
+st.session_state["t22_result_target_cost"] = (
+    t22_target_cost
+)
+
+st.session_state["t22_result_kpi_score"] = (
+    t22_kpi_score
+)
+
+st.session_state["t22_result_priority_actions"] = (
+    t22_priority_actions
+)
+
+
+# ------------------------------------------------------------
+# TAHAP 22 STATUS
+# ------------------------------------------------------------
+
+st.success(
+    "✅ TAHAP 22 ACTIVE — Fuel Cost Saving & Financial Impact "
+    "Intelligence is operational."
+)
+
+st.info(
+    "TAHAP 22 results are stored in the application session "
+    "and prepared for the next intelligence modules."
+)
+
+
+# ============================================================
+# END TAHAP 22
+# ============================================================
+
 
