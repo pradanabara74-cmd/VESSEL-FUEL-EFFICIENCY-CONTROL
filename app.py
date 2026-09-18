@@ -13557,4 +13557,240 @@ st.info(
 # END TAHAP 25
 # ============================================================
 
+# ============================================================
+# TAHAP 26
+# FUEL EFFICIENCY ACTION TRACKER &
+# CONTINUOUS IMPROVEMENT INTELLIGENCE
+# ============================================================
+
+st.markdown("---")
+st.header("📌 Fuel Efficiency Action Tracker & Continuous Improvement")
+st.caption(
+    "TAHAP 26 — Converts fuel-efficiency intelligence into "
+    "traceable management actions and continuous-improvement monitoring."
+)
+
+# ------------------------------------------------------------
+# SAFE HELPERS
+# ------------------------------------------------------------
+
+def t26_safe_float(value, default=0.0):
+    try:
+        if value is None:
+            return default
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+# ------------------------------------------------------------
+# COLLECT UPSTREAM INTELLIGENCE
+# ------------------------------------------------------------
+
+t26_kpi_score = t26_safe_float(
+    st.session_state.get("t21_result_kpi_score", 0.0)
+)
+
+t26_potential_cost_saving = t26_safe_float(
+    st.session_state.get("t23_result_potential_cost_saving", 0.0)
+)
+
+t26_recommendations = st.session_state.get(
+    "t25_result_recommendations",
+    []
+)
+
+if not isinstance(t26_recommendations, list):
+    t26_recommendations = []
+
+
+# ------------------------------------------------------------
+# ACTION TRACKER
+# ------------------------------------------------------------
+
+st.subheader("📋 Management Action Tracker")
+
+if t26_recommendations:
+    t26_actions = []
+
+    for index, recommendation in enumerate(
+        t26_recommendations,
+        start=1
+    ):
+        t26_actions.append(
+            {
+                "Action ID": f"FE-{index:03d}",
+                "Recommendation": str(recommendation),
+                "Priority": "Review",
+                "Status": "Open",
+            }
+        )
+
+else:
+    t26_actions = [
+        {
+            "Action ID": "FE-001",
+            "Recommendation":
+                "Continue routine fuel-efficiency monitoring "
+                "and verify operational data.",
+            "Priority": "Routine",
+            "Status": "Monitoring",
+        }
+    ]
+
+st.dataframe(
+    t26_actions,
+    use_container_width=True,
+    hide_index=True
+)
+
+
+# ------------------------------------------------------------
+# MANAGEMENT FOLLOW-UP
+# ------------------------------------------------------------
+
+st.subheader("🎯 Continuous Improvement")
+
+t26_follow_up = []
+
+if t26_kpi_score > 0:
+    if t26_kpi_score < 80:
+        t26_follow_up.append(
+            "Review the fuel-efficiency KPI and verify the "
+            "operational factors contributing to the result."
+        )
+    else:
+        t26_follow_up.append(
+            "Maintain current monitoring and verify that the "
+            "fuel-efficiency KPI remains stable."
+        )
+else:
+    t26_follow_up.append(
+        "Establish sufficient verified operational data for "
+        "continuous KPI monitoring."
+    )
+
+if t26_potential_cost_saving > 0:
+    t26_follow_up.append(
+        "Track verified fuel consumption and actual financial "
+        "results against the identified saving opportunity."
+    )
+
+for i, action in enumerate(t26_follow_up, start=1):
+    st.write(f"{i}. {action}")
+
+
+# ------------------------------------------------------------
+# ACTION SUMMARY
+# ------------------------------------------------------------
+
+st.subheader("📊 Action Summary")
+
+t26_total_actions = len(t26_actions)
+
+t26_open_actions = sum(
+    1
+    for action in t26_actions
+    if action["Status"] in ["Open", "Monitoring"]
+)
+
+c1, c2, c3 = st.columns(3)
+
+c1.metric(
+    "Tracked Actions",
+    t26_total_actions
+)
+
+c2.metric(
+    "Active / Open",
+    t26_open_actions
+)
+
+c3.metric(
+    "Potential Saving",
+    f"${t26_potential_cost_saving:,.2f}"
+)
+
+
+# ------------------------------------------------------------
+# DATA QUALITY & VALIDATION
+# ------------------------------------------------------------
+
+st.subheader("🛡️ Data Quality & Validation")
+
+t26_upstream_available = (
+    t26_kpi_score > 0
+    or t26_potential_cost_saving > 0
+    or len(t26_recommendations) > 0
+)
+
+if t26_upstream_available:
+    st.success(
+        "🟢 Upstream fuel-efficiency intelligence is available "
+        "for action tracking."
+    )
+else:
+    st.warning(
+        "🟠 Some upstream intelligence results are unavailable. "
+        "Action tracking is operating with available-data limitations."
+    )
+
+
+# ------------------------------------------------------------
+# DECISION-SUPPORT NOTICE
+# ------------------------------------------------------------
+
+st.info(
+    "Fuel-efficiency action tracking and continuous-improvement "
+    "results are decision-support indicators. Actions should be "
+    "validated against verified fuel measurements, ROB, engine "
+    "performance, RPM/load, vessel speed, draft/trim, weather/current, "
+    "voyage conditions, machinery condition, applicable OEM limits, "
+    "company procedures and the Master's operational authority before "
+    "implementation."
+)
+
+
+# ------------------------------------------------------------
+# STORE TAHAP 26 RESULTS
+# ------------------------------------------------------------
+
+st.session_state["t26_result_actions"] = t26_actions
+
+st.session_state["t26_result_total_actions"] = (
+    t26_total_actions
+)
+
+st.session_state["t26_result_open_actions"] = (
+    t26_open_actions
+)
+
+st.session_state["t26_result_follow_up"] = (
+    t26_follow_up
+)
+
+st.session_state["t26_result_upstream_available"] = (
+    t26_upstream_available
+)
+
+
+# ------------------------------------------------------------
+# TAHAP 26 STATUS
+# ------------------------------------------------------------
+
+st.success(
+    "✅ TAHAP 26 ACTIVE — Fuel Efficiency Action Tracker & "
+    "Continuous Improvement Intelligence is operational."
+)
+
+st.info(
+    "TAHAP 26 results are stored in the application session "
+    "and prepared for the next intelligence modules."
+)
+
+
+# ============================================================
+# END TAHAP 26
+# ============================================================
+
 
